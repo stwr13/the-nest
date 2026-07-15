@@ -31,6 +31,18 @@
         <button id="sign-out" class="btn btn-ghost">Sign out</button>
       </div>
     </header>
+    <section class="card dash-card">
+      <div class="dash-head">
+        <div>
+          <p id="dash-label" class="dash-label">This month</p>
+          <p id="dash-total" class="dash-total">S$0.00</p>
+        </div>
+        <p id="dash-compare" class="dash-compare"></p>
+      </div>
+      <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
+      <ul id="dash-cats" class="dash-cats"></ul>
+    </section>
+
     <section class="card form-card">
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">

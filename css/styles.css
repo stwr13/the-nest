@@ -113,7 +113,47 @@ input:focus {
   border-radius: 999px;
 }
 
-.placeholder { margin: 0; color: var(--ink-soft); }
+/* ── dashboard ── */
+.dash-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dash-label { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); }
+
+.dash-total {
+  margin: 0.1rem 0 0;
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--green-deep);
+}
+
+.dash-compare {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash-cats { margin: 1rem 0 0; padding: 0; list-style: none; }
+.dash-cats li + li { margin-top: 0.6rem; }
+
+.cat-row { display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 600; }
+.cat-row span:last-child { color: var(--green-deep); }
+
+.cat-bar {
+  height: 6px;
+  margin-top: 0.25rem;
+  background: var(--pink-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cat-bar-fill { height: 100%; background: var(--pink); border-radius: 999px; }
 
 /* ── expense form ── */
 .card + .card { margin-top: 1rem; }

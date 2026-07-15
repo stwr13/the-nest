@@ -23,9 +23,15 @@ const cancelBtn = document.getElementById("exp-cancel");
 const categorySelect = document.getElementById("exp-category");
 const ledgerList = document.getElementById("ledger");
 const ledgerStatus = document.getElementById("ledger-status");
+const dashLabel = document.getElementById("dash-label");
+const dashTotal = document.getElementById("dash-total");
+const dashCompare = document.getElementById("dash-compare");
+const dashCats = document.getElementById("dash-cats");
+const dashEmpty = document.getElementById("dash-empty");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
+const monthFmt = new Intl.DateTimeFormat("en-SG", { month: "long" });
 
 let currentUser = null;
 let editingId = null;
@@ -95,18 +101,23 @@ async function loadApp() {
     categorySelect.replaceChildren(
       ...categories.map((c) => new Option(c.name, c.id)),
     );
-    renderLedger(expenses);
+    renderAll(expenses);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
 }
 
-async function refreshLedger() {
+async function refresh() {
   try {
-    renderLedger(await fetchExpenses());
+    renderAll(await fetchExpenses());
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
+}
+
+function renderAll(expenses) {
+  renderDashboard(expenses);
+  renderLedger(expenses);
 }
 
 function loadErrorMessage(error) {
@@ -167,6 +178,69 @@ function renderEntry(expense) {
   return li;
 }
 
+// ── dashboard ─────────────────────────────────────────────────────────
+
+// Sums in integer cents: amounts are exact numeric in Postgres, but JS
+// numbers are floats — 84.2 + 9.9 style drift would show on screen.
+function renderDashboard(expenses) {
+  const now = new Date();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const thisKey = monthKey(now);
+  const lastKey = monthKey(lastMonth);
+
+  let thisCents = 0;
+  let lastCents = 0;
+  const byCategory = new Map();
+
+  for (const expense of expenses) {
+    const key = expense.date.slice(0, 7);
+    if (key !== thisKey && key !== lastKey) continue;
+    const cents = Math.round(Number(expense.amount) * 100);
+    if (key === lastKey) {
+      lastCents += cents;
+      continue;
+    }
+    thisCents += cents;
+    const name = expense.categories.name;
+    byCategory.set(name, (byCategory.get(name) ?? 0) + cents);
+  }
+
+  dashLabel.textContent = `This month · ${monthFmt.format(now)}`;
+  dashTotal.textContent = sgd.format(thisCents / 100);
+  dashCompare.textContent = `${monthFmt.format(lastMonth)}: ${sgd.format(lastCents / 100)}`;
+
+  const rows = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+  dashEmpty.hidden = rows.length > 0;
+  const maxCents = rows[0]?.[1] ?? 1;
+  dashCats.replaceChildren(...rows.map(([name, cents]) => categoryRow(name, cents, maxCents)));
+}
+
+function categoryRow(name, cents, maxCents) {
+  const li = document.createElement("li");
+
+  const row = document.createElement("div");
+  row.className = "cat-row";
+  const label = document.createElement("span");
+  label.textContent = name;
+  const value = document.createElement("span");
+  value.textContent = sgd.format(cents / 100);
+  row.append(label, value);
+
+  const bar = document.createElement("div");
+  bar.className = "cat-bar";
+  const fill = document.createElement("div");
+  fill.className = "cat-bar-fill";
+  fill.style.width = `${Math.max(4, Math.round((cents / maxCents) * 100))}%`;
+  bar.append(fill);
+
+  li.append(row, bar);
+  return li;
+}
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function entryButton(label, onClick) {
   const button = document.createElement("button");
   button.type = "button";
@@ -198,7 +272,7 @@ expenseForm.addEventListener("submit", async (event) => {
     exitEditMode();
     expenseForm.amount.value = "";
     expenseForm.note.value = "";
-    await refreshLedger();
+    await refresh();
   } catch (error) {
     showFormStatus(
       error.message?.includes("fetch")
@@ -245,7 +319,7 @@ async function confirmDelete(expense) {
   try {
     await deleteExpense(expense.id);
     if (editingId === expense.id) exitEditMode();
-    await refreshLedger();
+    await refresh();
   } catch (error) {
     showLedgerStatus(
       error.message?.includes("fetch")
