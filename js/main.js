@@ -6,6 +6,8 @@ import {
   addExpense,
   updateExpense,
   deleteExpense,
+  findPossibleDuplicates,
+  fetchAllExpensesForExport,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -275,6 +277,15 @@ expenseForm.addEventListener("submit", async (event) => {
   };
 
   try {
+    let proceed = true;
+    try {
+      const dupes = await findPossibleDuplicates(fields.amount, fields.date, editingId);
+      if (dupes.length > 0) proceed = window.confirm(duplicateMessage(fields, dupes[0]));
+    } catch {
+      // the check is advisory — warn, never block, even when it fails
+    }
+    if (!proceed) return;
+
     if (editingId === null) await addExpense(fields);
     else await updateExpense(editingId, fields);
     exitEditMode();
@@ -292,6 +303,14 @@ expenseForm.addEventListener("submit", async (event) => {
     submitBtn.textContent = editingId === null ? "Save" : "Update";
   }
 });
+
+function duplicateMessage(fields, dupe) {
+  const when = dateFmt.format(new Date(dupe.date + "T00:00:00"));
+  return (
+    `Possible duplicate: ${sgd.format(fields.amount)} is already logged ` +
+    `(${dupe.categories.name}, ${when}, paid by ${dupe.paid_by}).\n\nSave anyway?`
+  );
+}
 
 cancelBtn.addEventListener("click", () => {
   exitEditMode();
@@ -335,6 +354,48 @@ async function confirmDelete(expense) {
         : `Couldn't delete: ${error.message}`,
     );
   }
+}
+
+// ── CSV export ────────────────────────────────────────────────────────
+
+const exportBtn = document.getElementById("export-csv");
+exportBtn.addEventListener("click", exportCsv);
+
+async function exportCsv() {
+  exportBtn.disabled = true;
+  exportBtn.textContent = "Exporting…";
+  try {
+    const rows = await fetchAllExpensesForExport();
+    const header = "date,amount,category,paid_by,note";
+    const lines = rows.map((r) =>
+      [r.date, r.amount, r.categories.name, r.paid_by, r.note ?? ""]
+        .map(csvField)
+        .join(","),
+    );
+    // BOM so Excel detects UTF-8 instead of mangling accented text
+    const csv = "\uFEFF" + [header, ...lines].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `the-nest-ledger-${todayISO()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    showLedgerStatus(
+      error.message?.includes("fetch")
+        ? "No connection — export failed."
+        : `Couldn't export: ${error.message}`,
+    );
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.textContent = "Export CSV";
+  }
+}
+
+function csvField(value) {
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
 function resetFormDefaults() {

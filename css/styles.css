@@ -223,6 +223,19 @@ select:focus {
 .btn-block { width: 100%; margin-top: 0.5rem; }
 
 /* ── ledger ── */
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-head .card-title { margin: 0; }
+
+.btn-small { min-height: 36px; padding: 0.35rem 0.9rem; font-size: 0.875rem; }
+
+
 .muted { margin: 0.25rem 0; color: var(--ink-soft); }
 
 .ledger { margin: 0; padding: 0; list-style: none; }

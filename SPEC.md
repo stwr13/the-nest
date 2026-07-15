@@ -23,6 +23,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 - Supabase free tier pauses after ~7 days of inactivity — daily use keeps it alive; unpause manually in the console if it happens.
 - No offline entry: a failed save shows a visible error, nothing is queued.
 - Single currency (SGD).
+- The ledger view shows the most recent 1000 entries (API page cap); CSV export always contains the full history.
 - iOS PWA installs via the share-sheet → Add to Home Screen (Safari or Chrome; both use WebKit on iOS).
 
 ## Out of scope for v1.0
