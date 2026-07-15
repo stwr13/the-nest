@@ -146,7 +146,15 @@ function renderEntry(expense) {
 
   const top = document.createElement("p");
   top.className = "entry-title";
-  top.textContent = expense.categories.name + (expense.note ? ` · ${expense.note}` : "");
+  const category = document.createElement("span");
+  category.textContent = expense.categories.name;
+  top.append(category);
+  if (expense.note) {
+    const note = document.createElement("span");
+    note.className = "entry-note";
+    note.textContent = ` · ${expense.note}`;
+    top.append(note);
+  }
 
   const meta = document.createElement("p");
   meta.className = "entry-meta";

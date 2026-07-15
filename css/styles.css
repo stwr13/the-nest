@@ -240,6 +240,7 @@ select:focus {
 
 .entry-main { min-width: 0; }
 .entry-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.entry-note { font-weight: 400; color: var(--ink-soft); }
 .entry-meta { margin: 0.15rem 0 0; font-size: 0.8rem; color: var(--ink-soft); }
 
 .entry-side {
