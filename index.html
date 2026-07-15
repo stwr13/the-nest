@@ -31,8 +31,40 @@
         <button id="sign-out" class="btn btn-ghost">Sign out</button>
       </div>
     </header>
-    <section class="card">
-      <p class="placeholder">Signed in. The ledger arrives in step 3.</p>
+    <section class="card form-card">
+      <h2 id="form-title" class="card-title">Log an expense</h2>
+      <form id="expense-form">
+        <label for="exp-amount">Amount (SGD)</label>
+        <input id="exp-amount" name="amount" type="number" inputmode="decimal"
+               step="0.01" min="0.01" max="99999999" placeholder="0.00" required />
+
+        <label for="exp-category">Category</label>
+        <select id="exp-category" name="category_id" required></select>
+
+        <fieldset class="paid-by">
+          <legend>Paid by</legend>
+          <div class="segment">
+            <label><input type="radio" name="paid_by" value="Shawn" required /><span>Shawn</span></label>
+            <label><input type="radio" name="paid_by" value="Claire" /><span>Claire</span></label>
+          </div>
+        </fieldset>
+
+        <label for="exp-date">Date</label>
+        <input id="exp-date" name="date" type="date" required />
+
+        <label for="exp-note">Note <span class="optional">(optional)</span></label>
+        <input id="exp-note" name="note" type="text" maxlength="200" autocomplete="off" />
+
+        <p id="form-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="exp-submit" class="btn btn-primary">Save</button>
+        <button type="button" id="exp-cancel" class="btn btn-ghost btn-block" hidden>Cancel edit</button>
+      </form>
+    </section>
+
+    <section class="card ledger-card">
+      <h2 class="card-title">Ledger</h2>
+      <p id="ledger-status" class="muted">Loading…</p>
+      <ul id="ledger" class="ledger"></ul>
     </section>
   </main>
 
