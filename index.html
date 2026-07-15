@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#29583f" />
+  <title>The Nest</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main id="login-view" class="view view-centered" hidden>
+    <section class="card login-card">
+      <h1 class="brand">The Nest</h1>
+      <p class="tagline">One ledger, two people.</p>
+      <form id="login-form" novalidate>
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="email" required />
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+        <p id="login-error" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="login-submit" class="btn btn-primary">Sign in</button>
+      </form>
+    </section>
+  </main>
+
+  <main id="app-view" class="view" hidden>
+    <header class="app-header">
+      <h1 class="brand brand-small">The Nest</h1>
+      <div class="whoami">
+        <span id="user-name" class="user-pill"></span>
+        <button id="sign-out" class="btn btn-ghost">Sign out</button>
+      </div>
+    </header>
+    <section class="card">
+      <p class="placeholder">Signed in. The ledger arrives in step 3.</p>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

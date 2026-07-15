@@ -1,0 +1,121 @@
+/* The Nest — green × pastel-pink household palette */
+:root {
+  --green-deep: #29583f;
+  --green: #3a7d5c;
+  --green-soft: #ddeee4;
+  --pink: #e9a0b1;
+  --pink-soft: #fbe7ec;
+  --ink: #24332b;
+  --ink-soft: #5c6b62;
+  --bg: #f7f2ef;
+  --card: #ffffff;
+  --danger: #b3364b;
+  --danger-soft: #fdecef;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+/* author display rules below would silently defeat the hidden attribute */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--pink-soft), var(--bg) 45%, var(--green-soft));
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+.view { min-height: 100dvh; padding: 1rem; }
+.view-centered { display: grid; place-items: center; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgb(41 88 63 / 0.1);
+}
+
+.login-card { width: 100%; max-width: 24rem; }
+
+.brand { margin: 0; font-size: 2rem; color: var(--green-deep); }
+.brand-small { font-size: 1.25rem; }
+.tagline { margin: 0.25rem 0 1.25rem; color: var(--ink-soft); }
+
+label {
+  display: block;
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem;
+  /* 1rem minimum: smaller text makes iOS Safari auto-zoom on focus */
+  font-size: 1rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--green-soft);
+  border-radius: 10px;
+}
+
+input:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
+.btn {
+  min-height: 44px; /* Apple minimum tap target */
+  padding: 0.6rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.btn-primary { width: 100%; margin-top: 1.25rem; background: var(--green); color: #fff; }
+.btn-primary:active { background: var(--green-deep); }
+.btn-primary:disabled { opacity: 0.6; }
+.btn-ghost { background: var(--pink-soft); color: var(--green-deep); }
+
+.form-error {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-radius: 10px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.whoami { display: flex; align-items: center; gap: 0.5rem; }
+
+.user-pill {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  background: var(--pink-soft);
+  border-radius: 999px;
+}
+
+.placeholder { margin: 0; color: var(--ink-soft); }
+
+@media (min-width: 700px) {
+  .view { padding: 2rem; }
+  #app-view { max-width: 40rem; margin: 0 auto; }
+}
