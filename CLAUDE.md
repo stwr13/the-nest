@@ -17,8 +17,8 @@
 
 ## Interface standards
 
-- Mobile-first. iPhone Safari is the reference device; desktop is secondary.
-- Installable PWA (manifest + service worker). Install path is Safari share-sheet → Add to Home Screen.
+- Mobile-first. iPhone is the reference device (Shawn uses Chrome, which is WebKit on iOS — Safari rules apply identically); desktop is secondary.
+- Installable PWA (manifest + service worker). Install path is the share-sheet → Add to Home Screen, from Safari or Chrome.
 - Palette: green × pastel-pink blend — one household aesthetic for two people with different taste.
 - Fail gracefully: when offline or a request fails, show a visible message ("No connection — entry not saved"). Never fail silently.
 
