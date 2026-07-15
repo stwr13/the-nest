@@ -1,0 +1,5 @@
+# Local-only project values — stays out of the public repo until RLS is live and signups are closed
+CONFIG.md
+
+# macOS noise
+.DS_Store
