@@ -153,7 +153,7 @@ input:focus {
   overflow: hidden;
 }
 
-.cat-bar-fill { height: 100%; background: var(--pink); border-radius: 999px; }
+.cat-bar-fill { height: 100%; background: var(--green); border-radius: 999px; }
 
 /* ── expense form ── */
 .card + .card { margin-top: 1rem; }
