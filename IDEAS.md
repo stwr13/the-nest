@@ -7,9 +7,13 @@ Not commitments. Two weeks of real use decides what earns a place
   in v1.0: log the SGD amount the card was charged, put the foreign
   amount in the note. Hard part if built: dashboard sums across
   currencies need an exchange-rate policy.
-- **Ledger filtering / search** (raised 2026-07-16). By category, month,
-  or text. Dashboard covers aggregate questions; this is about finding
-  specific entries once the ledger is long.
+- **Ledger filtering / search** (raised 2026-07-16, re-raised same day:
+  filter by person and by category). Three possible shapes, undecided —
+  usage picks: (a) ledger filter by person, (b) ledger filter by
+  category, (c) no filter at all but a per-person split line on the
+  dashboard ("Shawn S$x · Claire S$y this month"), if the real question
+  is "who spent what" rather than "find that entry". Dashboard covers
+  category aggregates already; filters matter once the ledger is long.
 - **In-app category manager** (deferred 2026-07-16). Add/rename/delete
   from inside the app so Claire can edit too. v1.0 stopgap: Supabase
   Table Editor. Builds the case if category edits turn out frequent.

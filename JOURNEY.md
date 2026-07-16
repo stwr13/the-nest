@@ -20,8 +20,8 @@ were public from step 2, force-push is irreversible and only partial
 (GitHub retains commits by hash; caches/forks persist), low value for
 the effort. **Lesson:** an email is a username, not a secret — brute-
 force defense is closed signups + auth rate-limiting + strong unique
-passwords, not email secrecy. (Leaked-password protection is a Pro-
-plan feature; unique passwords make it redundant anyway.)
+passwords, not email secrecy. Leaked-password protection (HaveIBeenPwned
+check) enabled 2026-07-16; it applies when a password is set or changed.
 
 ## 2026-07-15 — Step 1: schema + RLS (`955f7d6`)
 
