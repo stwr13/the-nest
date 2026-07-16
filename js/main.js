@@ -115,19 +115,21 @@ function friendlyAuthError(error) {
 async function loadApp() {
   resetFormDefaults();
   try {
-    const [categories, expenses, ideas] = await Promise.all([
+    const [categories, expenses] = await Promise.all([
       fetchCategories(),
       fetchExpenses(),
-      fetchIdeas(),
     ]);
     categorySelect.replaceChildren(
       ...categories.map((c) => new Option(c.name, c.id)),
     );
     renderAll(expenses);
-    renderIdeas(ideas);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
+  // Deliberately separate: the idea box is auxiliary, and its failure
+  // must never take the ledger down with it. Its errors show in its
+  // own card via refreshIdeas' catch.
+  refreshIdeas();
 }
 
 async function refresh() {
