@@ -5,6 +5,19 @@ why. Screenshots live in `docs/snapshots/` — **sample data only, never
 real ledger amounts** (this repo is public). Raw material for a future
 "how we iterated" deck.
 
+## 2026-07-16 — Idea box: in-app friction capture
+
+Shawn's ask: stop the Notes-app-and-copy-paste pipeline — let both
+users log itches inside the app during the two-week trial. Built as
+feature 7 (spec amended): `ideas` table (RLS: household reads,
+add/delete own; no update — the inbox stays honest), one-line input
+below the ledger, "log the itch, not the fix" in the UI copy.
+**Decision:** this passed the build-now bar that filtering failed —
+it is the instrument for the usage trial, so its value is front-loaded;
+waiting would forfeit the data. **Lesson:** the usage-earns-scope rule
+has a corollary: tooling that *harvests* usage is exempt from waiting
+for it.
+
 ## 2026-07-16 — Security audit + privacy correction (`39cd3ab`)
 
 Full pass at v1.0 close. **Verified:** anon refused on every read/

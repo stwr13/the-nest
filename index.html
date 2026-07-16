@@ -88,6 +88,19 @@
       <p id="ledger-status" class="muted">Loading…</p>
       <ul id="ledger" class="ledger"></ul>
     </section>
+
+    <section class="card idea-card">
+      <h2 class="card-title">Ideas &amp; friction</h2>
+      <p class="muted idea-hint">Something slow, missing, or annoying? Log the itch, not the fix.</p>
+      <form id="idea-form">
+        <input id="idea-body" name="body" type="text" maxlength="500" required
+               placeholder="What was the question or annoyance?"
+               aria-label="Idea or friction note" autocomplete="off" />
+        <p id="idea-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="idea-submit" class="btn btn-primary idea-submit">Log it</button>
+      </form>
+      <ul id="idea-list" class="ledger idea-list"></ul>
+    </section>
   </main>
 
   <script type="module" src="js/main.js"></script>

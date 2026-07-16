@@ -8,6 +8,9 @@ import {
   deleteExpense,
   findPossibleDuplicates,
   fetchAllExpensesForExport,
+  fetchIdeas,
+  addIdea,
+  deleteIdea,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -31,6 +34,10 @@ const dashCompare = document.getElementById("dash-compare");
 const dashCats = document.getElementById("dash-cats");
 const dashEmpty = document.getElementById("dash-empty");
 const dashMonths = document.getElementById("dash-months");
+const ideaForm = document.getElementById("idea-form");
+const ideaStatus = document.getElementById("idea-status");
+const ideaSubmit = document.getElementById("idea-submit");
+const ideaList = document.getElementById("idea-list");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -108,11 +115,16 @@ function friendlyAuthError(error) {
 async function loadApp() {
   resetFormDefaults();
   try {
-    const [categories, expenses] = await Promise.all([fetchCategories(), fetchExpenses()]);
+    const [categories, expenses, ideas] = await Promise.all([
+      fetchCategories(),
+      fetchExpenses(),
+      fetchIdeas(),
+    ]);
     categorySelect.replaceChildren(
       ...categories.map((c) => new Option(c.name, c.id)),
     );
     renderAll(expenses);
+    renderIdeas(ideas);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
@@ -430,6 +442,89 @@ async function exportCsv() {
 function csvField(value) {
   const text = String(value);
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+// ── idea box: raw friction inbox for the usage trial ─────────────────
+
+ideaForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showIdeaStatus(null);
+  ideaSubmit.disabled = true;
+  ideaSubmit.textContent = "Logging…";
+  try {
+    await addIdea({
+      body: ideaForm.body.value.trim(),
+      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+    });
+    ideaForm.reset();
+    await refreshIdeas();
+  } catch (error) {
+    showIdeaStatus(
+      error.message?.includes("fetch")
+        ? "No connection — idea not saved."
+        : `Couldn't save: ${error.message}`,
+    );
+  } finally {
+    ideaSubmit.disabled = false;
+    ideaSubmit.textContent = "Log it";
+  }
+});
+
+async function refreshIdeas() {
+  try {
+    renderIdeas(await fetchIdeas());
+  } catch (error) {
+    showIdeaStatus(
+      error.message?.includes("fetch")
+        ? "No connection — couldn't load ideas."
+        : `Couldn't load ideas: ${error.message}`,
+    );
+  }
+}
+
+function renderIdeas(ideas) {
+  ideaList.replaceChildren(...ideas.map(renderIdea));
+}
+
+function renderIdea(idea) {
+  const li = document.createElement("li");
+
+  const main = document.createElement("div");
+  main.className = "entry-main";
+
+  const body = document.createElement("p");
+  body.className = "entry-title";
+  body.textContent = idea.body;
+
+  const meta = document.createElement("p");
+  meta.className = "entry-meta";
+  meta.textContent = `${idea.author} · ${dateFmt.format(new Date(idea.created_at))}`;
+
+  main.append(body, meta);
+  li.append(main);
+
+  if (idea.created_by === currentUser?.id) {
+    const side = document.createElement("div");
+    side.className = "entry-side";
+    side.append(entryButton("Delete", () => confirmDeleteIdea(idea)));
+    li.append(side);
+  }
+  return li;
+}
+
+async function confirmDeleteIdea(idea) {
+  if (!window.confirm("Delete this note?")) return;
+  try {
+    await deleteIdea(idea.id);
+    await refreshIdeas();
+  } catch (error) {
+    showIdeaStatus(`Couldn't delete: ${error.message}`);
+  }
+}
+
+function showIdeaStatus(message) {
+  ideaStatus.textContent = message ?? "";
+  ideaStatus.hidden = !message;
 }
 
 function resetFormDefaults() {

@@ -12,6 +12,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 4. **Duplicate warning** — same amount within ±1 day prompts "possible duplicate — save anyway?" Warns, never blocks.
 5. **Two-account auth** — email + password via Supabase; signups closed after both accounts exist.
 6. **CSV export** — one button, full ledger download. This is the backup story.
+7. **Idea box** (added 2026-07-16) — one-line friction/idea capture inside the app, so both users can log itches during real use without leaving it. Raw notes live in the `ideas` table (household reads all, add/delete own); curated into IDEAS.md at scoping time. Process tooling, not a product bet: its value is the usage-trial data itself.
 
 ## Data model
 

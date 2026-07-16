@@ -78,6 +78,37 @@ create policy "delete own expenses"
   on public.expenses for delete to authenticated
   using (created_by = auth.uid());
 
+-- ── ideas: in-app friction/idea inbox (added 2026-07-16) ────────────
+-- Raw capture during real use; curated into IDEAS.md when scoping.
+-- author is a display name string: names are fine inside the private,
+-- RLS-protected database — it is the public repo they must stay out of.
+create table public.ideas (
+  id         bigint generated always as identity primary key,
+  body       text not null check (char_length(trim(body)) between 1 and 500),
+  author     text not null,
+  created_by uuid not null default auth.uid() references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+alter table public.ideas enable row level security;
+
+create policy "household reads ideas"
+  on public.ideas for select to authenticated
+  using (true);
+
+create policy "insert own ideas"
+  on public.ideas for insert to authenticated
+  with check (created_by = auth.uid());
+
+create policy "delete own ideas"
+  on public.ideas for delete to authenticated
+  using (created_by = auth.uid());
+
+-- no update policy: notes are add/delete only, keep the inbox honest
+
+grant select, insert, delete on public.ideas to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+
 -- ── placeholder categories (final list to be decided at home) ───────
 insert into public.categories (name, sort_order) values
   ('Groceries',  1),

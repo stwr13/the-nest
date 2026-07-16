@@ -282,6 +282,12 @@ select:focus {
 
 .btn-link:last-child { color: var(--danger); }
 
+/* ── idea box ── */
+.idea-hint { margin: 0 0 0.75rem; }
+.idea-submit { margin-top: 0.75rem; }
+.idea-list { margin-top: 1rem; }
+.idea-list .entry-title { font-weight: 400; }
+
 @media (min-width: 700px) {
   .view { padding: 2rem; }
   #app-view { max-width: 40rem; margin: 0 auto; }

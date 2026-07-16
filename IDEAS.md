@@ -1,7 +1,10 @@
 # IDEAS.md — candidates for after v1.0
 
 Not commitments. Two weeks of real use decides what earns a place
-(SPEC.md rule). Record ideas here instead of building them.
+(SPEC.md rule). This file is the curated backlog; the raw inbox is the
+in-app idea box (`ideas` table). At scoping time: `select author, body,
+created_at from ideas order by created_at;` in the SQL editor, paste
+the output into a session, and entries get triaged into this file.
 
 - **Multi-currency entry** (raised 2026-07-16, travel use case). Stopgap
   in v1.0: log the SGD amount the card was charged, put the foreign

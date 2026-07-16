@@ -75,3 +75,24 @@ export async function deleteExpense(id) {
   const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── ideas: raw friction inbox, curated into IDEAS.md at scoping time ──
+
+export async function fetchIdeas() {
+  const { data, error } = await supabase
+    .from("ideas")
+    .select("id, body, author, created_at, created_by")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addIdea(fields) {
+  const { error } = await supabase.from("ideas").insert(fields);
+  if (error) throw error;
+}
+
+export async function deleteIdea(id) {
+  const { error } = await supabase.from("ideas").delete().eq("id", id);
+  if (error) throw error;
+}
