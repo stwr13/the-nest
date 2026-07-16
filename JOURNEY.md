@@ -5,6 +5,24 @@ why. Screenshots live in `docs/snapshots/` — **sample data only, never
 real ledger amounts** (this repo is public). Raw material for a future
 "how we iterated" deck.
 
+## 2026-07-16 — Security audit + privacy correction (`39cd3ab`)
+
+Full pass at v1.0 close. **Verified:** anon refused on every read/
+write/delete/signup/admin call (grant layer, tested live with the
+publishable key); owner-only insert/update/delete confirmed in
+`pg_policies` (`created_by = auth.uid()`) and armed via
+`pg_tables.rowsecurity = true` on both tables; no secrets in code or
+git history; no XSS sinks (all DOM via `textContent`). **Fixed:** the
+`HOUSEHOLD` map shipped both login emails in the public repo — removed;
+display names now come from Supabase auth metadata via
+`js/identity.js`. **Decisions:** git history scrub declined — emails
+were public from step 2, force-push is irreversible and only partial
+(GitHub retains commits by hash; caches/forks persist), low value for
+the effort. **Lesson:** an email is a username, not a secret — brute-
+force defense is closed signups + auth rate-limiting + strong unique
+passwords, not email secrecy. (Leaked-password protection is a Pro-
+plan feature; unique passwords make it redundant anyway.)
+
 ## 2026-07-15 — Step 1: schema + RLS (`955f7d6`)
 
 Two tables (`expenses`, `categories`) deployed to Supabase. Two-layer
