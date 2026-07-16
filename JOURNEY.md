@@ -16,7 +16,11 @@ below the ledger, "log the itch, not the fix" in the UI copy.
 it is the instrument for the usage trial, so its value is front-loaded;
 waiting would forfeit the data. **Lesson:** the usage-earns-scope rule
 has a corollary: tooling that *harvests* usage is exempt from waiting
-for it.
+for it. **Same-day sequel:** shipping it before its table existed
+blanked the ledger — the ideas fetch was coupled into the core load.
+Fixed by isolating it (`3ff209f`); header 💡 button added after the
+below-the-ledger placement failed the thumb test (`af25fff`).
+Blast radius should match the importance of what failed.
 
 ## 2026-07-16 — Security audit + privacy correction (`39cd3ab`)
 
