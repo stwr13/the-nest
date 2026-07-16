@@ -446,6 +446,13 @@ function csvField(value) {
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────
 
+// Header 💡: capture must stay one tap away no matter how long the
+// ledger grows. focus() inside the tap handler opens the keyboard.
+document.getElementById("idea-jump").addEventListener("click", () => {
+  ideaForm.body.focus({ preventScroll: true });
+  ideaForm.body.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
 ideaForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showIdeaStatus(null);

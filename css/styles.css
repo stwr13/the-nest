@@ -283,6 +283,7 @@ select:focus {
 .btn-link:last-child { color: var(--danger); }
 
 /* ── idea box ── */
+.idea-jump { min-width: 44px; padding: 0.35rem 0.6rem; }
 .idea-hint { margin: 0 0 0.75rem; }
 .idea-submit { margin-top: 0.75rem; }
 .idea-list { margin-top: 1rem; }
