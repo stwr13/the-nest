@@ -455,3 +455,11 @@ function showLedgerStatus(message) {
   ledgerStatus.textContent = message ?? "";
   ledgerStatus.hidden = !message;
 }
+
+// ── PWA ───────────────────────────────────────────────────────────────
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("sw.js")
+    .catch((error) => console.warn("Service worker registration failed:", error));
+}

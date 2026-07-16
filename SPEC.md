@@ -16,7 +16,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 ## Data model
 
 - `expenses`: amount, category_id, paid_by, date, note, created_by
-- `categories`: name, sort order — editable in-app, seeded with placeholders (final list to be defined together at home)
+- `categories`: name, sort order — seeded with placeholders; final list to be defined together at home. Edited via the Supabase Table Editor in v1.0 (amended 2026-07-16 — no UI for a twice-a-year task; in-app manager recorded in IDEAS.md)
 
 ## Known limitations (recorded, not fixed)
 

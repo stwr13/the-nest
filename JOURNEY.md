@@ -47,6 +47,17 @@ created for deferred candidates (multi-currency, filtering).
 **Decision:** polish shipped features immediately; new scope waits for
 usage evidence.
 
+## 2026-07-16 — Step 6: PWA install + service worker
+
+Manifest (standalone display, relative start_url/scope for the Pages
+subpath), icon — two eggs in a nest, one green one pink — and a
+service worker with a deliberate strategy: network-first for our own
+files (staleness impossible while online, cache is the offline
+fallback), stale-while-revalidate for the CDN, and no caching at all
+for Supabase so data failures stay visible. **Decision:** categories
+stay table-editor-edited in v1.0; in-app manager deferred to IDEAS.md.
+v1.0 feature-complete.
+
 ## 2026-07-16 — Comparison redesign: 3-month view + average
 
 Shawn's critique from real use: one reference month is noise — a

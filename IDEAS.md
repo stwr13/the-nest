@@ -10,3 +10,6 @@ Not commitments. Two weeks of real use decides what earns a place
 - **Ledger filtering / search** (raised 2026-07-16). By category, month,
   or text. Dashboard covers aggregate questions; this is about finding
   specific entries once the ledger is long.
+- **In-app category manager** (deferred 2026-07-16). Add/rename/delete
+  from inside the app so Claire can edit too. v1.0 stopgap: Supabase
+  Table Editor. Builds the case if category edits turn out frequent.
