@@ -13,6 +13,7 @@
 - Row Level Security (RLS) on every table, deny-by-default. No table ships without a policy.
 - Signups disabled in Supabase after the two household accounts exist.
 - No secrets in client code, ever. The Supabase anon key is the only key that ships in the browser — it is designed to be public and is safe only because of RLS.
+- No personal identifiers in the repo or client code — no email addresses, phone numbers, or real ledger data. The repo is public and GitHub Pages serves every client file to anyone; RLS protects rows, not facts printed in source. Personal data lives only in Supabase (auth metadata or RLS-protected tables). First names are the accepted exception.
 - Any future AI feature calls a Supabase Edge Function; the browser never talks to an AI API directly and never holds an AI key.
 
 ## Interface standards

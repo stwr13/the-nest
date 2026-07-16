@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import { HOUSEHOLD } from "./config.js";
+import { displayNameFor } from "./identity.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -56,7 +56,8 @@ supabase.auth.onAuthStateChange((_event, session) => {
   loginView.hidden = Boolean(session);
   appView.hidden = !session;
   if (session) {
-    userName.textContent = HOUSEHOLD[session.user.email] ?? session.user.email;
+    // No display_name set yet → show the login email: visible, never blank.
+    userName.textContent = displayNameFor(session.user) ?? session.user.email;
     if (!appLoaded) {
       appLoaded = true; // token refreshes re-fire this handler; load once
       loadApp();
@@ -433,7 +434,9 @@ function csvField(value) {
 
 function resetFormDefaults() {
   expenseForm.date.value = todayISO();
-  const myName = HOUSEHOLD[currentUser?.email];
+  // No display_name (or no matching radio) → nothing preselected; the
+  // radio group is `required`, so the form visibly asks instead.
+  const myName = displayNameFor(currentUser);
   if (myName) expenseForm.paid_by.value = myName;
 }
 

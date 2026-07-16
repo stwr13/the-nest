@@ -77,3 +77,19 @@ phone's entry), warns via confirm and never blocks — even when the
 check itself fails. CSV export pages past the 1000-row API cap,
 escapes properly, BOM for Excel. **Lesson:** a backup that silently
 truncates is worse than none.
+
+## 2026-07-16 — Privacy correction: login emails out of client code
+
+Review found both real login emails hard-coded in `js/config.js` — a
+public repo, and Pages serves every client file to anyone regardless.
+Removed the `HOUSEHOLD` email map; display names now come from Supabase
+auth metadata (`user_metadata.display_name`, set once per account) via
+`js/identity.js`, unit-tested in Node (`node --test tests/*.test.mjs`).
+Fallbacks stay visible: header shows the login email until metadata is
+set; the
+paid-by radio keeps `required` and simply asks. **Decision:** personal
+identifiers never ship in repo or client code — rule added to CLAUDE.md.
+**Lesson:** RLS protects rows, not facts printed in source; "no secrets"
+and "no real amounts" weren't rules enough to catch PII. Still pending
+(separate, deliberate steps): set `display_name` on both accounts,
+scrub the two old commits from public history, then deploy.
