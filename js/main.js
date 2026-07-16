@@ -30,10 +30,18 @@ const dashTotal = document.getElementById("dash-total");
 const dashCompare = document.getElementById("dash-compare");
 const dashCats = document.getElementById("dash-cats");
 const dashEmpty = document.getElementById("dash-empty");
+const dashMonths = document.getElementById("dash-months");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
 const monthFmt = new Intl.DateTimeFormat("en-SG", { month: "long" });
+const monthShortFmt = new Intl.DateTimeFormat("en-SG", { month: "short" });
+// whole dollars for trend glances; cents belong in the ledger
+const sgdWhole = new Intl.NumberFormat("en-SG", {
+  style: "currency",
+  currency: "SGD",
+  maximumFractionDigits: 0,
+});
 
 let currentUser = null;
 let editingId = null;
@@ -194,30 +202,55 @@ function renderEntry(expense) {
 // numbers are floats — 84.2 + 9.9 style drift would show on screen.
 function renderDashboard(expenses) {
   const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const thisKey = monthKey(now);
-  const lastKey = monthKey(lastMonth);
 
   let thisCents = 0;
-  let lastCents = 0;
   const byCategory = new Map();
+  const byMonth = new Map();
 
   for (const expense of expenses) {
     const key = expense.date.slice(0, 7);
-    if (key !== thisKey && key !== lastKey) continue;
     const cents = Math.round(Number(expense.amount) * 100);
-    if (key === lastKey) {
-      lastCents += cents;
-      continue;
+    if (key === thisKey) {
+      thisCents += cents;
+      const name = expense.categories.name;
+      byCategory.set(name, (byCategory.get(name) ?? 0) + cents);
+    } else {
+      byMonth.set(key, (byMonth.get(key) ?? 0) + cents);
     }
-    thisCents += cents;
-    const name = expense.categories.name;
-    byCategory.set(name, (byCategory.get(name) ?? 0) + cents);
   }
 
   dashLabel.textContent = `This month · ${monthFmt.format(now)}`;
   dashTotal.textContent = sgd.format(thisCents / 100);
-  dashCompare.textContent = `${monthFmt.format(lastMonth)}: ${sgd.format(lastCents / 100)}`;
+
+  // Past three calendar months, oldest first — but only from the month
+  // history began; a wall of S$0 rows would be noise in the first weeks.
+  // The average smooths one-off big-ticket months; the row shows why.
+  const earliestKey = expenses.length
+    ? expenses[expenses.length - 1].date.slice(0, 7)
+    : null;
+  const past = [];
+  for (let i = 3; i >= 1; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = monthKey(d);
+    if (earliestKey !== null && key >= earliestKey) {
+      past.push({ date: d, cents: byMonth.get(key) ?? 0 });
+    }
+  }
+
+  dashMonths.hidden = past.length === 0;
+  dashMonths.textContent = past
+    .map((m) => `${monthShortFmt.format(m.date)} ${sgdWhole.format(Math.round(m.cents / 100))}`)
+    .join(" · ");
+
+  if (past.length >= 2) {
+    const avgCents = past.reduce((sum, m) => sum + m.cents, 0) / past.length;
+    dashCompare.textContent = `${past.length}-mo avg: ${sgdWhole.format(Math.round(avgCents / 100))}`;
+  } else if (past.length === 1) {
+    dashCompare.textContent = `${monthShortFmt.format(past[0].date)}: ${sgd.format(past[0].cents / 100)}`;
+  } else {
+    dashCompare.textContent = "first month";
+  }
 
   const rows = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
   dashEmpty.hidden = rows.length > 0;

@@ -8,7 +8,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 
 1. **Log an expense** — amount (SGD), category, date (default today), who paid, optional note. Under 10 seconds on a phone.
 2. **Shared ledger** — reverse-chronological list, both users see everything; edit/delete your own entries.
-3. **Monthly dashboard** — this month's total, split by category, simple month-vs-last-month comparison. Z-pattern layout: headline number top-left.
+3. **Monthly dashboard** — this month's total, split by category, and a recent-months comparison: the past three months listed plus their average (amended 2026-07-16 — a single-month anchor confounds trend with variance; an average dilutes one-off big-ticket months). Z-pattern layout: headline number top-left.
 4. **Duplicate warning** — same amount within ±1 day prompts "possible duplicate — save anyway?" Warns, never blocks.
 5. **Two-account auth** — email + password via Supabase; signups closed after both accounts exist.
 6. **CSV export** — one button, full ledger download. This is the backup story.

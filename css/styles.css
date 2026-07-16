@@ -139,6 +139,8 @@ input:focus {
   white-space: nowrap;
 }
 
+.dash-months { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+
 .dash-cats { margin: 1rem 0 0; padding: 0; list-style: none; }
 .dash-cats li + li { margin-top: 0.6rem; }
 

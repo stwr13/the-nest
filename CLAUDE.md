@@ -27,3 +27,4 @@
 - Ship small; verify each feature on the phone before starting the next.
 - Every session ends with working, deployed code. No half-built states on `main`.
 - The spec (`SPEC.md`) is the scope contract. Anything not in it waits for the next version — usage, not imagination, earns the next decision.
+- Every shipped step gets a dated JOURNEY.md entry (what shipped, what was decided, why) and, where practical, a snapshot in `docs/snapshots/`. Snapshots use sample data only — never real ledger amounts; the repo is public.
