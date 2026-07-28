@@ -46,11 +46,15 @@ speculation.
 - **Per-person emoji on "paid by"** (new, Shawn 07-21). Small
   personalisation; pairs with category icons under one "make the
   ledger scannable" umbrella.
-- **Consolidated multi-item entry / calculator** (new, Shawn 07-23).
-  Food-court case: drink + meal + snack as one log instead of three.
-  Smallest shape: the amount field accepts arithmetic ("3.5+6+2").
-  Bigger shape: true itemised entry — likely over-engineering at this
-  stage.
+- **Consolidated multi-item entry / calculator** (new, Shawn 07-23;
+  expanded 2026-07-28 in scoping). Food-court case: drink + meal +
+  snack as one log instead of three. Bill-split case: dinner with
+  friends, 405 ÷ 4 — today that means app-switching to Calculator and
+  remembering the result. Smallest shape: the amount field accepts
+  arithmetic with + − × ÷ ("3.5+6+2", "405/4") and shows the computed
+  amount live before saving. Bigger shape: true itemised entry or a
+  separate calculator screen — both add taps/modes; likely
+  over-engineering. Decision pending in v1.1 scoping.
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments
@@ -61,8 +65,23 @@ speculation.
   case; **not re-raised in live use** — though no trips fell inside
   the trial window, so the silence is weak evidence either way).
   Stopgap stands: log the SGD charge, foreign amount in the note.
-- **AI receipt parsing** (earmarked pre-launch as the v1.1 bet,
-  SPEC.md: Edge Function only, browser never holds an AI key; **zero
-  live-use raises** during the trial). The itch users actually logged
-  is organisation — categories, layout, filtering — not entry
-  automation. Competes from behind on evidence.
+- **Zero-touch capture** (reframed 2026-07-28 during v1.1 scoping —
+  this is the root need behind the pre-launch "AI receipt parsing"
+  earmark, which got zero live-use raises). Shawn: "we want to avoid
+  manual input as much as possible — based on incoming SMSs,
+  transactions, or emails, pull the data directly instead of typing."
+  Reality check, recorded so we don't re-litigate: a PWA — and iOS
+  apps generally — cannot read SMS directly, so "the app watches my
+  messages" is off the table. Workable paths: (a) bank *email* alerts
+  auto-forwarded to a Supabase Edge Function that parses them into
+  pending ledger entries awaiting one-tap confirm; (b) an iOS
+  Shortcuts personal automation ("when a message containing X
+  arrives") that posts the alert text to an Edge Function — per-phone
+  setup, somewhat fragile, but real; (c) receipt-photo parsing — the
+  original idea, weakest fit (still manual, still per-purchase).
+  Alert texts are highly structured, so parsing is likely regex, not
+  AI; any AI stays behind an Edge Function per the standing security
+  rule. **Discovery before any build:** during the next usage cycle,
+  note which real transactions produce an SMS or email alert and from
+  which bank — that decides feasibility and shape. Strong v1.2
+  headline candidate.

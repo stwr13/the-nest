@@ -30,3 +30,22 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 ## Out of scope for v1.0
 
 AI parsing/Q&A (v1.1 via Edge Function), income tracking, recurring expenses, card/miles tagging, budgets, and every other Shared Brain module. Two weeks of real use decides what earns a place next.
+
+## v1.1 — "Organise the nest" (scoped 2026-07-28 from the live-use harvest, IDEAS.md)
+
+Locked by Shawn:
+
+1. **Entry-first layout** — log box at the top, dashboard below. Reverses the v1.0 Z-pattern decision (headline top-left); both users independently asked on 2026-07-19. The app is an input tool first, a report second.
+2. **Category system** — in-app manager (add / rename / edit; past entries keep their history — delete only via reassign to another category), expanded category list defined together at home, per-category icons, and an excluded-from-totals flag (first use: "Blessing" — giving is logged but not summed into household spending).
+3. **Ledger de-clutter** — entries grouped by day, plus a filter by person.
+
+Open at time of writing:
+
+- **Amount-field calculator** (accepts + − × ÷, shows computed amount live, e.g. "405/4 = S$101.25") — recommended in, awaiting Shawn's yes/no.
+
+Rejected for v1.1, with reasons:
+
+- **AI receipt parsing** (the pre-launch v1.1 earmark) — zero live-use raises in the trial; scoping revealed the real need is zero-touch capture from bank transaction alerts (see IDEAS.md), which needs a discovery pass on which transactions actually produce alerts before it can be scoped. Strong v1.2 headline candidate; Edge-Function-only rule stands.
+- **Multi-currency** — no live raises (no trips in the window); stopgap stands.
+- **Recurring payments / commitments registry** — parked by its own author ("may not be the immediate next fix") until re-raised.
+- **Per-person emoji on "paid by"** — folded into the category-icons work only if free; not a scope item.
