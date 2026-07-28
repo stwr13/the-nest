@@ -54,7 +54,8 @@ speculation.
   arithmetic with + − × ÷ ("3.5+6+2", "405/4") and shows the computed
   amount live before saving. Bigger shape: true itemised entry or a
   separate calculator screen — both add taps/modes; likely
-  over-engineering. Decision pending in v1.1 scoping.
+  over-engineering. Direction agreed 2026-07-29: inline shape, in the
+  v1.1 working scope.
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments
@@ -66,9 +67,13 @@ speculation.
   the trial window, so the silence is weak evidence either way).
   Stopgap stands: log the SGD charge, foreign amount in the note.
 - **Zero-touch capture** (reframed 2026-07-28 during v1.1 scoping —
-  this is the root need behind the pre-launch "AI receipt parsing"
-  earmark, which got zero live-use raises). Shawn: "we want to avoid
-  manual input as much as possible — based on incoming SMSs,
+  the root need behind the pre-launch "AI receipt parsing" earmark).
+  Evidence note corrected 2026-07-29: it got zero idea-box raises
+  *because both users assumed AI entry was already the next build* —
+  the silence was anticipation, not absence of demand. Lesson for
+  future triage: absence of raises only counts as evidence when users
+  don't believe the thing is already promised. Shawn: "we want to
+  avoid manual input as much as possible — based on incoming SMSs,
   transactions, or emails, pull the data directly instead of typing."
   Reality check, recorded so we don't re-litigate: a PWA — and iOS
   apps generally — cannot read SMS directly, so "the app watches my
@@ -81,7 +86,13 @@ speculation.
   original idea, weakest fit (still manual, still per-purchase).
   Alert texts are highly structured, so parsing is likely regex, not
   AI; any AI stays behind an Edge Function per the standing security
-  rule. **Discovery before any build:** during the next usage cycle,
-  note which real transactions produce an SMS or email alert and from
-  which bank — that decides feasibility and shape. Strong v1.2
-  headline candidate.
+  rule. **Slated as the v1.2 headline** (direction agreed 2026-07-29;
+  Shawn: v1.2 is this, v1.3 stays open). **Discovery runs during the
+  v1.1 build, costs nothing:** for each real payment, note whether
+  the alert that "pops up" is (a) an SMS, (b) an email, or (c) a
+  bank-app push notification — and from which bank. The distinction
+  is decisive: SMS and email are capturable (Shortcut / forwarding);
+  app push notifications are sealed off by iOS and capturable by
+  nothing. If most alerts turn out to be app pushes, the fix is
+  usually enabling per-transaction email alerts in the bank's
+  settings.
