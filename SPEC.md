@@ -55,7 +55,7 @@ Baseline category proposal (drafted 2026-07-29 from the current six + live-use a
 | 🙏 | Blessing | new (Shawn's ask) — giving; excluded from totals |
 | 📦 | Other | keep — should shrink now |
 
-Open for the at-home talk: (a) Gifts vs Blessing boundary — a present is a Gift (counts as spending), giving/tithing is Blessing (doesn't); (b) whether Travel is worth adding now or gets added via the manager when the first trip happens.
+Approved by Shawn 2026-07-29 as the seed list (piece 1 verified on his phone the same day); Claire amends freely via the manager once it ships. Still a you-two convention, not code: (a) Gifts vs Blessing boundary — a present is a Gift (counts as spending), giving/tithing is Blessing (doesn't); (b) Travel gets added via the manager when the first trip happens. Migration: `db/migrations/2026-07-29-categories-v1_1.sql` (additive, idempotent; no RLS changes needed — v1.0's household category policies already cover the manager).
 
 Attached to item 2, agreed in direction 2026-07-29:
 
