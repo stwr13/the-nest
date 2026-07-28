@@ -4,8 +4,14 @@
     {
       "name": "nest",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8000", "--bind", "127.0.0.1"],
-      "port": 8000
+      "runtimeArgs": ["-m", "http.server", "4173", "--bind", "127.0.0.1"],
+      "port": 4173
+    },
+    {
+      "name": "nest-v1-0",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4174", "--bind", "127.0.0.1", "-d", "/private/tmp/claude-501/-Users-shawntanwr-Projects-the-nest--claude-worktrees-vigorous-jang-075f2a/cc421fea-7a72-40f1-9bfc-5d8efddeab7d/scratchpad/nest-v1.0"],
+      "port": 4174
     }
   ]
 }

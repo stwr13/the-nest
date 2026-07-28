@@ -143,3 +143,16 @@ DB changes additive-only. Piece 1 shipped: the log form now sits above
 the dashboard — both users independently asked for it on 07-19; the app
 is an input tool first, a report second. Verified: section order + no
 console errors in local preview, node tests green.
+
+## 2026-07-29 — v1.1 piece 2a: categories in the database + icons + Blessing
+
+Ran the first production migration through Shawn's Supabase session
+(after his explicit go): icons + excluded_from_totals columns, four new
+categories (🎁 Gifts, 💆 Wellness, 📚 Learning, 🙏 Blessing), Other
+sorted last. Additive + idempotent, verified by read-back — 10 rows.
+App side: icons render in dropdown, ledger, and dashboard; dashboard
+math moved to js/dashboard-math.js (pure, Node-tested) and now honours
+excluded_from_totals — Blessing shows on the dashboard as "not counted"
+and never inflates the monthly total or past-month sums. **Decision:**
+piece 2 split 2a (data + display) / 2b (manager UI) to keep ships
+small. Tests 4/4; preview console clean.

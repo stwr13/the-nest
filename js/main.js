@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
+import { summarize, categoryLabel } from "./dashboard-math.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -120,7 +121,7 @@ async function loadApp() {
       fetchExpenses(),
     ]);
     categorySelect.replaceChildren(
-      ...categories.map((c) => new Option(c.name, c.id)),
+      ...categories.map((c) => new Option(categoryLabel(c), c.id)),
     );
     renderAll(expenses);
   } catch (error) {
@@ -172,7 +173,7 @@ function renderEntry(expense) {
   const top = document.createElement("p");
   top.className = "entry-title";
   const category = document.createElement("span");
-  category.textContent = expense.categories.name;
+  category.textContent = categoryLabel(expense.categories);
   top.append(category);
   if (expense.note) {
     const note = document.createElement("span");
@@ -213,45 +214,13 @@ function renderEntry(expense) {
 
 // ── dashboard ─────────────────────────────────────────────────────────
 
-// Sums in integer cents: amounts are exact numeric in Postgres, but JS
-// numbers are floats — 84.2 + 9.9 style drift would show on screen.
+// Math lives in dashboard-math.js (pure, Node-tested); this renders it.
 function renderDashboard(expenses) {
   const now = new Date();
-  const thisKey = monthKey(now);
-
-  let thisCents = 0;
-  const byCategory = new Map();
-  const byMonth = new Map();
-
-  for (const expense of expenses) {
-    const key = expense.date.slice(0, 7);
-    const cents = Math.round(Number(expense.amount) * 100);
-    if (key === thisKey) {
-      thisCents += cents;
-      const name = expense.categories.name;
-      byCategory.set(name, (byCategory.get(name) ?? 0) + cents);
-    } else {
-      byMonth.set(key, (byMonth.get(key) ?? 0) + cents);
-    }
-  }
+  const { thisCents, byCategory, past, excluded } = summarize(expenses, now);
 
   dashLabel.textContent = `This month · ${monthFmt.format(now)}`;
   dashTotal.textContent = sgd.format(thisCents / 100);
-
-  // Past three calendar months, oldest first — but only from the month
-  // history began; a wall of S$0 rows would be noise in the first weeks.
-  // The average smooths one-off big-ticket months; the row shows why.
-  const earliestKey = expenses.length
-    ? expenses[expenses.length - 1].date.slice(0, 7)
-    : null;
-  const past = [];
-  for (let i = 3; i >= 1; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = monthKey(d);
-    if (earliestKey !== null && key >= earliestKey) {
-      past.push({ date: d, cents: byMonth.get(key) ?? 0 });
-    }
-  }
 
   dashMonths.hidden = past.length === 0;
   dashMonths.textContent = past
@@ -268,18 +237,37 @@ function renderDashboard(expenses) {
   }
 
   const rows = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
-  dashEmpty.hidden = rows.length > 0;
+  dashEmpty.hidden = rows.length > 0 || excluded.size > 0;
   const maxCents = rows[0]?.[1] ?? 1;
-  dashCats.replaceChildren(...rows.map(([name, cents]) => categoryRow(name, cents, maxCents)));
+  const excludedRows = [...excluded.entries()].sort((a, b) => b[1] - a[1]);
+  dashCats.replaceChildren(
+    ...rows.map(([label, cents]) => categoryRow(label, cents, maxCents)),
+    ...excludedRows.map(([label, cents]) => excludedCategoryRow(label, cents)),
+  );
 }
 
-function categoryRow(name, cents, maxCents) {
+// Blessing-style categories: shown for visibility, kept out of the sums
+function excludedCategoryRow(label, cents) {
+  const li = document.createElement("li");
+  li.className = "cat-excluded";
+  const row = document.createElement("div");
+  row.className = "cat-row";
+  const name = document.createElement("span");
+  name.textContent = label;
+  const value = document.createElement("span");
+  value.textContent = `${sgd.format(cents / 100)} · not counted`;
+  row.append(name, value);
+  li.append(row);
+  return li;
+}
+
+function categoryRow(labelText, cents, maxCents) {
   const li = document.createElement("li");
 
   const row = document.createElement("div");
   row.className = "cat-row";
   const label = document.createElement("span");
-  label.textContent = name;
+  label.textContent = labelText;
   const value = document.createElement("span");
   value.textContent = sgd.format(cents / 100);
   row.append(label, value);
@@ -293,10 +281,6 @@ function categoryRow(name, cents, maxCents) {
 
   li.append(row, bar);
   return li;
-}
-
-function monthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function entryButton(label, onClick) {

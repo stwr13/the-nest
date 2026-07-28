@@ -3,7 +3,7 @@ import { supabase } from "./supabase.js";
 export async function fetchCategories() {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, icon, excluded_from_totals")
     .order("sort_order");
   if (error) throw error;
   return data;
@@ -12,7 +12,7 @@ export async function fetchCategories() {
 export async function fetchExpenses() {
   const { data, error } = await supabase
     .from("expenses")
-    .select("id, amount, date, paid_by, note, created_by, category_id, categories(name)")
+    .select("id, amount, date, paid_by, note, created_by, category_id, categories(name, icon, excluded_from_totals)")
     .order("date", { ascending: false })
     .order("id", { ascending: false });
   if (error) throw error;
