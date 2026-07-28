@@ -39,19 +39,6 @@
         <button id="sign-out" class="btn btn-ghost">Sign out</button>
       </div>
     </header>
-    <section class="card dash-card">
-      <div class="dash-head">
-        <div>
-          <p id="dash-label" class="dash-label">This month</p>
-          <p id="dash-total" class="dash-total">S$0.00</p>
-        </div>
-        <p id="dash-compare" class="dash-compare"></p>
-      </div>
-      <p id="dash-months" class="dash-months" hidden></p>
-      <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
-      <ul id="dash-cats" class="dash-cats"></ul>
-    </section>
-
     <section class="card form-card">
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">
@@ -80,6 +67,19 @@
         <button type="submit" id="exp-submit" class="btn btn-primary">Save</button>
         <button type="button" id="exp-cancel" class="btn btn-ghost btn-block" hidden>Cancel edit</button>
       </form>
+    </section>
+
+    <section class="card dash-card">
+      <div class="dash-head">
+        <div>
+          <p id="dash-label" class="dash-label">This month</p>
+          <p id="dash-total" class="dash-total">S$0.00</p>
+        </div>
+        <p id="dash-compare" class="dash-compare"></p>
+      </div>
+      <p id="dash-months" class="dash-months" hidden></p>
+      <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
+      <ul id="dash-cats" class="dash-cats"></ul>
     </section>
 
     <section class="card ledger-card">

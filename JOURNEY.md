@@ -128,3 +128,18 @@ identifiers never ship in repo or client code — rule added to CLAUDE.md.
 and "no real amounts" weren't rules enough to catch PII. Still pending
 (separate, deliberate steps): set `display_name` on both accounts,
 scrub the two old commits from public history, then deploy.
+
+## 2026-07-29 — v1.1 locked + piece 1: entry-first layout
+
+Harvested the idea box (11 captures, both authors) into IDEAS.md and
+scoped v1.1 with Shawn: entry-first layout, category system (+ one-time
+recategorization, Blessing excluded-from-totals), ledger day-grouping +
+person filter, inline amount calculator. v1.2 direction: zero-touch
+capture from bank alerts (discovery fieldwork runs during the build).
+**Decision:** receipt parsing's "zero raises" was anticipation, not
+absence of demand — silence only counts as evidence when users don't
+think the thing is already promised. Tagged `v1.0` as rollback anchor;
+DB changes additive-only. Piece 1 shipped: the log form now sits above
+the dashboard — both users independently asked for it on 07-19; the app
+is an input tool first, a report second. Verified: section order + no
+console errors in local preview, node tests green.
