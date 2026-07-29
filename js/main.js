@@ -491,11 +491,13 @@ async function refreshCategories() {
 
 document.getElementById("cat-add").addEventListener("click", () => openCategoryDialog(null));
 
-// Header 🏷️: the card lives below the ledger (rare-use), but reaching
+// Header 🔖: the card lives below the ledger (rare-use), but reaching
 // it must not require scrolling past the whole ledger — same pattern
-// as the 💡 idea jump. (Shawn's phone-check feedback, 2026-07-29.)
+// as the 💡 idea jump. Instant, not smooth: iOS PWA smooth-scroll
+// silently no-ops here (💡 only survives because focusing its input
+// makes iOS scroll to the keyboard). Phone-verified 2026-07-29.
 document.getElementById("cat-jump").addEventListener("click", () => {
-  document.querySelector(".cat-card").scrollIntoView({ behavior: "smooth" });
+  document.querySelector(".cat-card").scrollIntoView();
 });
 
 function openCategoryDialog(category) {

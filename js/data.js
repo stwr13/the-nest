@@ -3,8 +3,12 @@ import { supabase } from "./supabase.js";
 export async function fetchCategories() {
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, icon, excluded_from_totals")
-    .order("sort_order");
+    // sort_order must be selected: the manager computes "end of list"
+    // from it (2026-07-29 bug: omitting it sent new categories to the
+    // top — Shawn caught it on the phone within minutes)
+    .select("id, name, icon, excluded_from_totals, sort_order")
+    .order("sort_order")
+    .order("name");
   if (error) throw error;
   return data;
 }

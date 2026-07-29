@@ -182,3 +182,17 @@ home for a rare-use feature, wrong reachability). His fix shipped: a
 pattern. Shopping category added by Shawn himself via the manager —
 the feature validating itself. Reordering wart (new categories land
 after Other) recorded in IDEAS.md.
+
+## 2026-07-29 — three phone-check fixes: 🔖 contrast, instant jump, sort bug
+
+Shawn's second phone pass found: (1) 🏷️ faded into the pastel header
+— now 🔖; (2) the jump didn't scroll at all on iOS — smooth
+scrollIntoView silently no-ops in the PWA (💡 only works because
+focusing its input makes iOS scroll to the keyboard); instant jump
+now, reliable everywhere; (3) real bug: fetchCategories omitted
+sort_order, so the manager's "append at end" computed from undefined
+and sent 🛍️ Shopping to position 1 (tied with Groceries, displayed
+second). Fetch fixed + deterministic tie-break; Shopping/Other
+sort_order repaired by one-off SQL (the reorder-on-request precedent).
+**Lesson:** the phone check catches what unit tests structurally can't
+— the tests never fetch.
