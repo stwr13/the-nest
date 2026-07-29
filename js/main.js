@@ -9,6 +9,10 @@ import {
   deleteExpense,
   findPossibleDuplicates,
   fetchAllExpensesForExport,
+  addCategory,
+  updateCategory,
+  countExpensesForCategory,
+  reassignAndDeleteCategory,
   fetchIdeas,
   addIdea,
   deleteIdea,
@@ -35,6 +39,17 @@ const dashCompare = document.getElementById("dash-compare");
 const dashCats = document.getElementById("dash-cats");
 const dashEmpty = document.getElementById("dash-empty");
 const dashMonths = document.getElementById("dash-months");
+const catList = document.getElementById("cat-list");
+const catDialog = document.getElementById("cat-dialog");
+const catForm = document.getElementById("cat-form");
+const catDialogTitle = document.getElementById("cat-dialog-title");
+const catStatus = document.getElementById("cat-status");
+const catDeleteBtn = document.getElementById("cat-delete");
+const catDeleteDialog = document.getElementById("cat-delete-dialog");
+const catDeleteForm = document.getElementById("cat-delete-form");
+const catDeleteInfo = document.getElementById("cat-delete-info");
+const catDeleteTarget = document.getElementById("cat-delete-target");
+const catDeleteStatus = document.getElementById("cat-delete-status");
 const ideaForm = document.getElementById("idea-form");
 const ideaStatus = document.getElementById("idea-status");
 const ideaSubmit = document.getElementById("idea-submit");
@@ -54,6 +69,8 @@ const sgdWhole = new Intl.NumberFormat("en-SG", {
 let currentUser = null;
 let editingId = null;
 let appLoaded = false;
+let categoriesCache = [];
+let dialogCategoryId = null; // null while adding a new category
 
 // ── auth ──────────────────────────────────────────────────────────────
 
@@ -120,9 +137,9 @@ async function loadApp() {
       fetchCategories(),
       fetchExpenses(),
     ]);
-    categorySelect.replaceChildren(
-      ...categories.map((c) => new Option(categoryLabel(c), c.id)),
-    );
+    categoriesCache = categories;
+    renderCategoryOptions();
+    renderCategoryManager();
     renderAll(expenses);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
@@ -428,6 +445,150 @@ async function exportCsv() {
 function csvField(value) {
   const text = String(value);
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+// ── category manager (v1.1 piece 2b) ─────────────────────────────────
+
+function renderCategoryOptions() {
+  const selected = categorySelect.value;
+  categorySelect.replaceChildren(
+    ...categoriesCache.map((c) => new Option(categoryLabel(c), c.id)),
+  );
+  // keep the user's pick across refreshes when it still exists
+  if ([...categorySelect.options].some((o) => o.value === selected)) {
+    categorySelect.value = selected;
+  }
+}
+
+function renderCategoryManager() {
+  catList.replaceChildren(
+    ...categoriesCache.map((category) => {
+      const li = document.createElement("li");
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "cat-manage-row";
+      const label = document.createElement("span");
+      label.textContent = categoryLabel(category);
+      row.append(label);
+      if (category.excluded_from_totals) {
+        const badge = document.createElement("span");
+        badge.className = "cat-badge";
+        badge.textContent = "not counted";
+        row.append(badge);
+      }
+      row.addEventListener("click", () => openCategoryDialog(category));
+      li.append(row);
+      return li;
+    }),
+  );
+}
+
+async function refreshCategories() {
+  categoriesCache = await fetchCategories();
+  renderCategoryOptions();
+  renderCategoryManager();
+}
+
+document.getElementById("cat-add").addEventListener("click", () => openCategoryDialog(null));
+
+function openCategoryDialog(category) {
+  dialogCategoryId = category?.id ?? null;
+  catDialogTitle.textContent = category ? "Edit category" : "Add category";
+  catForm.icon.value = category?.icon ?? "";
+  catForm.name.value = category?.name ?? "";
+  catForm.excluded.checked = Boolean(category?.excluded_from_totals);
+  catDeleteBtn.hidden = category === null;
+  showCatStatus(null);
+  catDialog.showModal();
+}
+
+catForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = catForm.name.value.trim();
+  if (!name) {
+    showCatStatus("Give it a name.");
+    return;
+  }
+  const fields = {
+    name,
+    icon: catForm.icon.value.trim() || null,
+    excluded_from_totals: catForm.excluded.checked,
+  };
+  try {
+    if (dialogCategoryId === null) {
+      // new categories go to the end of the list
+      const maxSort = Math.max(0, ...categoriesCache.map((c) => c.sort_order ?? 0));
+      await addCategory({ ...fields, sort_order: maxSort + 1 });
+    } else {
+      await updateCategory(dialogCategoryId, fields);
+    }
+    catDialog.close();
+    await refreshCategories();
+    await refresh(); // ledger + dashboard labels may have changed
+  } catch (error) {
+    showCatStatus(friendlyCategoryError(error));
+  }
+});
+
+document.getElementById("cat-cancel").addEventListener("click", () => catDialog.close());
+
+catDeleteBtn.addEventListener("click", async () => {
+  const category = categoriesCache.find((c) => c.id === dialogCategoryId);
+  if (!category) return;
+  const others = categoriesCache.filter((c) => c.id !== category.id);
+  if (others.length === 0) {
+    showCatStatus("Can't delete the only category.");
+    return;
+  }
+  catDialog.close();
+  catDeleteTarget.replaceChildren(...others.map((c) => new Option(categoryLabel(c), c.id)));
+  catDeleteInfo.textContent = `Counting entries in ${categoryLabel(category)}…`;
+  showCatDeleteStatus(null);
+  catDeleteDialog.showModal();
+  try {
+    const count = await countExpensesForCategory(category.id);
+    catDeleteInfo.textContent =
+      count === 0
+        ? `No entries use ${categoryLabel(category)}.`
+        : `${count} ${count === 1 ? "entry" : "entries"} will move out of ${categoryLabel(category)}.`;
+  } catch {
+    catDeleteInfo.textContent = `Couldn't count entries in ${categoryLabel(category)} — the move below still works.`;
+  }
+});
+
+catDeleteForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showCatDeleteStatus(null);
+  try {
+    await reassignAndDeleteCategory(dialogCategoryId, Number(catDeleteTarget.value));
+    catDeleteDialog.close();
+    await refreshCategories();
+    await refresh();
+  } catch (error) {
+    showCatDeleteStatus(
+      error.message?.includes("fetch")
+        ? "No connection — nothing was changed."
+        : `Couldn't delete: ${error.message}`,
+    );
+  }
+});
+
+document.getElementById("cat-delete-cancel").addEventListener("click", () => catDeleteDialog.close());
+
+function friendlyCategoryError(error) {
+  if (error.message?.includes("duplicate key")) return "That name already exists.";
+  if (error.message?.includes("fetch")) return "No connection — not saved.";
+  return `Couldn't save: ${error.message}`;
+}
+
+function showCatStatus(message) {
+  catStatus.textContent = message ?? "";
+  catStatus.hidden = !message;
+}
+
+function showCatDeleteStatus(message) {
+  catDeleteStatus.textContent = message ?? "";
+  catDeleteStatus.hidden = !message;
 }
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────

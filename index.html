@@ -91,6 +91,45 @@
       <ul id="ledger" class="ledger"></ul>
     </section>
 
+    <section class="card cat-card">
+      <div class="card-head">
+        <h2 class="card-title">Categories</h2>
+        <button id="cat-add" class="btn btn-ghost btn-small">Add</button>
+      </div>
+      <p class="muted cat-hint">Tap one to rename it, change its icon, or remove it.</p>
+      <ul id="cat-list" class="cat-list"></ul>
+    </section>
+
+    <dialog id="cat-dialog" class="cat-dialog">
+      <form id="cat-form" novalidate>
+        <h2 id="cat-dialog-title" class="card-title">Edit category</h2>
+        <label for="cat-icon">Icon <span class="optional">(emoji, optional)</span></label>
+        <input id="cat-icon" name="icon" type="text" maxlength="8" autocomplete="off" />
+        <label for="cat-name">Name</label>
+        <input id="cat-name" name="name" type="text" maxlength="40" required autocomplete="off" />
+        <label class="cat-flag">
+          <input id="cat-excluded" name="excluded" type="checkbox" />
+          <span>Don't count in totals (like Blessing)</span>
+        </label>
+        <p id="cat-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="cat-save" class="btn btn-primary">Save</button>
+        <button type="button" id="cat-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete…</button>
+        <button type="button" id="cat-cancel" class="btn btn-ghost btn-block">Cancel</button>
+      </form>
+    </dialog>
+
+    <dialog id="cat-delete-dialog" class="cat-dialog">
+      <form id="cat-delete-form" novalidate>
+        <h2 class="card-title">Delete category</h2>
+        <p id="cat-delete-info" class="muted"></p>
+        <label for="cat-delete-target">Move its entries to</label>
+        <select id="cat-delete-target"></select>
+        <p id="cat-delete-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-danger">Move &amp; delete</button>
+        <button type="button" id="cat-delete-cancel" class="btn btn-ghost btn-block">Cancel</button>
+      </form>
+    </dialog>
+
     <section class="card idea-card">
       <h2 class="card-title">Ideas &amp; friction</h2>
       <p class="muted idea-hint">Something slow, missing, or annoying? Log the itch, not the fix.</p>

@@ -76,6 +76,39 @@ export async function deleteExpense(id) {
   if (error) throw error;
 }
 
+// ── categories: household-managed in-app (v1.1 piece 2b) ─────────────
+
+export async function addCategory(fields) {
+  const { error } = await supabase.from("categories").insert(fields);
+  if (error) throw error;
+}
+
+export async function updateCategory(id, fields) {
+  const { error } = await supabase.from("categories").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+export async function countExpensesForCategory(id) {
+  const { count, error } = await supabase
+    .from("expenses")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", id);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+// Delete-via-reassign must move BOTH users' rows; the expenses RLS
+// policy (update own only) rightly blocks that client-side, so a
+// SECURITY DEFINER function is the one narrow door (see
+// db/migrations/2026-07-29-category-manager-rpc.sql).
+export async function reassignAndDeleteCategory(fromId, toId) {
+  const { error } = await supabase.rpc("reassign_and_delete_category", {
+    from_id: fromId,
+    to_id: toId,
+  });
+  if (error) throw error;
+}
+
 // ── ideas: raw friction inbox, curated into IDEAS.md at scoping time ──
 
 export async function fetchIdeas() {
