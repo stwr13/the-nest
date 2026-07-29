@@ -196,3 +196,16 @@ second). Fetch fixed + deterministic tie-break; Shopping/Other
 sort_order repaired by one-off SQL (the reorder-on-request precedent).
 **Lesson:** the phone check catches what unit tests structurally can't
 — the tests never fetch.
+
+## 2026-07-29 — the glide, done properly: 🗃️ + hand-rolled scroll animation
+
+Shawn wanted the 💡-style glide for the category jump — rightly. Root
+cause finally clear: iOS PWAs silently ignore smooth scrollIntoView;
+💡's glide was never our code, it's iOS animating toward a focused
+input's keyboard. Fix: hand-rolled rAF glide (ease-out cubic, 400ms)
+with a 100ms no-frame fallback to an instant jump — verified in the
+frame-suspended preview (fallback) and awaiting phone check (glide).
+Icon now 🗃️ (Shawn's pick for backdrop contrast). Back-to-top:
+explicitly NOT built — iOS status-bar tap covers it (recorded in
+IDEAS.md). Two lessons: platform quirks hide behind lookalike
+behaviour, and the cheapest feature is the one the OS already ships.

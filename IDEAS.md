@@ -73,6 +73,10 @@ speculation.
   (~1-2 weeks of use), Shawn requests a one-off reorder (single SQL)
   instead. Same rule that kept the category manager out of v1.0: no
   UI for a twice-a-year task.
+- **Back-to-top affordance** — rejected 2026-07-29: iOS's status-bar
+  tap already scrolls to top in the installed PWA (Shawn uses it
+  naturally). No build for what the platform gives free; revisit only
+  if it appears in the idea box (especially from Claire).
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments

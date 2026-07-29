@@ -491,13 +491,38 @@ async function refreshCategories() {
 
 document.getElementById("cat-add").addEventListener("click", () => openCategoryDialog(null));
 
-// Header 🔖: the card lives below the ledger (rare-use), but reaching
+// Header 🗃️: the card lives below the ledger (rare-use), but reaching
 // it must not require scrolling past the whole ledger — same pattern
-// as the 💡 idea jump. Instant, not smooth: iOS PWA smooth-scroll
-// silently no-ops here (💡 only survives because focusing its input
-// makes iOS scroll to the keyboard). Phone-verified 2026-07-29.
+// as the 💡 idea jump. The glide is hand-rolled: iOS PWAs silently
+// ignore smooth scrollIntoView (💡 only glides because focusing its
+// input makes iOS animate toward the keyboard). Phone-found 2026-07-29.
+function glideTo(element) {
+  const start = window.scrollY;
+  const target = Math.min(
+    element.getBoundingClientRect().top + start,
+    document.scrollingElement.scrollHeight - window.innerHeight,
+  );
+  const duration = 400;
+  let t0 = null;
+  let started = false;
+  function step(ts) {
+    started = true;
+    t0 ??= ts;
+    const p = Math.min((ts - t0) / duration, 1);
+    const eased = 1 - (1 - p) ** 3;
+    window.scrollTo(0, start + (target - start) * eased);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  // Frames can be suspended (backgrounded/embedded webviews) — never
+  // strand the tap: jump instantly if no frame ran.
+  setTimeout(() => {
+    if (!started) window.scrollTo(0, target);
+  }, 100);
+}
+
 document.getElementById("cat-jump").addEventListener("click", () => {
-  document.querySelector(".cat-card").scrollIntoView();
+  glideTo(document.querySelector(".cat-card"));
 });
 
 function openCategoryDialog(category) {
