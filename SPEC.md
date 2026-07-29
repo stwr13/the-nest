@@ -57,6 +57,13 @@ Baseline category proposal (drafted 2026-07-29 from the current six + live-use a
 
 Approved by Shawn 2026-07-29 as the seed list (piece 1 verified on his phone the same day); Claire amends freely via the manager once it ships. Still a you-two convention, not code: (a) Gifts vs Blessing boundary — a present is a Gift (counts as spending), giving/tithing is Blessing (doesn't); (b) Travel gets added via the manager when the first trip happens. Migration: `db/migrations/2026-07-29-categories-v1_1.sql` (additive, idempotent; no RLS changes needed — v1.0's household category policies already cover the manager).
 
+Category-edit semantics (recorded 2026-07-29, raised by Shawn pre-go):
+
+- **Rename / icon change** never touches expenses — entries reference category *ids*, names are looked up at display time. History is safe by construction.
+- **Delete-via-reassign is atomic** — the server function runs as one transaction: either all entries move AND the category disappears, or nothing happens. No half-states.
+- **The taxonomy is retroactive by design.** Reassign rewrites which category old entries belong to, and the excluded-from-totals flag applies to all history at display time. Consequence: every view answers "under today's rules, what did we spend?" — month-on-month comparisons are always apples-to-apples under the current taxonomy, but "what we called it at the time" is not preserved in-app. CSV exports are the time-capsules: an export taken today freezes today's labels.
+- Alternatives considered and rejected: loosening expenses RLS so either user can edit all rows (weakens the core protection everywhere to serve a rare operation); archive-instead-of-delete (avoids rewriting history but contradicts the actual need, which is moving entries into better categories — and adds a second mode).
+
 Attached to item 2, agreed in direction 2026-07-29:
 
 - **One-time recategorization migration** — when the new category set exists, existing ledger entries get moved to it without anyone re-entering data: Claude proposes a new category per entry (reading the ledger through Shawn's logged-in Supabase session, as in the idea harvest), both users review the proposed mapping, then it applies in one SQL pass. A migration, not an app feature. Entries with empty/thin notes will need human eyes — the review step is the safety net. Real ledger data never enters the repo (public-repo rule).

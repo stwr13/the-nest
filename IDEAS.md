@@ -56,6 +56,16 @@ speculation.
   separate calculator screen — both add taps/modes; likely
   over-engineering. Direction agreed 2026-07-29: inline shape, in the
   v1.1 working scope.
+- **Per-category month-on-month comparison** (raised 2026-07-29 by
+  Shawn during the 2b design review: "we might compare or analyse
+  which category we spent more in comparison"). Today's dashboard
+  compares months as absolute totals only; category bars exist for the
+  current month alone. The data model already supports the full
+  version (every entry keeps category_id + date forever), and the
+  retroactive-taxonomy semantics recorded in SPEC.md mean past months
+  re-bucket cleanly under today's categories. Shapes when it earns a
+  place: per-category "vs last month" deltas on the existing bars, or
+  a tap-a-category month history. Waits for live-use demand (idea box).
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments
