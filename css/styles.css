@@ -288,6 +288,20 @@ select:focus {
 
 .ledger li:first-child { border-top: none; }
 
+/* ── day grouping + person filter (v1.1 piece 3) ── */
+.ledger-filter { margin: 0 0 0.75rem; }
+.ledger li.day-header {
+  display: block;
+  padding: 1rem 0 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-top: none;
+}
+.ledger li.day-header + li { border-top: none; }
+
 .entry-main { min-width: 0; }
 .entry-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
 .entry-note { font-weight: 400; color: var(--ink-soft); }

@@ -89,6 +89,11 @@
         <h2 class="card-title">Ledger</h2>
         <button id="export-csv" class="btn btn-ghost btn-small">Export CSV</button>
       </div>
+      <div id="ledger-filter" class="segment ledger-filter" role="radiogroup" aria-label="Filter by who paid">
+        <label><input type="radio" name="ledger_filter" value="all" checked /><span>All</span></label>
+        <label><input type="radio" name="ledger_filter" value="Shawn" /><span>Shawn</span></label>
+        <label><input type="radio" name="ledger_filter" value="Claire" /><span>Claire</span></label>
+      </div>
       <p id="ledger-status" class="muted">Loading…</p>
       <ul id="ledger" class="ledger"></ul>
     </section>

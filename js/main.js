@@ -1,6 +1,7 @@
 import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel } from "./dashboard-math.js";
+import { ledgerView } from "./ledger-view.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -71,6 +72,8 @@ let editingId = null;
 let appLoaded = false;
 let categoriesCache = [];
 let dialogCategoryId = null; // null while adding a new category
+let expensesCache = [];
+let ledgerFilter = "all";
 
 // ── auth ──────────────────────────────────────────────────────────────
 
@@ -159,6 +162,7 @@ async function refresh() {
 }
 
 function renderAll(expenses) {
+  expensesCache = expenses;
   renderDashboard(expenses);
   renderLedger(expenses);
 }
@@ -170,16 +174,39 @@ function loadErrorMessage(error) {
 }
 
 function renderLedger(expenses) {
-  if (expenses.length === 0) {
-    showLedgerStatus("No expenses yet — log the first one above.");
+  const groups = ledgerView(expenses, ledgerFilter);
+  if (groups.length === 0) {
+    showLedgerStatus(
+      expenses.length === 0
+        ? "No expenses yet — log the first one above."
+        : `Nothing paid by ${ledgerFilter} yet.`,
+    );
     ledgerList.replaceChildren();
     return;
   }
   showLedgerStatus(null);
   // textContent throughout: notes are user input and must never be
   // interpreted as HTML
-  ledgerList.replaceChildren(...expenses.map(renderEntry));
+  ledgerList.replaceChildren(
+    ...groups.flatMap((group) => [
+      dayHeader(group.date),
+      ...group.items.map(renderEntry),
+    ]),
+  );
 }
+
+function dayHeader(date) {
+  const li = document.createElement("li");
+  li.className = "day-header";
+  li.textContent = dateFmt.format(new Date(date + "T00:00:00"));
+  return li;
+}
+
+// person filter re-renders from cache — no refetch for a view change
+document.getElementById("ledger-filter").addEventListener("change", (event) => {
+  ledgerFilter = event.target.value;
+  renderLedger(expensesCache);
+});
 
 function renderEntry(expense) {
   const li = document.createElement("li");
@@ -201,7 +228,8 @@ function renderEntry(expense) {
 
   const meta = document.createElement("p");
   meta.className = "entry-meta";
-  meta.textContent = `${dateFmt.format(new Date(expense.date + "T00:00:00"))} · paid by ${expense.paid_by}`;
+  // date lives in the day header now; repeating it per entry is noise
+  meta.textContent = `paid by ${expense.paid_by}`;
 
   main.append(top, meta);
 

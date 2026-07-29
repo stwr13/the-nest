@@ -209,3 +209,14 @@ Icon now 🗃️ (Shawn's pick for backdrop contrast). Back-to-top:
 explicitly NOT built — iOS status-bar tap covers it (recorded in
 IDEAS.md). Two lessons: platform quirks hide behind lookalike
 behaviour, and the cheapest feature is the one the OS already ships.
+
+## 2026-07-29 — v1.1 piece 3: ledger day-grouping + person filter
+
+The Claire-and-Shawn de-clutter ask, live: entries now group under
+uppercase day headers (per-entry dates dropped as redundant), and an
+All / Shawn / Claire segmented filter sits under the Ledger title —
+view-only state, re-rendered from cache, dashboard untouched. Logic
+extracted pure (js/ledger-view.js, 3 Node tests: grouping order,
+filter dropping empty days, empty states). Filter wiring verified
+end-to-end in preview; day-header styling checked dressed at mobile
+width. Tests 7/7.
