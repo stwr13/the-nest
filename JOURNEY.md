@@ -156,3 +156,20 @@ excluded_from_totals — Blessing shows on the dashboard as "not counted"
 and never inflates the monthly total or past-month sums. **Decision:**
 piece 2 split 2a (data + display) / 2b (manager UI) to keep ships
 small. Tests 4/4; preview console clean.
+
+## 2026-07-29 — v1.1 piece 2b: in-app category manager
+
+Categories card + native dialogs: add / rename / icon / excluded flag,
+delete-via-reassign. Cross-user reassign runs through a SECURITY
+DEFINER function (reassign_and_delete_category) — the one narrow door
+past the own-rows RLS policy; grants verified by read-back: execute
+for authenticated only, anon/public revoked, prosecdef true.
+**Decision:** category taxonomy is retroactive by design (renames free,
+reassigns rewrite history, excluded flag applies at render time); CSV
+exports are the time-capsules. Recorded in SPEC.md after Shawn's
+pre-go design review; per-category month-on-month comparison logged in
+IDEAS.md from the same conversation. **Process note:** the SQL editor's
+autocomplete corrupted a typed migration ("returns void" became
+"returns storage.vector_indexes") — caught by the screenshot-verify-
+before-run rule; retyped single-line. Verify before run is not
+optional.
