@@ -67,10 +67,12 @@ speculation.
   place: per-category "vs last month" deltas on the existing bars, or
   a tap-a-category month history. Waits for live-use demand (idea box).
 - **Category reordering** (noted 2026-07-29 while shipping the
-  manager). New categories append after Other; there's no in-app way
-  to reorder. Wart, not blocker — a one-line SQL fixes any specific
-  ordering on request. Earns a manager feature only if reordering
-  requests become a pattern.
+  manager; decided same day by Shawn). New categories append after
+  Other; no in-app reorder. **Not becoming a feature**: reordering is
+  a rare, settle-once need — after the category set stabilises
+  (~1-2 weeks of use), Shawn requests a one-off reorder (single SQL)
+  instead. Same rule that kept the category manager out of v1.0: no
+  UI for a twice-a-year task.
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments
