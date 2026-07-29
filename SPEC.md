@@ -31,7 +31,9 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 
 AI parsing/Q&A (v1.1 via Edge Function), income tracking, recurring expenses, card/miles tagging, budgets, and every other Shared Brain module. Two weeks of real use decides what earns a place next.
 
-## v1.1 — "Organise the nest" (LOCKED by Shawn 2026-07-29)
+## v1.1 — "Organise the nest" (LOCKED by Shawn 2026-07-29; build complete same day)
+
+Build status 2026-07-29: pieces 1–4 all live and phone-verified (incl. the category-filter scope change). Remaining before v1.1 closes: the one-time recategorization — waits for Shawn + Claire to settle the category list and say the word. v1.2 discovery fieldwork (alert channels per bank) runs meanwhile.
 
 Scope, in build order (each piece ships and gets phone-verified before the next starts):
 
