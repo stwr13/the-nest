@@ -73,6 +73,14 @@ speculation.
   (~1-2 weeks of use), Shawn requests a one-off reorder (single SQL)
   instead. Same rule that kept the category manager out of v1.0: no
   UI for a twice-a-year task.
+- **Inline ledger editing / return-to-place after edit** (raised and
+  deferred by Shawn same breath, 2026-07-29). Editing jumps to the
+  form (it IS the editor — one form, one validation path) and leaves
+  you at the top afterwards. Inline editing: big surface for a rare
+  action — not built. Return-to-place after save: cheap (the glideTo
+  helper exists) but also deferred — the current edit spike is
+  cleanup, which the one-time recategorization makes obsolete. Either
+  earns a place only if the itch recurs in normal post-cleanup use.
 - **Back-to-top affordance** — rejected 2026-07-29: iOS's status-bar
   tap already scrolls to top in the installed PWA (Shawn uses it
   naturally). No build for what the platform gives free; revisit only
