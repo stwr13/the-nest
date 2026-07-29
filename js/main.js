@@ -2,6 +2,7 @@ import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
+import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -74,6 +75,9 @@ let categoriesCache = [];
 let dialogCategoryId = null; // null while adding a new category
 let expensesCache = [];
 let ledgerFilter = "all";
+let ledgerCategory = "all";
+const ledgerCategorySelect = document.getElementById("ledger-category");
+const amountPreview = document.getElementById("amount-preview");
 
 // ── auth ──────────────────────────────────────────────────────────────
 
@@ -174,12 +178,12 @@ function loadErrorMessage(error) {
 }
 
 function renderLedger(expenses) {
-  const groups = ledgerView(expenses, ledgerFilter);
+  const groups = ledgerView(expenses, ledgerFilter, ledgerCategory);
   if (groups.length === 0) {
     showLedgerStatus(
       expenses.length === 0
         ? "No expenses yet — log the first one above."
-        : `Nothing paid by ${ledgerFilter} yet.`,
+        : "Nothing matches this filter yet.",
     );
     ledgerList.replaceChildren();
     return;
@@ -202,9 +206,14 @@ function dayHeader(date) {
   return li;
 }
 
-// person filter re-renders from cache — no refetch for a view change
+// filters re-render from cache — no refetch for a view change
 document.getElementById("ledger-filter").addEventListener("change", (event) => {
   ledgerFilter = event.target.value;
+  renderLedger(expensesCache);
+});
+
+ledgerCategorySelect.addEventListener("change", () => {
+  ledgerCategory = ledgerCategorySelect.value;
   renderLedger(expensesCache);
 });
 
@@ -342,11 +351,19 @@ function entryButton(label, onClick) {
 expenseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showFormStatus(null);
+
+  // the amount field doubles as a calculator: "405/4" saves as 101.25
+  const amount = evaluateAmount(expenseForm.amount.value);
+  if (amount === null || amount <= 0 || amount > 99999999) {
+    showFormStatus("Check the amount — a number like 12.40, or a sum like 405/4.");
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.textContent = "Saving…";
 
   const fields = {
-    amount: Number(expenseForm.amount.value),
+    amount,
     category_id: Number(expenseForm.category_id.value),
     paid_by: expenseForm.paid_by.value,
     date: expenseForm.date.value,
@@ -368,6 +385,7 @@ expenseForm.addEventListener("submit", async (event) => {
     exitEditMode();
     expenseForm.amount.value = "";
     expenseForm.note.value = "";
+    updateAmountPreview();
     await refresh();
   } catch (error) {
     showFormStatus(
@@ -393,11 +411,40 @@ cancelBtn.addEventListener("click", () => {
   exitEditMode();
   expenseForm.amount.value = "";
   expenseForm.note.value = "";
+  updateAmountPreview();
 });
+
+// ── inline amount calculator (v1.1 piece 4) ─────────────────────────
+
+function updateAmountPreview() {
+  const text = expenseForm.amount.value;
+  if (!hasOperator(text)) {
+    amountPreview.hidden = true;
+    return;
+  }
+  const result = evaluateAmount(text);
+  amountPreview.hidden = false;
+  amountPreview.textContent = result === null ? "= …" : `= ${sgd.format(result)}`;
+}
+
+expenseForm.amount.addEventListener("input", updateAmountPreview);
+
+// The iOS decimal keypad has no operator keys — these chips insert
+// them. pointerdown + preventDefault keeps focus (and the keypad) in
+// the amount field.
+for (const button of document.querySelectorAll(".calc-op")) {
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    expenseForm.amount.value += button.dataset.op;
+    expenseForm.amount.focus({ preventScroll: true });
+    updateAmountPreview();
+  });
+}
 
 function startEdit(expense) {
   editingId = expense.id;
   expenseForm.amount.value = expense.amount;
+  updateAmountPreview();
   expenseForm.category_id.value = String(expense.category_id);
   expenseForm.paid_by.value = expense.paid_by;
   expenseForm.date.value = expense.date;
@@ -485,6 +532,18 @@ function renderCategoryOptions() {
   // keep the user's pick across refreshes when it still exists
   if ([...categorySelect.options].some((o) => o.value === selected)) {
     categorySelect.value = selected;
+  }
+
+  // the ledger's category filter mirrors the list, plus "All"
+  ledgerCategorySelect.replaceChildren(
+    new Option("All categories", "all"),
+    ...categoriesCache.map((c) => new Option(categoryLabel(c), c.id)),
+  );
+  if ([...ledgerCategorySelect.options].some((o) => o.value === ledgerCategory)) {
+    ledgerCategorySelect.value = ledgerCategory;
+  } else {
+    ledgerCategory = "all"; // the filtered category was deleted
+    renderLedger(expensesCache);
   }
 }
 

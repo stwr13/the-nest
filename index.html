@@ -44,9 +44,15 @@
     <section class="card form-card">
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">
-        <label for="exp-amount">Amount (SGD)</label>
-        <input id="exp-amount" name="amount" type="number" inputmode="decimal"
-               step="0.01" min="0.01" max="99999999" placeholder="0.00" required />
+        <label for="exp-amount">Amount (SGD) <span id="amount-preview" class="amount-preview" hidden></span></label>
+        <input id="exp-amount" name="amount" type="text" inputmode="decimal"
+               maxlength="60" autocomplete="off" placeholder="0.00 · or 405/4" required />
+        <div class="calc-ops" aria-label="Insert a calculation sign">
+          <button type="button" class="calc-op" data-op="+" aria-label="plus">+</button>
+          <button type="button" class="calc-op" data-op="−" aria-label="minus">−</button>
+          <button type="button" class="calc-op" data-op="×" aria-label="times">×</button>
+          <button type="button" class="calc-op" data-op="÷" aria-label="divide">÷</button>
+        </div>
 
         <label for="exp-category">Category</label>
         <select id="exp-category" name="category_id" required></select>
@@ -94,6 +100,7 @@
         <label><input type="radio" name="ledger_filter" value="Shawn" /><span>Shawn</span></label>
         <label><input type="radio" name="ledger_filter" value="Claire" /><span>Claire</span></label>
       </div>
+      <select id="ledger-category" class="ledger-category" aria-label="Filter by category"></select>
       <p id="ledger-status" class="muted">Loading…</p>
       <ul id="ledger" class="ledger"></ul>
     </section>

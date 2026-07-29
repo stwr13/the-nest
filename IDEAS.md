@@ -27,7 +27,14 @@ speculation.
   bought". Claire (07-19): "view by individual dates or weekly —
   viewing in a list just looks too cluttered". Live use favours two
   shapes from the pre-launch list: per-person filter and day/week
-  grouping (a variant of collapsible month groups). Root need
+  grouping (a variant of collapsible month groups) — both shipped
+  2026-07-29 (v1.1 piece 3). Category filter re-raised same day
+  (Shawn, minutes after the person filter shipped: "a drop down of
+  sorts?") — deferred at the v1.1 finish line: no concrete blocked
+  moment named yet, and two shapes compete (ledger dropdown vs tapping
+  a dashboard category row to see its entries; the latter pairs with
+  the per-category month-on-month idea below). The itch names its
+  moment, then the shape picks itself. Root need
   confirmed within the first week of real data.
 - **Entry-first layout** (new in live use; both users independently,
   same day). Claire (07-19): "my main purpose upon opening the app is

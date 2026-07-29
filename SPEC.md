@@ -37,8 +37,8 @@ Scope, in build order (each piece ships and gets phone-verified before the next 
 
 1. **Entry-first layout** — log box at the top, dashboard below. Reverses the v1.0 Z-pattern decision (headline top-left); both users independently asked on 2026-07-19. The app is an input tool first, a report second.
 2. **Category system** — in-app manager (add / rename / edit; past entries keep their history — delete only via reassign to another category), expanded category list defined together at home, per-category icons, and an excluded-from-totals flag (first use: "Blessing" — giving is logged but not summed into household spending).
-3. **Ledger de-clutter** — entries grouped by day, plus a filter by person.
-4. **Amount-field calculator** (agreed 2026-07-29) — the amount field accepts + − × ÷ and shows the computed amount live ("405/4 = S$101.25"). Inline only; no separate calculator screen.
+3. **Ledger de-clutter** — entries grouped by day, plus a filter by person. Scope change 2026-07-29, deliberate (Shawn, after piece 3's phone check, overruling the recorded defer): plus a category dropdown filter, combined with the person filter.
+4. **Amount-field calculator** (agreed 2026-07-29) — the amount field accepts + − × ÷ and shows the computed amount live ("405/4 = S$101.25"). Inline only; no separate calculator screen. Shape note: the iOS decimal keypad has no operator keys, so four insert-chips (+ − × ÷) sit under the field; hardware keyboards can type expressions directly.
 
 Baseline category proposal (drafted 2026-07-29 from the current six + live-use asks; a starting point for the decide-together-at-home conversation, not a decision — the manager makes the list editable forever anyway):
 

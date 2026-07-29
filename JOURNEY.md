@@ -220,3 +220,16 @@ extracted pure (js/ledger-view.js, 3 Node tests: grouping order,
 filter dropping empty days, empty states). Filter wiring verified
 end-to-end in preview; day-header styling checked dressed at mobile
 width. Tests 7/7.
+
+## 2026-07-29 — v1.1 piece 4: inline calculator + category filter (scope change)
+
+The amount field is now a calculator: + − × ÷ with standard
+precedence, cent rounding, live "= S$x" preview, strict hand-rolled
+parser (no eval — form input stays inert). iOS reality shaped the UX:
+the decimal keypad has no operator keys, so four insert-chips sit
+under the field (pointerdown+preventDefault keeps the keypad open).
+Same ship: ledger **category dropdown filter**, combined with the
+person filter — a deliberate scope change ("Build it") minutes after
+Shawn raised it post-piece-3; the defer was recorded, he overruled,
+IDEAS/SPEC updated in step. Tests 14/14; calculator flow verified
+end-to-end in preview (chip insert → live result).
