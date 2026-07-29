@@ -491,6 +491,13 @@ async function refreshCategories() {
 
 document.getElementById("cat-add").addEventListener("click", () => openCategoryDialog(null));
 
+// Header 🏷️: the card lives below the ledger (rare-use), but reaching
+// it must not require scrolling past the whole ledger — same pattern
+// as the 💡 idea jump. (Shawn's phone-check feedback, 2026-07-29.)
+document.getElementById("cat-jump").addEventListener("click", () => {
+  document.querySelector(".cat-card").scrollIntoView({ behavior: "smooth" });
+});
+
 function openCategoryDialog(category) {
   dialogCategoryId = category?.id ?? null;
   catDialogTitle.textContent = category ? "Edit category" : "Add category";

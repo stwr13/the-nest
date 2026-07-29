@@ -173,3 +173,12 @@ autocomplete corrupted a typed migration ("returns void" became
 "returns storage.vector_indexes") — caught by the screenshot-verify-
 before-run rule; retyped single-line. Verify before run is not
 optional.
+
+## 2026-07-29 — 2b polish from phone check: header 🏷️ jump
+
+Shawn couldn't find the Categories card (below the full ledger — right
+home for a rare-use feature, wrong reachability). His fix shipped: a
+🏷️ header button jumping to the card, mirroring the 💡 idea-jump
+pattern. Shopping category added by Shawn himself via the manager —
+the feature validating itself. Reordering wart (new categories land
+after Other) recorded in IDEAS.md.

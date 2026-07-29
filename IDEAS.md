@@ -66,6 +66,11 @@ speculation.
   re-bucket cleanly under today's categories. Shapes when it earns a
   place: per-category "vs last month" deltas on the existing bars, or
   a tap-a-category month history. Waits for live-use demand (idea box).
+- **Category reordering** (noted 2026-07-29 while shipping the
+  manager). New categories append after Other; there's no in-app way
+  to reorder. Wart, not blocker — a one-line SQL fixes any specific
+  ordering on request. Earns a manager feature only if reordering
+  requests become a pattern.
 - **Recurring payments / commitments registry** (new, Shawn 07-26,
   self-flagged "may not be the immediate next fix"). Track recurring
   outflows with end dates, plus payout-bearing commitments
