@@ -111,10 +111,28 @@ speculation.
   card on the current page (add, check off, clear). Bigger shapes:
   its own page/tab (the app's first navigation change — the single
   page is getting long), assignees, due dates, recurring chores.
-  Scoping questions open (2026-07-30): what tool does it replace and
-  how is that tool failing; what lives on it (errands / groceries /
-  house projects / all); flat shared list or per-person assignment;
-  page-vs-card tolerance. Not locked, not building yet.
+  Scoping answers (Shawn, 2026-07-30): vision confirmed — The Nest
+  was "always going to be a multi-module home… all if not most areas
+  of our lives". Items live in Telegram/WhatsApp today (buried in
+  scrollback, no state). Contents: everything household — errands,
+  to-buy, to-plan, pay MCST, check on repair. Flat shared list, no
+  assignment ("don't matter for 2 people"). Due dates: yes, and
+  "notifications is good".
+  Shape agreed in scoping (pending lock): **split in two ships.**
+  Ship 1 = tab navigation (the multi-module skeleton: Money /
+  To-dos / Ideas) + To-dos core: one-line dump at messaging speed,
+  check off, optional due date shown + sorted, overdue highlighted
+  in-app — no push yet. Ship 2 = **notifications platform**: iOS PWA
+  Web Push (installed app only, iOS 16.4+, permission prompt; needs
+  push-subscription storage + pg_cron + Edge Function sender) —
+  deliberately a platform piece: the same plumbing later serves
+  zero-touch capture's "pending to confirm" nudges. Adjacent notes:
+  "pay MCST" is recurring — will eventually meet the parked
+  recurring-payments registry; and since the household lives in
+  Telegram, a future Telegram→Nest capture bridge is a natural lane
+  (noted only, not scoped). Roadmap consequence to decide at lock:
+  to-dos would step in front of zero-touch capture (still gated on
+  alert fieldwork anyway).
 - **Zero-touch capture** (reframed 2026-07-28 during v1.1 scoping —
   the root need behind the pre-launch "AI receipt parsing" earmark).
   Evidence note corrected 2026-07-29: it got zero idea-box raises
