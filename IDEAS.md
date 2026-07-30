@@ -102,6 +102,19 @@ speculation.
   case; **not re-raised in live use** — though no trips fell inside
   the trial window, so the silence is weak evidence either way).
   Stopgap stands: log the SGD charge, foreign amount in the note.
+- **Shared to-do list — the second Nest module** (raised 2026-07-30
+  by Shawn: "things we can dump there and track together"). First
+  module beyond money; the Shared Brain vision always implied this
+  class, so it's on-mission — the open question is *sequencing*
+  against zero-touch capture. Structurally a sibling of the idea box:
+  dump one-liners fast, household-shared. Smallest shape: a To-dos
+  card on the current page (add, check off, clear). Bigger shapes:
+  its own page/tab (the app's first navigation change — the single
+  page is getting long), assignees, due dates, recurring chores.
+  Scoping questions open (2026-07-30): what tool does it replace and
+  how is that tool failing; what lives on it (errands / groceries /
+  house projects / all); flat shared list or per-person assignment;
+  page-vs-card tolerance. Not locked, not building yet.
 - **Zero-touch capture** (reframed 2026-07-28 during v1.1 scoping —
   the root need behind the pre-launch "AI receipt parsing" earmark).
   Evidence note corrected 2026-07-29: it got zero idea-box raises
@@ -131,4 +144,13 @@ speculation.
   app push notifications are sealed off by iOS and capturable by
   nothing. If most alerts turn out to be app pushes, the fix is
   usually enabling per-transaction email alerts in the bank's
-  settings.
+  settings. Design sketch agreed in conversation 2026-07-29: shared
+  spine = alert text → Edge Function parser (regex first, AI only if
+  ever needed, server-side per standing rule) → RLS-protected
+  `pending_expenses` pile → one-tap confirm in-app; **nothing ever
+  auto-commits to the ledger**, and unparseable alerts surface as raw
+  pending rows (fail visibly), never silently drop. Email path =
+  Gmail auto-forward to the function (sturdy, per-account); SMS path
+  = iOS Shortcuts message-trigger automation posting to the same
+  function (per-phone, fragile). Existing duplicate warning covers
+  alert-vs-manual overlap.
