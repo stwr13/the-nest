@@ -162,6 +162,9 @@
     </section>
   </main>
 
+  <!-- vendored Supabase client: defer keeps it off the parse path and
+       guarantees it runs before the (implicitly deferred) module -->
+  <script defer src="js/vendor/supabase-js-2.111.0.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

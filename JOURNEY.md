@@ -269,3 +269,26 @@ and letting the line wrap. Also decided: alphabetical category
 reordering dropped (Shawn); Claire's collapse/expand capture still
 ambiguous — he reads it as minimising the whole Ledger card, and we
 can't tell which build she was on because the app shows no version.
+
+## 2026-08-01 — cold-open fix: Supabase client vendored
+
+Shawn: "slow to open… 2-3 seconds." Measured before guessing, and his
+hypothesis (rendering the whole ledger) was wrong — 90 entries render
+in 20ms, 500 in 20ms, 2000 in 71ms. The real cost was the CDN: the
+client was imported from esm.sh, which expanded into **16 chained
+cross-origin requests**, starting at ~850ms and finishing at ~1.19s,
+with the last resource at 1.35s — before a single row of data was
+requested. 17.5 KB total, so pure latency, not bandwidth.
+Fix: vendored the official single-file UMD build (2.111.0, no external
+imports) into js/vendor/, loaded with `defer` ahead of the module, and
+precached with the shell (cache bumped nest-v1 → nest-v2, esm.sh
+branch deleted from the SW). One same-origin request replaces sixteen
+cross-country ones. The version is pinned in the filename — upgrades
+are a deliberate drop-in, not a silent CDN roll. Note: this doesn't
+breach the no-build-tools rule — the dependency already shipped, it
+just came from someone else's server.
+Two other findings recorded, not yet acted on: the SW is network-first
+for the shell (every open waits on the network even when cached — a
+deliberate v1.0 trade-off, and the reason a version can lag on a
+phone), and `background-attachment: fixed` on the body gradient is a
+known iOS scroll-jank source. Both await Shawn's call.

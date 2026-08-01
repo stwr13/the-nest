@@ -1,8 +1,9 @@
 // Strategy: network-first for our own files (staleness impossible while
-// online; cache is the offline fallback), stale-while-revalidate for the
-// esm.sh CDN, and NO caching for Supabase — data failures must stay
-// visible, never masked by a stale cache (SPEC: no offline entry).
-const CACHE = "nest-v1";
+// online; cache is the offline fallback) and NO caching for Supabase —
+// data failures must stay visible, never masked by a stale cache
+// (SPEC: no offline entry). The esm.sh branch is gone: the Supabase
+// client is vendored and precached with the rest of the shell.
+const CACHE = "nest-v2";
 const SHELL = [
   "./",
   "index.html",
@@ -11,6 +12,11 @@ const SHELL = [
   "js/data.js",
   "js/supabase.js",
   "js/config.js",
+  "js/identity.js",
+  "js/dashboard-math.js",
+  "js/ledger-view.js",
+  "js/amount-expr.js",
+  "js/vendor/supabase-js-2.111.0.js",
   "manifest.webmanifest",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512.png",
@@ -37,8 +43,6 @@ self.addEventListener("fetch", (event) => {
   if (url.hostname.endsWith("supabase.co")) return;
   if (url.origin === self.location.origin) {
     event.respondWith(networkFirst(event.request));
-  } else if (url.hostname === "esm.sh") {
-    event.respondWith(staleWhileRevalidate(event.request));
   }
 });
 
@@ -53,16 +57,4 @@ async function networkFirst(request) {
     if (cached) return cached;
     throw error;
   }
-}
-
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(request);
-  const refresh = fetch(request)
-    .then((fresh) => {
-      if (fresh.ok) cache.put(request, fresh.clone());
-      return fresh;
-    })
-    .catch(() => cached);
-  return cached ?? refresh;
 }
