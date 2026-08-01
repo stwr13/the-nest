@@ -33,7 +33,9 @@ AI parsing/Q&A (v1.1 via Edge Function), income tracking, recurring expenses, ca
 
 ## v1.1 — "Organise the nest" (LOCKED by Shawn 2026-07-29; build complete same day)
 
-Build status 2026-07-29: pieces 1–4 all live and phone-verified (incl. the category-filter scope change). Remaining before v1.1 closes: the one-time recategorization — waits for Shawn + Claire to settle the category list and say the word. v1.2 discovery fieldwork (alert channels per bank) runs meanwhile.
+Build status 2026-07-29: pieces 1–4 all live and phone-verified (incl. the category-filter scope change).
+
+**Recategorization outcome (2026-07-29) — the planned migration never ran.** Backups were taken (in-Supabase snapshot + CSV time-capsule) and a 7-entry proposal prepared; before it was applied, Claire had already recategorized 5 of them by hand using the manager shipped that morning. Two stragglers (tithe S$470, JP Books S$30) deliberately left in Other at Shawn's call — Claire's sweep, Claire's finish line. **Lesson recorded:** shipping the tool made the migration mostly unnecessary; prefer giving users the lever over running the batch job. Her filing also settled the boundary in practice — money given (angbao, tithe, housewarming cash) = Blessing; purchased presents = Gifts (awaiting Shawn's confirmation before this becomes the written convention).
 
 Scope, in build order (each piece ships and gets phone-verified before the next starts):
 
@@ -76,7 +78,7 @@ Rollback / audit discipline for v1.1 (agreed 2026-07-29):
 - **Database**: v1.1 schema changes are additive only (new columns / new rows — no renames, no drops), so v1.0 code keeps working against a v1.1 database. Rolling back the code never strands the data.
 - **The one destructive step** — the one-time recategorization — gets its own undo: before it runs, (a) a CSV export (the existing backup story) and (b) an in-Supabase snapshot of `expenses` + `categories` plus the old→new mapping, so the whole move reverses with one SQL statement. Snapshots live only in Supabase, never in the repo (public-repo rule).
 
-Version direction agreed 2026-07-29 (ideation, not locked): **v1.2 = zero-touch capture** (bank SMS/email alerts → pending entries → one-tap confirm; see IDEAS.md — the successor to the old AI-parsing earmark). Discovery fieldwork (which payments alert via SMS vs email vs app push, per bank) runs during the v1.1 build. **v1.3 stays open** — usage after v1.2 decides.
+Version direction — **superseded 2026-07-30, pending lock.** The 2026-07-29 direction was "v1.2 = zero-touch capture" (bank SMS/email alerts → pending entries → one-tap confirm; design sketch in IDEAS.md). Scoping on 07-30 proposed reordering: **v1.2 = the second module** (tab navigation + shared to-dos, Ship 1; notifications platform, Ship 2 — see IDEAS.md), pushing **zero-touch capture to v1.3**, which loses nothing since it is gated on the alert-channel fieldwork anyway and would inherit Ship 2's push plumbing. Neither is locked; the open-decisions board at the top of IDEAS.md is authoritative.
 
 Not in v1.1, with reasons:
 

@@ -233,3 +233,17 @@ person filter — a deliberate scope change ("Build it") minutes after
 Shawn raised it post-piece-3; the defer was recorded, he overruled,
 IDEAS/SPEC updated in step. Tests 14/14; calculator flow verified
 end-to-end in preview (chip insert → live result).
+
+## 2026-07-29/30 — recategorization dissolved; second module scoped
+
+The one-time recategorization was prepped (snapshot + CSV backup,
+87 rows read, 7-entry proposal) and then **not needed**: Claire had
+already fixed 5 of the 7 herself in the manager shipped that morning,
+including the S$5,000 judgement call I'd flagged as "yours to make"
+(housewarming → Blessing). Two stragglers left in Other at Shawn's
+call. Her filing settled the Gifts/Blessing boundary in practice.
+Scoping 07-30: The Nest's multi-module vision restated by Shawn, so
+the to-do module arrives with tab navigation (Money / To-dos / Ideas)
+as Ship 1 and a notifications *platform* as Ship 2 — proposed as v1.2,
+reordering zero-touch capture to v1.3. Nothing locked; open-decisions
+board added to the top of IDEAS.md so any session can resume cold.
