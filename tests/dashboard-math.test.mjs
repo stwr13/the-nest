@@ -25,6 +25,31 @@ test("excluded categories stay out of every sum but remain visible", () => {
   assert.equal(past.at(-1).cents, 3000);
 });
 
+// The month-review gap: on 1 Aug, July's breakdown vanished from the
+// dashboard (Claire, idea box 2026-08-01). summarize must answer for any
+// target month, not just today's.
+test("a past month keeps its own breakdown and its own comparison months", () => {
+  const expenses = [
+    { amount: "20.00", date: "2026-08-01", categories: cat("Groceries", "🛒") },
+    { amount: "84.20", date: "2026-07-18", categories: cat("Groceries", "🛒") },
+    { amount: "15.80", date: "2026-07-10", categories: cat("Fun", "🎉") },
+    { amount: "50.00", date: "2026-07-05", categories: cat("Blessing", "🙏", true) },
+    { amount: "30.00", date: "2026-06-10", categories: cat("Fun", "🎉") },
+  ];
+  const july = new Date(2026, 6, 1);
+  const { thisCents, byCategory, past, excluded } = summarize(expenses, july);
+  assert.equal(thisCents, 10000); // 84.20 + 15.80 — August's 20.00 excluded
+  assert.deepEqual(
+    [...byCategory.entries()],
+    [
+      ["🛒 Groceries", 8420],
+      ["🎉 Fun", 1580],
+    ],
+  );
+  assert.deepEqual([...excluded.entries()], [["🙏 Blessing", 5000]]);
+  assert.equal(past.at(-1).cents, 3000); // June, the month before July
+});
+
 test("labels combine icon and name; icon optional", () => {
   assert.equal(categoryLabel(cat("Groceries", "🛒")), "🛒 Groceries");
   assert.equal(categoryLabel(cat("Other")), "Other");

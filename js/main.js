@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
-import { summarize, categoryLabel } from "./dashboard-math.js";
+import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
@@ -41,6 +41,8 @@ const dashCompare = document.getElementById("dash-compare");
 const dashCats = document.getElementById("dash-cats");
 const dashEmpty = document.getElementById("dash-empty");
 const dashMonths = document.getElementById("dash-months");
+const dashPrev = document.getElementById("dash-prev");
+const dashNext = document.getElementById("dash-next");
 const catList = document.getElementById("cat-list");
 const catDialog = document.getElementById("cat-dialog");
 const catForm = document.getElementById("cat-form");
@@ -74,6 +76,7 @@ let appLoaded = false;
 let categoriesCache = [];
 let dialogCategoryId = null; // null while adding a new category
 let expensesCache = [];
+let dashDate = startOfMonth(new Date()); // which month the dashboard shows
 let ledgerFilter = "all";
 let ledgerCategory = "all";
 const ledgerCategorySelect = document.getElementById("ledger-category");
@@ -269,17 +272,38 @@ function renderEntry(expense) {
 // ── dashboard ─────────────────────────────────────────────────────────
 
 // Math lives in dashboard-math.js (pure, Node-tested); this renders it.
+// The dashboard is month-navigable: on the 1st of a month the previous
+// month's breakdown used to vanish — exactly when you want to review it
+// (Claire, idea box 2026-08-01).
 function renderDashboard(expenses) {
-  const now = new Date();
-  const { thisCents, byCategory, past, excluded } = summarize(expenses, now);
+  const { thisCents, byCategory, past, excluded } = summarize(expenses, dashDate);
+  const viewingNow = monthKey(dashDate) === monthKey(new Date());
 
-  dashLabel.textContent = `This month · ${monthFmt.format(now)}`;
+  dashLabel.textContent = viewingNow
+    ? `This month · ${monthFmt.format(dashDate)}`
+    : `${monthFmt.format(dashDate)} ${dashDate.getFullYear()}`;
   dashTotal.textContent = sgd.format(thisCents / 100);
 
+  // don't walk back past the start of history, or forward past today
+  const earliestKey = expenses.length
+    ? expenses[expenses.length - 1].date.slice(0, 7)
+    : monthKey(new Date());
+  dashPrev.disabled = monthKey(shiftMonth(dashDate, -1)) < earliestKey;
+  dashNext.disabled = viewingNow;
+
+  // months in the comparison row are tappable — Claire reached for this
+  // before it existed, so it's the affordance the app owed her
   dashMonths.hidden = past.length === 0;
-  dashMonths.textContent = past
-    .map((m) => `${monthShortFmt.format(m.date)} ${sgdWhole.format(Math.round(m.cents / 100))}`)
-    .join(" · ");
+  dashMonths.replaceChildren(
+    ...past.flatMap((m, i) => {
+      const jump = document.createElement("button");
+      jump.type = "button";
+      jump.className = "dash-month-link";
+      jump.textContent = `${monthShortFmt.format(m.date)} ${sgdWhole.format(Math.round(m.cents / 100))}`;
+      jump.addEventListener("click", () => showMonth(m.date));
+      return i === 0 ? [jump] : [document.createTextNode(" · "), jump];
+    }),
+  );
 
   if (past.length >= 2) {
     const avgCents = past.reduce((sum, m) => sum + m.cents, 0) / past.length;
@@ -292,6 +316,9 @@ function renderDashboard(expenses) {
 
   const rows = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
   dashEmpty.hidden = rows.length > 0 || excluded.size > 0;
+  dashEmpty.textContent = viewingNow
+    ? "Nothing logged this month yet."
+    : `Nothing logged in ${monthFmt.format(dashDate)}.`;
   const maxCents = rows[0]?.[1] ?? 1;
   const excludedRows = [...excluded.entries()].sort((a, b) => b[1] - a[1]);
   dashCats.replaceChildren(
@@ -299,6 +326,22 @@ function renderDashboard(expenses) {
     ...excludedRows.map(([label, cents]) => excludedCategoryRow(label, cents)),
   );
 }
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function shiftMonth(date, months) {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+function showMonth(date) {
+  dashDate = startOfMonth(date);
+  renderDashboard(expensesCache);
+}
+
+dashPrev.addEventListener("click", () => showMonth(shiftMonth(dashDate, -1)));
+dashNext.addEventListener("click", () => showMonth(shiftMonth(dashDate, 1)));
 
 // Blessing-style categories: shown for visibility, kept out of the sums
 function excludedCategoryRow(label, cents) {
@@ -386,6 +429,9 @@ expenseForm.addEventListener("submit", async (event) => {
     expenseForm.amount.value = "";
     expenseForm.note.value = "";
     updateAmountPreview();
+    // show the month the entry landed in, so the save is always visible
+    // even while browsing an older month
+    dashDate = startOfMonth(new Date(fields.date + "T00:00:00"));
     await refresh();
   } catch (error) {
     showFormStatus(

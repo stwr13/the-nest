@@ -288,6 +288,37 @@ select:focus {
 
 .ledger li:first-child { border-top: none; }
 
+/* ── month navigation on the dashboard ── */
+/* the ‹ tucks toward the card edge so month nav costs no extra width
+   and the comparison line can't get pushed off the card */
+.dash-label-row { display: flex; align-items: center; gap: 0.1rem; margin: 0 0 0 -0.5rem; }
+.dash-head .dash-compare { white-space: normal; }
+.dash-nav {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+  font-family: inherit;
+  color: var(--green-deep);
+  background: none;
+  border: none;
+  border-radius: 8px;
+}
+.dash-nav:disabled { opacity: 0.25; }
+.dash-nav:not(:disabled):active { background: var(--green-soft); }
+
+.dash-month-link {
+  padding: 0.1rem 0.2rem;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  border-bottom: 1px dotted var(--ink-soft);
+}
+.dash-month-link:active { color: var(--green-deep); }
+
 /* ── inline amount calculator (v1.1 piece 4) ── */
 .amount-preview { float: right; font-weight: 700; color: var(--green-deep); }
 .calc-ops { display: flex; gap: 0.5rem; margin-top: 0.4rem; }

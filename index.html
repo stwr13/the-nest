@@ -80,7 +80,11 @@
     <section class="card dash-card">
       <div class="dash-head">
         <div>
-          <p id="dash-label" class="dash-label">This month</p>
+          <p class="dash-label-row">
+            <button type="button" id="dash-prev" class="dash-nav" aria-label="Previous month">‹</button>
+            <span id="dash-label" class="dash-label">This month</span>
+            <button type="button" id="dash-next" class="dash-nav" aria-label="Next month">›</button>
+          </p>
           <p id="dash-total" class="dash-total">S$0.00</p>
         </div>
         <p id="dash-compare" class="dash-compare"></p>

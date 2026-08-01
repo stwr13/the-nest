@@ -21,11 +21,11 @@ Books S$30 still in Other (July total reads high until moved);
 (5) alert-channel fieldwork (SMS / email / app-popup, per bank) —
 gates zero-touch scoping; (6) category list: declare settled → then
 the one-off reorder on request.
-From the 2026-08-01 harvest (all Claire): (7) does the **month-review
-gap** — fresh, dated, unprompted friction from the trailing user —
-outrank the to-do module for v1.2? (8) which build does her 07-30
-ledger capture describe: is she on v1.1 yet? (9) alphabetical vs
-frequency order for the one-off category reorder.
+From the 2026-08-01 harvest (all Claire): (7) month-review gap —
+**closed, shipped 2026-08-01**; (8) which build does her 07-30 ledger
+capture describe — is she on v1.1 yet, and does she want the whole
+Ledger card minimisable? (ask her); (9) alphabetical reorder —
+**closed, dropped by Shawn**.
 
 Ordered by evidence strength: live-use raises beat pre-launch
 speculation.
@@ -46,6 +46,14 @@ speculation.
   per-category month-on-month below — same screen, same data.
   Strongest fresh evidence in this file: real friction, real moment,
   from the trailing user, dated to the day it hurt.
+  **SHIPPED 2026-08-01** (Shawn: "can we fix that now, first") —
+  month-navigable dashboard: ‹ › arrows step through months, and the
+  comparison-row months are tappable, honouring the affordance Claire
+  reached for. Bounded to real history (no walking before the first
+  entry, no future). Saving an expense jumps the dashboard to that
+  entry's month so a save is never invisible. Per-category
+  month-on-month (below) is now one step away — the data is on screen,
+  only the delta is missing.
 
 - **Categories: more of them, editable, in-app** (deferred pre-launch
   2026-07-16; re-raised in live use ×3). Claire (07-19): needs Gifts,
@@ -83,7 +91,10 @@ speculation.
   no version anywhere, so a capture can't be tied to a build — we
   can't tell whether feedback describes shipped or unshipped
   behaviour. Cheap candidate fix: a small version marker in the
-  header or on the idea card. Root need
+  header or on the idea card. **Shawn's read 2026-08-01:** he thinks
+  she means collapsing the *entire Ledger card* out of the way when
+  she doesn't want it — i.e. a section-level minimise, not per-day
+  collapse ("not sure" — unconfirmed with her). Still open. Root need
   confirmed within the first week of real data.
 - **Entry-first layout** (new in live use; both users independently,
   same day). Claire (07-19): "my main purpose upon opening the app is
@@ -136,7 +147,9 @@ speculation.
   question for the household: alphabetical (predictable, what she
   asked for) vs frequency-of-use (fastest for the daily dropdown —
   Eating out and Groceries dominate the ledger). Today's order is
-  neither, which is probably why it grates.
+  neither, which is probably why it grates. **Closed 2026-08-01:
+  Shawn — "ignore the alphabetical order task."** Not doing it; the
+  one-off reorder offer stands if either of them asks again.
 - **Inline ledger editing / return-to-place after edit** (raised and
   deferred by Shawn same breath, 2026-07-29). Editing jumps to the
   form (it IS the editor — one form, one validation path) and leaves

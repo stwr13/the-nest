@@ -247,3 +247,25 @@ the to-do module arrives with tab navigation (Money / To-dos / Ideas)
 as Ship 1 and a notifications *platform* as Ship 2 — proposed as v1.2,
 reordering zero-touch capture to v1.3. Nothing locked; open-decisions
 board added to the top of IDEAS.md so any session can resume cold.
+
+## 2026-08-01 — month-navigable dashboard (Claire's find, fixed same day)
+
+Second idea-box harvest (3 captures, all Claire) surfaced a real hole:
+on 1 August the dashboard rolled over and July's category breakdown
+vanished — past months survived only as totals. The moment you most
+want a month's breakdown is the moment the app stopped showing it. She
+found it by tapping a month name expecting drill-down, an affordance
+we never built. Fix shipped the same day at Shawn's call ("can we fix
+that now, first"): ‹ › month stepping on the dashboard label, plus the
+comparison-row months made tappable — honouring the interaction she
+reached for. Bounded to real history (no stepping before the first
+entry or into the future); saving an expense now jumps the dashboard
+to that entry's month so a save is never invisible while browsing an
+older month. summarize() already accepted an arbitrary target date, so
+the math needed no change — one new Node test pins past-month
+breakdowns (15/15). Layout caught in preview: the arrows pushed the
+"3-mo avg" line off the card; fixed by tucking the ‹ to the card edge
+and letting the line wrap. Also decided: alphabetical category
+reordering dropped (Shawn); Claire's collapse/expand capture still
+ambiguous — he reads it as minimising the whole Ledger card, and we
+can't tell which build she was on because the app shows no version.
