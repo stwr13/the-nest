@@ -10,22 +10,43 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-**Open decisions as of 2026-08-01** (cleared when decided):
-Shawn's — (1) lock v1.2 "second module" scope: both ships / Ship 1
-only / keep ideating (incl. the roadmap reorder putting to-dos ahead
-of zero-touch); (2) confirm the Gifts/Blessing boundary as practiced
-(money given = Blessing, purchased presents = Gifts) for SPEC;
-(3) declare v1.1 closed (recategorization went user-driven) → tag
-v1.1. Household's — (4) Claire's two stragglers: tithe S$470 + JP
-Books S$30 still in Other (July total reads high until moved);
-(5) alert-channel fieldwork (SMS / email / app-popup, per bank) —
-gates zero-touch scoping; (6) category list: declare settled → then
-the one-off reorder on request.
-From the 2026-08-01 harvest (all Claire): (7) month-review gap —
-**closed, shipped 2026-08-01**; (8) which build does her 07-30 ledger
-capture describe — is she on v1.1 yet, and does she want the whole
-Ledger card minimisable? (ask her); (9) alphabetical reorder —
-**closed, dropped by Shawn**.
+## Open decisions — board as of 2026-08-01 (resume here)
+
+Shawn's calls, blocking the next build:
+
+1. **Lock v1.2 "second module"** — both ships / Ship 1 only / keep
+   ideating. Includes the roadmap reorder putting to-dos ahead of
+   zero-touch capture. Recommendation on file: lock Ship 1 only.
+2. **Declare v1.1 closed** → then tag `v1.1` as the new rollback
+   anchor and drop the `backup_*_20260729` tables.
+3. **Confirm the Gifts/Blessing boundary as practiced** (money given
+   = Blessing; purchased presents = Gifts) so it can go into SPEC.
+4. **Service worker: cache-first or stay network-first?** Today every
+   open waits on the network for the shell even when cached.
+   Cache-first = instant/offline opens, but updates land one launch
+   later — the same lag that left us unsure which build Claire was
+   on. Pairs with the in-app version marker idea.
+5. **`background-attachment: fixed` on the body gradient** — known
+   iOS scroll-jank source; one-line removal, near-invisible change.
+   Waiting on whether scrolling actually feels rough.
+
+Household / passive:
+
+6. **Claire's two stragglers** — tithe S$470 + JP Books S$30 still in
+   Other; July's counted total reads ~S$470 high until the tithe moves.
+7. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
+   Gates zero-touch capture scoping. Passive noticing, no deadline.
+8. **Ask Claire** — which build was her 07-30 ledger capture about
+   (is she on v1.1?), and does she want the whole Ledger card
+   minimisable? Answers item 4's urgency too.
+9. **Category list settled?** → then the one-off reorder on request.
+
+Pending phone check: the vendored-client speed fix (2026-08-01) —
+open the app twice; the first open downloads the new bundle.
+
+Closed 2026-08-01: month-review gap (shipped); alphabetical category
+reorder (dropped by Shawn); ledger-render performance theory
+(measured — not the cause).
 
 Ordered by evidence strength: live-use raises beat pre-launch
 speculation.
