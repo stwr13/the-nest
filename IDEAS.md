@@ -7,6 +7,18 @@ in-app idea box (`ideas` table). Harvested 2026-07-26: 11 captures,
 through Chrome directly (Claude in Chrome extension), so future
 harvests need no copy-paste.
 
+**Open decisions as of 2026-08-01** (cleared when decided):
+Shawn's — (1) lock v1.2 "second module" scope: both ships / Ship 1
+only / keep ideating (incl. the roadmap reorder putting to-dos ahead
+of zero-touch); (2) confirm the Gifts/Blessing boundary as practiced
+(money given = Blessing, purchased presents = Gifts) for SPEC;
+(3) declare v1.1 closed (recategorization went user-driven) → tag
+v1.1. Household's — (4) Claire's two stragglers: tithe S$470 + JP
+Books S$30 still in Other (July total reads high until moved);
+(5) alert-channel fieldwork (SMS / email / app-popup, per bank) —
+gates zero-touch scoping; (6) category list: declare settled → then
+the one-off reorder on request.
+
 Ordered by evidence strength: live-use raises beat pre-launch
 speculation.
 
