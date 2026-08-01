@@ -5,7 +5,10 @@ Not commitments. Two weeks of real use decides what earns a place
 in-app idea box (`ideas` table). Harvested 2026-07-26: 11 captures,
 2026-07-17 → 07-26, both authors — Claude now drives the SQL editor
 through Chrome directly (Claude in Chrome extension), so future
-harvests need no copy-paste.
+harvests need no copy-paste. Second harvest 2026-08-01: 3 new
+captures, all Claire — she is now the module's most demanding user;
+Shawn has logged nothing in-app since 07-26 (he raises things in
+session instead).
 
 **Open decisions as of 2026-08-01** (cleared when decided):
 Shawn's — (1) lock v1.2 "second module" scope: both ships / Ship 1
@@ -18,9 +21,31 @@ Books S$30 still in Other (July total reads high until moved);
 (5) alert-channel fieldwork (SMS / email / app-popup, per bank) —
 gates zero-touch scoping; (6) category list: declare settled → then
 the one-off reorder on request.
+From the 2026-08-01 harvest (all Claire): (7) does the **month-review
+gap** — fresh, dated, unprompted friction from the trailing user —
+outrank the to-do module for v1.2? (8) which build does her 07-30
+ledger capture describe: is she on v1.1 yet? (9) alphabetical vs
+frequency order for the one-off category reorder.
 
 Ordered by evidence strength: live-use raises beat pre-launch
 speculation.
+
+- **Month-review gap — past months have no breakdown** (raised
+  2026-08-01 by Claire, unprompted, on the first day of the new
+  month: "i clicked the month 'July' in the dashboard but am unable
+  to see the breakdown of July's expenses"). What happened: the
+  dashboard rolled over to August, so July's category bars vanished —
+  past months survive only as single totals in the comparison row.
+  **The one moment you most want a month's breakdown is the moment
+  the app stops showing it**; CSV is the only remaining route. She
+  also tapped a month name expecting drill-down — a discovered
+  affordance, not one we designed (and the same interaction shape
+  guessed at for category filtering). Shapes: (a) tap a month in the
+  comparison row → that month's breakdown, (b) month picker on the
+  dashboard, (c) simple "previous month" toggle. Pairs naturally with
+  per-category month-on-month below — same screen, same data.
+  Strongest fresh evidence in this file: real friction, real moment,
+  from the trailing user, dated to the day it hurt.
 
 - **Categories: more of them, editable, in-app** (deferred pre-launch
   2026-07-16; re-raised in live use ×3). Claire (07-19): needs Gifts,
@@ -46,7 +71,19 @@ speculation.
   moment named yet, and two shapes compete (ledger dropdown vs tapping
   a dashboard category row to see its entries; the latter pairs with
   the per-category month-on-month idea below). The itch names its
-  moment, then the shape picks itself. Root need
+  moment, then the shape picks itself. **Re-raised 2026-07-30 by
+  Claire**: "Add a function to collapse and expand the Ledger
+  section, and also to View By Date. The long list now is unnecessary
+  and unsightly." **Resolve before acting:** this landed the day
+  *after* day-grouping + filters shipped, and "View By Date" is
+  precisely what day-grouping delivers — so either she had not yet
+  received the update (iOS PWA caching; needs a close/reopen,
+  sometimes twice), or grouping alone isn't enough and she wants
+  *collapsible* day sections. **Process gap exposed:** the app shows
+  no version anywhere, so a capture can't be tied to a build — we
+  can't tell whether feedback describes shipped or unshipped
+  behaviour. Cheap candidate fix: a small version marker in the
+  header or on the idea card. Root need
   confirmed within the first week of real data.
 - **Entry-first layout** (new in live use; both users independently,
   same day). Claire (07-19): "my main purpose upon opening the app is
@@ -91,7 +128,15 @@ speculation.
   a rare, settle-once need — after the category set stabilises
   (~1-2 weeks of use), Shawn requests a one-off reorder (single SQL)
   instead. Same rule that kept the category manager out of v1.0: no
-  UI for a twice-a-year task.
+  UI for a twice-a-year task. **Re-raised in live use 2026-07-30 by
+  Claire** ("Rearrange the categories in alphabetical order") — now
+  raised independently by both users, the strongest evidence class at
+  n=2. It does *not* overturn the decision: her ask is satisfied
+  exactly by the one-off reorder already promised. Open design
+  question for the household: alphabetical (predictable, what she
+  asked for) vs frequency-of-use (fastest for the daily dropdown —
+  Eating out and Groceries dominate the ledger). Today's order is
+  neither, which is probably why it grates.
 - **Inline ledger editing / return-to-place after edit** (raised and
   deferred by Shawn same breath, 2026-07-29). Editing jumps to the
   form (it IS the editor — one form, one validation path) and leaves
