@@ -319,5 +319,12 @@ Two findings, both about the public repo, both fixed today:
    reachable, foreign fetch / eval / injected inline script all
    refused by the browser. XSS defence is now two independent layers.
 Noted, not done: CSV formula-escaping (theoretical — only the
-household writes notes) and Supabase leaked-password protection
-(dashboard toggle, checked via Chrome).
+household writes notes).
+**Record corrected:** the 07-16 entry says leaked-password protection
+was enabled — the dashboard (checked live via Chrome today) shows it
+DISABLED and **Pro-plan-gated**; on Free it cannot be on, so either
+the save never took or it was misrecorded. Accepted as-is: the
+compensating controls are closed signups, Supabase auth rate limits,
+and two strong unique passwords. Also observed on the email provider
+panel, left untouched pending Shawn's call: minimum password length 6
+with no character requirements, and "secure password change" off.
