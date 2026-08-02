@@ -10,42 +10,44 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-08-01 (resume here)
+## Open decisions — board as of 2026-08-02 (resume here)
+
+**v1.1 is CLOSED** (Shawn, 2026-08-02): phone check verified the
+cold-open fix, `v1.1` tagged as the rollback anchor. The
+`backup_*_20260729` drop is approved but awaits Shawn running one
+statement himself (Claude's permission layer blocks destructive SQL):
+`drop table if exists public.backup_categories_20260729, public.backup_expenses_20260729;`
 
 Shawn's calls, blocking the next build:
 
 1. **Lock v1.2 "second module"** — both ships / Ship 1 only / keep
    ideating. Includes the roadmap reorder putting to-dos ahead of
    zero-touch capture. Recommendation on file: lock Ship 1 only.
-2. **Declare v1.1 closed** → then tag `v1.1` as the new rollback
-   anchor and drop the `backup_*_20260729` tables.
-3. **Confirm the Gifts/Blessing boundary as practiced** (money given
-   = Blessing; purchased presents = Gifts) so it can go into SPEC.
-4. **Service worker: cache-first or stay network-first?** Today every
+   Debrief 2026-08-02 adds a piece-0 candidate: version marker +
+   cache-first SW (platform hygiene that makes captures diagnosable).
+2. **Service worker: cache-first or stay network-first?** Today every
    open waits on the network for the shell even when cached.
    Cache-first = instant/offline opens, but updates land one launch
-   later — the same lag that left us unsure which build Claire was
-   on. Pairs with the in-app version marker idea.
-5. **`background-attachment: fixed` on the body gradient** — known
+   later — the lag that made Claire's build ambiguous. Pairs with the
+   in-app version marker idea.
+3. **`background-attachment: fixed` on the body gradient** — known
    iOS scroll-jank source; one-line removal, near-invisible change.
    Waiting on whether scrolling actually feels rough.
 
 Household / passive:
 
-6. **Claire's two stragglers** — the tithe + a book purchase still in
+4. **Claire's two stragglers** — the tithe + a book purchase still in
    Other; July's counted total reads high by the tithe amount until it
-   moves. (Amounts redacted 2026-08-02 — public repo, no real ledger
-   figures in docs.)
-7. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
+   moves. (Confirmed still there in the 2026-08-02 category audit:
+   Other holds 3 entries.)
+5. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
    Gates zero-touch capture scoping. Passive noticing, no deadline.
-8. **Ask Claire** — which build was her 07-30 ledger capture about
-   (is she on v1.1?), and does she want the whole Ledger card
-   minimisable? Answers item 4's urgency too.
-9. **Category list settled?** → then the one-off reorder on request.
 
-Pending phone check: the vendored-client speed fix (2026-08-01) —
-open the app twice; the first open downloads the new bundle.
-
+Closed 2026-08-02: v1.1 (tagged); Gifts/Blessing boundary (confirmed
+into SPEC); category reorder (waived by Shawn — audit found no
+alarming discrepancies; notables in JOURNEY); Claire's collapse ask
+(clarified: whole-ledger length — parked below with a shape);
+vendored-client phone check (verified faster).
 Closed 2026-08-01: month-review gap (shipped); alphabetical category
 reorder (dropped by Shawn); ledger-render performance theory
 (measured — not the cause).
@@ -114,11 +116,12 @@ speculation.
   no version anywhere, so a capture can't be tied to a build — we
   can't tell whether feedback describes shipped or unshipped
   behaviour. Cheap candidate fix: a small version marker in the
-  header or on the idea card. **Shawn's read 2026-08-01:** he thinks
-  she means collapsing the *entire Ledger card* out of the way when
-  she doesn't want it — i.e. a section-level minimise, not per-day
-  collapse ("not sure" — unconfirmed with her). Still open. Root need
-  confirmed within the first week of real data.
+  header or on the idea card. **Resolved 2026-08-02 (Shawn, after
+  asking her):** she means the *entire ledger* is too long on screen.
+  Shape suggested by Shawn: show only the last 20–30 entries with an
+  expand-all control. Explicitly "not important or crucial now" —
+  parked with its shape until it earns a slot. Root need confirmed
+  within the first week of real data.
 - **Entry-first layout** (new in live use; both users independently,
   same day). Claire (07-19): "my main purpose upon opening the app is
   to log my expense... I would prefer this function right at the top"

@@ -31,11 +31,11 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 
 AI parsing/Q&A (v1.1 via Edge Function), income tracking, recurring expenses, card/miles tagging, budgets, and every other Shared Brain module. Two weeks of real use decides what earns a place next.
 
-## v1.1 — "Organise the nest" (LOCKED by Shawn 2026-07-29; build complete same day)
+## v1.1 — "Organise the nest" (LOCKED by Shawn 2026-07-29; build complete same day; **CLOSED 2026-08-02** — tagged `v1.1` as the new rollback anchor)
 
 Build status 2026-07-29: pieces 1–4 all live and phone-verified (incl. the category-filter scope change).
 
-**Recategorization outcome (2026-07-29) — the planned migration never ran.** Backups were taken (in-Supabase snapshot + CSV time-capsule) and a 7-entry proposal prepared; before it was applied, Claire had already recategorized 5 of them by hand using the manager shipped that morning. Two stragglers (the tithe and a book purchase; amounts redacted — public repo) deliberately left in Other at Shawn's call — Claire's sweep, Claire's finish line. **Lesson recorded:** shipping the tool made the migration mostly unnecessary; prefer giving users the lever over running the batch job. Her filing also settled the boundary in practice — money given (angbao, tithe, housewarming cash) = Blessing; purchased presents = Gifts (awaiting Shawn's confirmation before this becomes the written convention).
+**Recategorization outcome (2026-07-29) — the planned migration never ran.** Backups were taken (in-Supabase snapshot + CSV time-capsule) and a 7-entry proposal prepared; before it was applied, Claire had already recategorized 5 of them by hand using the manager shipped that morning. Two stragglers (the tithe and a book purchase; amounts redacted — public repo) deliberately left in Other at Shawn's call — Claire's sweep, Claire's finish line. **Lesson recorded:** shipping the tool made the migration mostly unnecessary; prefer giving users the lever over running the batch job. Her filing also settled the boundary in practice — money given (angbao, tithe, housewarming cash) = Blessing; purchased presents = Gifts — **confirmed by Shawn 2026-08-02; this is the written convention.**
 
 Scope, in build order (each piece ships and gets phone-verified before the next starts):
 

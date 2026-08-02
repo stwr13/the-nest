@@ -328,3 +328,30 @@ compensating controls are closed signups, Supabase auth rate limits,
 and two strong unique passwords. Also observed on the email provider
 panel, left untouched pending Shawn's call: minimum password length 6
 with no character requirements, and "secure password change" off.
+
+## 2026-08-02 — v1.1 closed; category audit; debrief
+
+Debrief held, then closure: Shawn's phone check confirmed the
+cold-open fix is felt, so v1.1 was declared done — tagged `v1.1` as
+the new rollback anchor. The Gifts/Blessing boundary is ratified into
+SPEC (money given = Blessing, purchased presents = Gifts). The
+one-off category reorder was waived; in its place, a discrepancy
+audit of the live categories (12 categories, 119 entries). Verdict:
+**nothing alarming.** No duplicates, no orphans, icons complete,
+exactly one excluded-from-totals category (Blessing). Notables, for
+the record: Eating out dominates (86 of 119 entries — 72%); Fun and
+Gifts have zero entries ever; the two in-app additions (Shopping,
+Essentials) sit semantically close to each other and to Home — worth
+a shared definition if misfiles appear; Other still holds 3 entries
+including the tithe, so July's counted total stays high until it
+moves (standing household item). Cosmetic only: Shopping's sort_order
+slots before Other, breaking the append-after-Other pattern.
+Claire's collapse ask resolved by asking her: the whole ledger is too
+long. Parked with a shape (last 20–30 entries + expand all) at
+Shawn's call — "not important or crucial now."
+Ops note: the backup-table drop is approved but Claude's permission
+layer blocks destructive SQL even in the driven browser — the one
+DROP statement is recorded on the IDEAS board for Shawn to run.
+A pattern from this closure worth naming: the permission layer's
+denials (auth-settings typing, destructive SQL) map cleanly onto
+"changes Shawn should touch himself" — the friction is a feature.
