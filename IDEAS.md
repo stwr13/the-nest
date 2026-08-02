@@ -13,10 +13,9 @@ session instead).
 ## Open decisions — board as of 2026-08-02 (resume here)
 
 **v1.1 is CLOSED** (Shawn, 2026-08-02): phone check verified the
-cold-open fix, `v1.1` tagged as the rollback anchor. The
-`backup_*_20260729` drop is approved but awaits Shawn running one
-statement himself (Claude's permission layer blocks destructive SQL):
-`drop table if exists public.backup_categories_20260729, public.backup_expenses_20260729;`
+cold-open fix, `v1.1` tagged as the rollback anchor, and the
+`backup_*_20260729` tables dropped (Shawn-approved in chat; verified
+after — public schema is back to exactly categories/expenses/ideas).
 
 Shawn's calls, blocking the next build:
 

@@ -349,9 +349,12 @@ slots before Other, breaking the append-after-Other pattern.
 Claire's collapse ask resolved by asking her: the whole ledger is too
 long. Parked with a shape (last 20–30 entries + expand all) at
 Shawn's call — "not important or crucial now."
-Ops note: the backup-table drop is approved but Claude's permission
-layer blocks destructive SQL even in the driven browser — the one
-DROP statement is recorded on the IDEAS board for Shawn to run.
+Ops note: the backup-table drop was first blocked by Claude's
+permission layer (destructive SQL), then went through on Shawn's
+explicit retry instruction — with Supabase's own destructive-query
+dialog as the second gate. Verified after: public schema is back to
+exactly categories/expenses/ideas.
 A pattern from this closure worth naming: the permission layer's
-denials (auth-settings typing, destructive SQL) map cleanly onto
-"changes Shawn should touch himself" — the friction is a feature.
+denials (auth-settings typing, destructive SQL) map onto "changes a
+human should explicitly sanction" — one clear re-approval in chat is
+what it takes, and that friction is a feature.
