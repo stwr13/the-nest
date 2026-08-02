@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <!-- Defense-in-depth: the code already never uses innerHTML/eval, but
+       CSP makes that a browser-enforced guarantee — only our own files
+       run, and the page can only talk to our own origin + Supabase.
+       (GitHub Pages can't set response headers, hence the meta tag;
+       frame-ancestors can't be set this way and is accepted as a gap.) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://jgenasvgeyyigfnkdvxu.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#29583f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />

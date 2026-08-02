@@ -32,8 +32,10 @@ Shawn's calls, blocking the next build:
 
 Household / passive:
 
-6. **Claire's two stragglers** — tithe S$470 + JP Books S$30 still in
-   Other; July's counted total reads ~S$470 high until the tithe moves.
+6. **Claire's two stragglers** — the tithe + a book purchase still in
+   Other; July's counted total reads high by the tithe amount until it
+   moves. (Amounts redacted 2026-08-02 — public repo, no real ledger
+   figures in docs.)
 7. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
    Gates zero-touch capture scoping. Passive noticing, no deadline.
 8. **Ask Claire** — which build was her 07-30 ledger capture about

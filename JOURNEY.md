@@ -239,8 +239,9 @@ end-to-end in preview (chip insert → live result).
 The one-time recategorization was prepped (snapshot + CSV backup,
 87 rows read, 7-entry proposal) and then **not needed**: Claire had
 already fixed 5 of the 7 herself in the manager shipped that morning,
-including the S$5,000 judgement call I'd flagged as "yours to make"
-(housewarming → Blessing). Two stragglers left in Other at Shawn's
+including the largest-single-entry judgement call I'd flagged as
+"yours to make" (housewarming → Blessing; amount redacted — public
+repo). Two stragglers left in Other at Shawn's
 call. Her filing settled the Gifts/Blessing boundary in practice.
 Scoping 07-30: The Nest's multi-module vision restated by Shawn, so
 the to-do module arrives with tab navigation (Money / To-dos / Ideas)
@@ -292,3 +293,31 @@ for the shell (every open waits on the network even when cached — a
 deliberate v1.0 trade-off, and the reason a version can lag on a
 phone), and `background-attachment: fixed` on the body gradient is a
 known iOS scroll-jank source. Both await Shawn's call.
+
+## 2026-08-02 — security audit: clean bill, two fixes shipped
+
+Full audit at Shawn's ask ("no backdoor capable of accessing my Mac
+Mini or just screwing things up"). Verdict: no backdoor, and nothing
+in the project can reach the Mini — static files on Pages, dev server
+loopback-only, network calls go to Supabase and nowhere else. The
+vendored client is byte-identical to the official 2.111.0 build
+(SHA-256 matched against the npm registry). Live probes from outside:
+anon reads of expenses/ideas and the anon RPC call all refused (401),
+and the decisive one — account signup — returns `signup_disabled`, so
+"authenticated", the role every RLS policy trusts, stays a two-person
+club. First-party code has zero innerHTML/eval sinks; rendering is
+textContent throughout.
+Two findings, both about the public repo, both fixed today:
+1. **Real ledger amounts had leaked into the narrative docs** —
+   SPEC/JOURNEY/IDEAS named real figures while the code obeyed the
+   no-real-data rule. Amounts redacted forward (history not scrubbed —
+   accepted); CLAUDE.md now says explicitly that the rule binds the
+   docs too.
+2. **CSP added** (meta tag — Pages can't set headers): only own-origin
+   scripts/styles run, the page can only talk to itself + Supabase,
+   object-src none. Verified in preview: app renders clean, Supabase
+   reachable, foreign fetch / eval / injected inline script all
+   refused by the browser. XSS defence is now two independent layers.
+Noted, not done: CSV formula-escaping (theoretical — only the
+household writes notes) and Supabase leaked-password protection
+(dashboard toggle, checked via Chrome).
