@@ -78,7 +78,19 @@ Rollback / audit discipline for v1.1 (agreed 2026-07-29):
 - **Database**: v1.1 schema changes are additive only (new columns / new rows — no renames, no drops), so v1.0 code keeps working against a v1.1 database. Rolling back the code never strands the data.
 - **The one destructive step** — the one-time recategorization — gets its own undo: before it runs, (a) a CSV export (the existing backup story) and (b) an in-Supabase snapshot of `expenses` + `categories` plus the old→new mapping, so the whole move reverses with one SQL statement. Snapshots live only in Supabase, never in the repo (public-repo rule).
 
-Version direction — **superseded 2026-07-30, pending lock.** The 2026-07-29 direction was "v1.2 = zero-touch capture" (bank SMS/email alerts → pending entries → one-tap confirm; design sketch in IDEAS.md). Scoping on 07-30 proposed reordering: **v1.2 = the second module** (tab navigation + shared to-dos, Ship 1; notifications platform, Ship 2 — see IDEAS.md), pushing **zero-touch capture to v1.3**, which loses nothing since it is gated on the alert-channel fieldwork anyway and would inherit Ship 2's push plumbing. Neither is locked; the open-decisions board at the top of IDEAS.md is authoritative.
+Version direction — ~~superseded 2026-07-30, pending lock~~ **LOCKED by Shawn 2026-08-12: v1.2 = the second module, Ship 1 only.** The 07-30 reorder is confirmed: tab navigation + shared to-dos now; the notifications platform (Ship 2) waits for real use to demand it; **zero-touch capture moves to v1.3** (loses nothing — it is gated on the alert-channel fieldwork anyway and would inherit Ship 2's push plumbing when that lands).
+
+## v1.2 — "The second module" (LOCKED by Shawn 2026-08-12; built same day on branch `v1.2`)
+
+Decisions at lock, all four open board calls in one sitting: Ship 1 only · piece 0 first · branch-then-merge workflow (build on a branch, verify, merge to main = deploy; `v1.1` tag is the rollback anchor — a separate "2.0" app was rejected: git protects the code, a fork would split the shared database) · scroll-jank one-liner waived (neither phone feels it).
+
+Scope, in build order:
+
+0. **Platform hygiene (piece 0)** — in-app version marker (footer, fed by `js/version.js`, single source shared with the service worker's cache name) + **cache-first service worker** with background revalidate. Opens are instant and work offline; an update lands one launch late, and the version marker is what makes that lag diagnosable instead of ambiguous. Supabase requests stay uncached (data failures must stay visible).
+1. **Tab navigation** — bottom tab bar: Money / To-dos / Ideas. Money keeps the whole v1.1 surface; Ideas moves to its own tab (💡 header jump switches tabs); the app always opens on Money (input tool first — the v1.1 entry-first rationale).
+2. **To-dos core** — one shared household list: one-line add at messaging speed, optional due date, due-first sort (dateless last), overdue highlighted, check off / reopen by either account, collapsible done history. No push notifications in this version.
+
+Data model addition: `todos` (body, due_date, author, done_at, done_by, created_by) — RLS deviates deliberately from the expenses precedent: **household-wide update/delete**, because completing or clearing the other person's item is the core loop of a shared list. Additive only; v1.1 code runs unchanged against the v1.2 database.
 
 Not in v1.1, with reasons:
 

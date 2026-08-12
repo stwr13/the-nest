@@ -358,3 +358,46 @@ A pattern from this closure worth naming: the permission layer's
 denials (auth-settings typing, destructive SQL) map onto "changes a
 human should explicitly sanction" — one clear re-approval in chat is
 what it takes, and that friction is a feature.
+
+## 2026-08-12 — v1.2 locked and built on a branch: piece 0 + ship 1
+
+Scope locked by Shawn (all four open board calls answered in one
+sitting): **v1.2 = ship 1 only** — tab navigation + the to-dos core,
+no push yet; **piece 0 first** (version marker + cache-first service
+worker); **branch-then-merge** replaces build-on-main (the v1.1 tag
+stays the rollback anchor — a separate "Nest 2.0" copy was considered
+and rejected: git already protects the code, and a fork would split
+the one thing git can't protect, the shared database); scroll-jank
+one-liner **waived** — neither phone feels it.
+
+Built on branch `v1.2`, all in one pass:
+
+- **Piece 0.** `js/version.js` is the single version source — the page
+  footer shows it (v1.2.0) and the service worker derives its cache
+  name from it, so one bump does both jobs. The SW flips from
+  network-first to **cache-first with background revalidate**: the
+  shell opens instantly (and offline), the refresh lands one launch
+  later. That lag stopped being scary the moment it became visible —
+  and it proved itself during this very build: the first post-edit
+  reload served the stale CSS, the second showed the fix, exactly as
+  designed, with the footer version there to arbitrate.
+- **Ship 1.** Bottom tab bar — Money / To-dos / Ideas. Money keeps
+  everything that exists today; Ideas gets its own tab (the 💡 header
+  jump now switches tabs and focuses the box); To-dos is new: one-line
+  add at messaging speed, optional due date, due-first sort with
+  dateless items sinking (pure logic in `js/todos-view.js`,
+  Node-tested like its siblings), overdue in red, round-checkbox
+  check-off, collapsible done list. The app always opens on Money —
+  same rationale as v1.1's entry-first layout.
+- **RLS deviation, deliberate.** `todos` allows household-wide
+  update/delete (expenses are edit-your-own): completing — or
+  clearing — the other person's item is the entire point of a shared
+  list. Recorded in the migration file itself.
+
+Verified locally (mobile viewport, tab switching, sort/overdue logic
+in-browser, zero console errors, 19/19 Node tests). NOT yet merged:
+the migration (`db/migrations/2026-08-12-todos-v1_2.sql`) must run in
+the Supabase SQL editor first, then merge → Pages deploy → phone
+check. Note for that check: cache-first means the SECOND launch after
+deploy shows v1.2.0 in the footer — the first launch still serves the
+old build. That's the feature working, not the deploy failing.

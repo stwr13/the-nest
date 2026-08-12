@@ -10,28 +10,25 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-08-02 (resume here)
+## Open decisions — board as of 2026-08-12 (resume here)
 
-**v1.1 is CLOSED** (Shawn, 2026-08-02): phone check verified the
-cold-open fix, `v1.1` tagged as the rollback anchor, and the
-`backup_*_20260729` tables dropped (Shawn-approved in chat; verified
-after — public schema is back to exactly categories/expenses/ideas).
+**v1.2 is LOCKED and BUILT on branch `v1.2`** (Shawn, 2026-08-12 —
+all four open calls answered in one sitting): Ship 1 only · piece 0
+first (version marker + cache-first SW, both shipped in the branch) ·
+branch-then-merge workflow (`v1.1` tag stays the rollback anchor; a
+separate "Nest 2.0" app was rejected — git protects the code, a fork
+would split the shared database) · scroll-jank one-liner waived
+(neither phone feels it; re-raise only if felt). Scope lives in
+SPEC.md's v1.2 section; build record in JOURNEY.md 2026-08-12.
 
-Shawn's calls, blocking the next build:
+Blocking the merge:
 
-1. **Lock v1.2 "second module"** — both ships / Ship 1 only / keep
-   ideating. Includes the roadmap reorder putting to-dos ahead of
-   zero-touch capture. Recommendation on file: lock Ship 1 only.
-   Debrief 2026-08-02 adds a piece-0 candidate: version marker +
-   cache-first SW (platform hygiene that makes captures diagnosable).
-2. **Service worker: cache-first or stay network-first?** Today every
-   open waits on the network for the shell even when cached.
-   Cache-first = instant/offline opens, but updates land one launch
-   later — the lag that made Claire's build ambiguous. Pairs with the
-   in-app version marker idea.
-3. **`background-attachment: fixed` on the body gradient** — known
-   iOS scroll-jank source; one-line removal, near-invisible change.
-   Waiting on whether scrolling actually feels rough.
+1. **Run the todos migration** —
+   `db/migrations/2026-08-12-todos-v1_2.sql` in the Supabase SQL
+   editor (additive only; household-wide update/delete is deliberate —
+   rationale in the file). Then merge `v1.2` → main, phone-check.
+   Cache-first caveat for that check: the footer shows v1.2.0 on the
+   SECOND launch after deploy — the first still serves the old build.
 
 Household / passive:
 
