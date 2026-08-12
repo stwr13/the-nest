@@ -71,6 +71,13 @@ const todoEmpty = document.getElementById("todo-empty");
 const todoList = document.getElementById("todo-list");
 const todoDoneToggle = document.getElementById("todo-done-toggle");
 const todoDoneList = document.getElementById("todo-done-list");
+const buyForm = document.getElementById("buy-form");
+const buyStatus = document.getElementById("buy-status");
+const buySubmit = document.getElementById("buy-submit");
+const buyEmpty = document.getElementById("buy-empty");
+const buyList = document.getElementById("buy-list");
+const buyDoneToggle = document.getElementById("buy-done-toggle");
+const buyDoneList = document.getElementById("buy-done-list");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -904,11 +911,13 @@ function showLedgerStatus(message) {
 const tabPanels = {
   money: document.getElementById("tab-money"),
   todos: document.getElementById("tab-todos"),
+  buy: document.getElementById("tab-buy"),
   ideas: document.getElementById("tab-ideas"),
 };
 const tabButtons = {
   money: document.getElementById("tab-btn-money"),
   todos: document.getElementById("tab-btn-todos"),
+  buy: document.getElementById("tab-btn-buy"),
   ideas: document.getElementById("tab-btn-ideas"),
 };
 
@@ -924,9 +933,14 @@ for (const [name, button] of Object.entries(tabButtons)) {
   button.addEventListener("click", () => showTab(name));
 }
 
-// ── to-dos: one shared household list (v1.2 ship 1) ──────────────────
+// ── to-dos + to-buy: two shared household lists (v1.2 ship 1 / v1.3) ─
+// One table backs both; `list` discriminates. The shopping list exists
+// because the household was already running it over Telegram — this
+// brings that workflow home (2026-08-12).
 
-let doneOpen = false; // collapsed by default; the open list is the point
+let todosCacheRows = [];
+let doneOpenTodo = false; // collapsed by default; the open list is the point
+let doneOpenBuy = false;
 
 todoForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -967,19 +981,65 @@ async function refreshTodos() {
 }
 
 function renderTodos(todos) {
-  const { open, done } = todosView(todos, todayISO());
-  todoEmpty.hidden = open.length > 0;
-  todoList.replaceChildren(...open.map(renderTodo));
-  todoDoneToggle.hidden = done.length === 0;
-  todoDoneToggle.textContent = `${doneOpen ? "Hide" : "Show"} done (${done.length})`;
-  todoDoneList.hidden = !doneOpen || done.length === 0;
-  todoDoneList.replaceChildren(...done.map(renderTodo));
+  todosCacheRows = todos;
+  const t = todosView(todos, todayISO(), "todo");
+  todoEmpty.hidden = t.open.length > 0;
+  todoList.replaceChildren(...t.open.map(renderTodo));
+  todoDoneToggle.hidden = t.done.length === 0;
+  todoDoneToggle.textContent = `${doneOpenTodo ? "Hide" : "Show"} done (${t.done.length})`;
+  todoDoneList.hidden = !doneOpenTodo || t.done.length === 0;
+  todoDoneList.replaceChildren(...t.done.map(renderTodo));
+
+  const s = todosView(todos, todayISO(), "shopping");
+  buyEmpty.hidden = s.open.length > 0;
+  buyList.replaceChildren(...s.open.map(renderTodo));
+  buyDoneToggle.hidden = s.done.length === 0;
+  buyDoneToggle.textContent = `${doneOpenBuy ? "Hide" : "Show"} bought (${s.done.length})`;
+  buyDoneList.hidden = !doneOpenBuy || s.done.length === 0;
+  buyDoneList.replaceChildren(...s.done.map(renderTodo));
 }
 
+// toggles re-render from cache — no refetch for a view change
 todoDoneToggle.addEventListener("click", () => {
-  doneOpen = !doneOpen;
-  refreshTodos();
+  doneOpenTodo = !doneOpenTodo;
+  renderTodos(todosCacheRows);
 });
+
+buyDoneToggle.addEventListener("click", () => {
+  doneOpenBuy = !doneOpenBuy;
+  renderTodos(todosCacheRows);
+});
+
+buyForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showBuyStatus(null);
+  buySubmit.disabled = true;
+  buySubmit.textContent = "Adding…";
+  try {
+    await addTodo({
+      body: buyForm.body.value.trim(),
+      list: "shopping",
+      urgent: buyForm.urgent.checked,
+      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+    });
+    buyForm.reset();
+    await refreshTodos();
+  } catch (error) {
+    showBuyStatus(
+      error.message?.includes("fetch")
+        ? "No connection — item not saved."
+        : `Couldn't save: ${error.message}`,
+    );
+  } finally {
+    buySubmit.disabled = false;
+    buySubmit.textContent = "Add";
+  }
+});
+
+function showBuyStatus(message) {
+  buyStatus.textContent = message ?? "";
+  buyStatus.hidden = !message;
+}
 
 function renderTodo(todo) {
   const isDone = Boolean(todo.done_at);
@@ -1014,8 +1074,9 @@ function renderTodo(todo) {
   author.textContent = todo.author;
   meta.append(author);
   if (isDone) {
+    const doneWord = (todo.list ?? "todo") === "shopping" ? "bought" : "done";
     const doneMeta = document.createElement("span");
-    doneMeta.textContent = ` · done${todo.done_by ? ` by ${todo.done_by}` : ""} ${dateFmt.format(new Date(todo.done_at))}`;
+    doneMeta.textContent = ` · ${doneWord}${todo.done_by ? ` by ${todo.done_by}` : ""} ${dateFmt.format(new Date(todo.done_at))}`;
     meta.append(doneMeta);
   } else if (todo.due_date) {
     const due = document.createElement("span");

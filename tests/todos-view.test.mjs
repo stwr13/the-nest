@@ -80,6 +80,20 @@ test("urgent pins above everything — even a dateless urgent beats an overdue d
   assert.deepEqual(open.map((x) => x.id), [3, 2, 1, 4]);
 });
 
+test("list split: shopping items stay out of the to-do view and vice versa", () => {
+  const rows = [
+    { ...t(1, "2026-08-01T10:00:00Z"), list: "todo" },
+    { ...t(2, "2026-08-02T10:00:00Z"), list: "shopping" },
+    { ...t(3, "2026-08-03T10:00:00Z", null, "2026-08-10T09:00:00Z"), list: "shopping" },
+    t(4, "2026-08-04T10:00:00Z"), // no list field: pre-migration row = to-do
+  ];
+  const todoView = todosView(rows, TODAY);
+  const shopView = todosView(rows, TODAY, "shopping");
+  assert.deepEqual(todoView.open.map((x) => x.id), [1, 4]);
+  assert.deepEqual(shopView.open.map((x) => x.id), [2]);
+  assert.deepEqual(shopView.done.map((x) => x.id), [3]);
+});
+
 test("rows without an urgent field (pre-migration shape) sort as not urgent", () => {
   const legacy = { id: 9, created_at: "2026-08-01T09:00:00Z", due_date: null, done_at: null };
   const { open } = todosView([legacy, t(2, "2026-08-02T10:00:00Z", null, null, true)], TODAY);

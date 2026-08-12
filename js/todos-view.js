@@ -6,8 +6,11 @@
 // "Overdue" is computed against the caller's today so tests control
 // the clock.
 
-export function todosView(todos, todayIso) {
-  const open = todos
+// v1.3: one table backs two lists — `list` discriminates ('todo' |
+// 'shopping'); rows predating the column count as to-dos.
+export function todosView(todos, todayIso, list = "todo") {
+  const inList = todos.filter((t) => (t.list ?? "todo") === list);
+  const open = inList
     .filter((t) => !t.done_at)
     .sort(
       (a, b) =>
@@ -17,7 +20,7 @@ export function todosView(todos, todayIso) {
         a.id - b.id,
     )
     .map((t) => ({ ...t, overdue: Boolean(t.due_date && t.due_date < todayIso) }));
-  const done = todos
+  const done = inList
     .filter((t) => t.done_at)
     .sort((a, b) => b.done_at.localeCompare(a.done_at) || b.id - a.id);
   return { open, done };

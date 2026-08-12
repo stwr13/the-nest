@@ -447,3 +447,24 @@ The second raise — a separate to-buy/shopping list against future
 overcrowding — was deliberately NOT built: the list is hours old, and
 the SPEC rule (usage, not imagination, earns a place) exists for
 exactly this. Parked in IDEAS with its reasoning.
+
+## 2026-08-12 (v1.3.0) — To-buy list: the Telegram workflow comes home
+
+The shopping list parked hours earlier under the two-week rule got
+unparked by better evidence: Shawn surfaced that the household ALREADY
+runs a shopping/reminder list — over Telegram. That flips the entry
+from prediction to observed behaviour predating the app; the rule is
+"usage earns a place," and the usage existed, just elsewhere. Built as
+a fourth tab (🛒 To-buy): same table with an additive `list`
+discriminator ('todo'|'shopping'), same check-off/urgent/delete
+machinery, lean form (item + urgent, no due date), check-offs read
+"bought by". Pre-migration rows count as to-dos; old clients
+unaffected. 27/27 tests. Version 1.3.0.
+
+Also scoped in conversation: **reminders**. Two routes on the table —
+Telegram bot (pg_cron + Edge Function posting into the household chat;
+token server-side per the no-secrets rule; recommended first: it's the
+channel they already use, and it opens the later bot→Nest capture
+lane) vs iOS Web Push (the Ship 2 spec; heavier, per-device permission
++ VAPID + subscription storage). Awaiting Shawn's go on the Telegram
+route.

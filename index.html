@@ -180,6 +180,27 @@
     </section>
     </div>
 
+    <div id="tab-buy" role="tabpanel" aria-label="To-buy" hidden>
+    <section class="card todo-card">
+      <h2 class="card-title">To-buy</h2>
+      <form id="buy-form">
+        <input id="buy-body" name="body" type="text" maxlength="200" required
+               placeholder="What do we need?"
+               aria-label="New shopping item" autocomplete="off" />
+        <label class="cat-flag">
+          <input id="buy-urgent" name="urgent" type="checkbox" />
+          <span>Urgent — need it soon</span>
+        </label>
+        <p id="buy-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="buy-submit" class="btn btn-primary">Add</button>
+      </form>
+      <p id="buy-empty" class="muted" hidden>Nothing on the list.</p>
+      <ul id="buy-list" class="ledger todo-list"></ul>
+      <button type="button" id="buy-done-toggle" class="btn btn-ghost btn-small todo-done-toggle" hidden></button>
+      <ul id="buy-done-list" class="ledger todo-list todo-done-list" hidden></ul>
+    </section>
+    </div>
+
     <div id="tab-ideas" role="tabpanel" aria-label="Ideas" hidden>
     <section class="card idea-card">
       <h2 class="card-title">Ideas &amp; friction</h2>
@@ -207,6 +228,10 @@
       <button type="button" id="tab-btn-todos" class="tab-btn" role="tab"
               aria-controls="tab-todos" aria-selected="false">
         <span class="tab-icon" aria-hidden="true">✅</span>To-dos
+      </button>
+      <button type="button" id="tab-btn-buy" class="tab-btn" role="tab"
+              aria-controls="tab-buy" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🛒</span>To-buy
       </button>
       <button type="button" id="tab-btn-ideas" class="tab-btn" role="tab"
               aria-controls="tab-ideas" aria-selected="false">
