@@ -791,11 +791,14 @@ function showCatDeleteStatus(message) {
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────
 
-// Header 💡: capture must stay one tap away. Since v1.2 the card lives
-// on its own tab; focus() inside the tap handler opens the keyboard.
+// Header 💡: capture must stay one tap away. The card lives at the
+// bottom of Money (v1.3.2 — its tab was noise, Shawn's call); focus()
+// inside the tap handler opens the keyboard, and on iOS the keyboard
+// animation is what actually scrolls the card into view.
 document.getElementById("idea-jump").addEventListener("click", () => {
-  showTab("ideas");
+  showTab("money");
   ideaForm.body.focus({ preventScroll: true });
+  ideaForm.body.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 ideaForm.addEventListener("submit", async (event) => {
@@ -914,13 +917,11 @@ const tabPanels = {
   money: document.getElementById("tab-money"),
   todos: document.getElementById("tab-todos"),
   buy: document.getElementById("tab-buy"),
-  ideas: document.getElementById("tab-ideas"),
 };
 const tabButtons = {
   money: document.getElementById("tab-btn-money"),
   todos: document.getElementById("tab-btn-todos"),
   buy: document.getElementById("tab-btn-buy"),
-  ideas: document.getElementById("tab-btn-ideas"),
 };
 
 function showTab(name) {

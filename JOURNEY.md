@@ -479,3 +479,14 @@ Delete only; Edit loads the item back into its list's form (body, due
 date, urgent), the button flips to Update with a cancel. Urgency,
 wording, and due-date changes are now one affordance instead of three.
 No schema change. 27/27 tests. Version 1.3.1.
+
+## 2026-08-12 (v1.3.2) — three tabs, money bag
+
+Shawn's trim after a day of tabs: the Ideas tab goes — "no point, it's
+a smaller function" — the capture box returns to the bottom of Money
+where it lived pre-tabs, still one 💡 header tap away (the tap now
+switches to Money, focuses the box, and lets the iOS keyboard animation
+do the scrolling). And the Money icon swaps 💸 → 💰 — a money bag, not
+money flying away, which on reflection was the wrong omen for a
+household ledger. Tab bar: Money · To-dos · To-buy. 27/27 tests.
+Version 1.3.2.
