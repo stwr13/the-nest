@@ -48,6 +48,7 @@
         <button id="sign-out" class="btn btn-ghost">Sign out</button>
       </div>
     </header>
+    <div id="tab-money" role="tabpanel" aria-label="Money">
     <section class="card form-card">
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">
@@ -124,6 +125,7 @@
       <p class="muted cat-hint">Tap one to rename it, change its icon, or remove it.</p>
       <ul id="cat-list" class="cat-list"></ul>
     </section>
+    </div>
 
     <dialog id="cat-dialog" class="cat-dialog">
       <form id="cat-form" novalidate>
@@ -155,6 +157,26 @@
       </form>
     </dialog>
 
+    <div id="tab-todos" role="tabpanel" aria-label="To-dos" hidden>
+    <section class="card todo-card">
+      <h2 class="card-title">To-dos</h2>
+      <form id="todo-form">
+        <input id="todo-body" name="body" type="text" maxlength="200" required
+               placeholder="What needs doing?"
+               aria-label="New to-do" autocomplete="off" />
+        <label for="todo-due">Due <span class="optional">(optional)</span></label>
+        <input id="todo-due" name="due_date" type="date" />
+        <p id="todo-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="todo-submit" class="btn btn-primary">Add</button>
+      </form>
+      <p id="todo-empty" class="muted" hidden>Nothing to do — enjoy it.</p>
+      <ul id="todo-list" class="ledger todo-list"></ul>
+      <button type="button" id="todo-done-toggle" class="btn btn-ghost btn-small todo-done-toggle" hidden></button>
+      <ul id="todo-done-list" class="ledger todo-list todo-done-list" hidden></ul>
+    </section>
+    </div>
+
+    <div id="tab-ideas" role="tabpanel" aria-label="Ideas" hidden>
     <section class="card idea-card">
       <h2 class="card-title">Ideas &amp; friction</h2>
       <p class="muted idea-hint">Something slow, missing, or annoying? Log the itch, not the fix.</p>
@@ -167,10 +189,32 @@
       </form>
       <ul id="idea-list" class="ledger idea-list"></ul>
     </section>
+    </div>
+
+    <footer class="app-footer">
+      <span id="app-version"></span>
+    </footer>
+
+    <nav class="tab-bar" role="tablist" aria-label="Sections">
+      <button type="button" id="tab-btn-money" class="tab-btn" role="tab"
+              aria-controls="tab-money" aria-selected="true">
+        <span class="tab-icon" aria-hidden="true">💸</span>Money
+      </button>
+      <button type="button" id="tab-btn-todos" class="tab-btn" role="tab"
+              aria-controls="tab-todos" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">✅</span>To-dos
+      </button>
+      <button type="button" id="tab-btn-ideas" class="tab-btn" role="tab"
+              aria-controls="tab-ideas" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">💡</span>Ideas
+      </button>
+    </nav>
   </main>
 
-  <!-- vendored Supabase client: defer keeps it off the parse path and
-       guarantees it runs before the (implicitly deferred) module -->
+  <!-- version first (classic, sets window.APP_VERSION), then the
+       vendored Supabase client: defer keeps both off the parse path and
+       guarantees they run before the (implicitly deferred) module -->
+  <script defer src="js/version.js"></script>
   <script defer src="js/vendor/supabase-js-2.111.0.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>

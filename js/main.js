@@ -2,6 +2,7 @@ import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
+import { todosView } from "./todos-view.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
   fetchCategories,
@@ -18,6 +19,10 @@ import {
   fetchIdeas,
   addIdea,
   deleteIdea,
+  fetchTodos,
+  addTodo,
+  updateTodo,
+  deleteTodo,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -58,6 +63,13 @@ const ideaForm = document.getElementById("idea-form");
 const ideaStatus = document.getElementById("idea-status");
 const ideaSubmit = document.getElementById("idea-submit");
 const ideaList = document.getElementById("idea-list");
+const todoForm = document.getElementById("todo-form");
+const todoStatus = document.getElementById("todo-status");
+const todoSubmit = document.getElementById("todo-submit");
+const todoEmpty = document.getElementById("todo-empty");
+const todoList = document.getElementById("todo-list");
+const todoDoneToggle = document.getElementById("todo-done-toggle");
+const todoDoneList = document.getElementById("todo-done-list");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -154,10 +166,11 @@ async function loadApp() {
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
-  // Deliberately separate: the idea box is auxiliary, and its failure
-  // must never take the ledger down with it. Its errors show in its
-  // own card via refreshIdeas' catch.
+  // Deliberately separate: the idea box and to-do list are auxiliary,
+  // and their failures must never take the ledger down with them. Each
+  // shows its errors in its own card via its refresh's catch.
   refreshIdeas();
+  refreshTodos();
 }
 
 async function refresh() {
@@ -655,6 +668,7 @@ function glideTo(element) {
 }
 
 document.getElementById("cat-jump").addEventListener("click", () => {
+  showTab("money"); // the card lives in the Money panel
   glideTo(document.querySelector(".cat-card"));
 });
 
@@ -760,11 +774,11 @@ function showCatDeleteStatus(message) {
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────
 
-// Header 💡: capture must stay one tap away no matter how long the
-// ledger grows. focus() inside the tap handler opens the keyboard.
+// Header 💡: capture must stay one tap away. Since v1.2 the card lives
+// on its own tab; focus() inside the tap handler opens the keyboard.
 document.getElementById("idea-jump").addEventListener("click", () => {
+  showTab("ideas");
   ideaForm.body.focus({ preventScroll: true });
-  ideaForm.body.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 ideaForm.addEventListener("submit", async (event) => {
@@ -875,7 +889,174 @@ function showLedgerStatus(message) {
   ledgerStatus.hidden = !message;
 }
 
+// ── tabs (v1.2 ship 1) ───────────────────────────────────────────────
+
+// Always opens on Money — the app is an input tool first (the same
+// rationale as v1.1's entry-first layout); the other tabs are one tap.
+const tabPanels = {
+  money: document.getElementById("tab-money"),
+  todos: document.getElementById("tab-todos"),
+  ideas: document.getElementById("tab-ideas"),
+};
+const tabButtons = {
+  money: document.getElementById("tab-btn-money"),
+  todos: document.getElementById("tab-btn-todos"),
+  ideas: document.getElementById("tab-btn-ideas"),
+};
+
+function showTab(name) {
+  for (const key of Object.keys(tabPanels)) {
+    tabPanels[key].hidden = key !== name;
+    tabButtons[key].setAttribute("aria-selected", String(key === name));
+  }
+  window.scrollTo(0, 0);
+}
+
+for (const [name, button] of Object.entries(tabButtons)) {
+  button.addEventListener("click", () => showTab(name));
+}
+
+// ── to-dos: one shared household list (v1.2 ship 1) ──────────────────
+
+let doneOpen = false; // collapsed by default; the open list is the point
+
+todoForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  showTodoStatus(null);
+  todoSubmit.disabled = true;
+  todoSubmit.textContent = "Adding…";
+  try {
+    await addTodo({
+      body: todoForm.body.value.trim(),
+      due_date: todoForm.due_date.value || null,
+      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+    });
+    todoForm.reset();
+    await refreshTodos();
+  } catch (error) {
+    showTodoStatus(
+      error.message?.includes("fetch")
+        ? "No connection — to-do not saved."
+        : `Couldn't save: ${error.message}`,
+    );
+  } finally {
+    todoSubmit.disabled = false;
+    todoSubmit.textContent = "Add";
+  }
+});
+
+async function refreshTodos() {
+  try {
+    renderTodos(await fetchTodos());
+  } catch (error) {
+    showTodoStatus(
+      error.message?.includes("fetch")
+        ? "No connection — couldn't load to-dos."
+        : `Couldn't load to-dos: ${error.message}`,
+    );
+  }
+}
+
+function renderTodos(todos) {
+  const { open, done } = todosView(todos, todayISO());
+  todoEmpty.hidden = open.length > 0;
+  todoList.replaceChildren(...open.map(renderTodo));
+  todoDoneToggle.hidden = done.length === 0;
+  todoDoneToggle.textContent = `${doneOpen ? "Hide" : "Show"} done (${done.length})`;
+  todoDoneList.hidden = !doneOpen || done.length === 0;
+  todoDoneList.replaceChildren(...done.map(renderTodo));
+}
+
+todoDoneToggle.addEventListener("click", () => {
+  doneOpen = !doneOpen;
+  refreshTodos();
+});
+
+function renderTodo(todo) {
+  const isDone = Boolean(todo.done_at);
+  const li = document.createElement("li");
+  if (isDone) li.className = "todo-done";
+
+  // The tap target IS the checkbox — either account may check off (or
+  // reopen) either person's item; RLS permits it by design.
+  const check = document.createElement("button");
+  check.type = "button";
+  check.className = "todo-check";
+  check.setAttribute("aria-label", isDone ? "Mark as not done" : "Mark as done");
+  check.textContent = isDone ? "✓" : "";
+  check.addEventListener("click", () => toggleTodo(todo));
+
+  const main = document.createElement("div");
+  main.className = "entry-main";
+
+  const body = document.createElement("p");
+  body.className = "entry-title todo-body";
+  body.textContent = todo.body;
+
+  const meta = document.createElement("p");
+  meta.className = "entry-meta";
+  const author = document.createElement("span");
+  author.textContent = todo.author;
+  meta.append(author);
+  if (isDone) {
+    const doneMeta = document.createElement("span");
+    doneMeta.textContent = ` · done${todo.done_by ? ` by ${todo.done_by}` : ""} ${dateFmt.format(new Date(todo.done_at))}`;
+    meta.append(doneMeta);
+  } else if (todo.due_date) {
+    const due = document.createElement("span");
+    due.className = todo.overdue ? "todo-due-overdue" : "";
+    due.textContent = ` · ${todo.overdue ? "overdue — was due" : "due"} ${dateFmt.format(new Date(todo.due_date + "T00:00:00"))}`;
+    meta.append(due);
+  }
+  main.append(body, meta);
+
+  const side = document.createElement("div");
+  side.className = "entry-side";
+  side.append(entryButton("Delete", () => confirmDeleteTodo(todo)));
+
+  li.append(check, main, side);
+  return li;
+}
+
+async function toggleTodo(todo) {
+  const fields = todo.done_at
+    ? { done_at: null, done_by: null }
+    : {
+        done_at: new Date().toISOString(),
+        done_by: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+      };
+  try {
+    await updateTodo(todo.id, fields);
+    await refreshTodos();
+  } catch (error) {
+    showTodoStatus(
+      error.message?.includes("fetch")
+        ? "No connection — not updated."
+        : `Couldn't update: ${error.message}`,
+    );
+  }
+}
+
+async function confirmDeleteTodo(todo) {
+  if (!window.confirm(`Delete "${todo.body}"?`)) return;
+  try {
+    await deleteTodo(todo.id);
+    await refreshTodos();
+  } catch (error) {
+    showTodoStatus(`Couldn't delete: ${error.message}`);
+  }
+}
+
+function showTodoStatus(message) {
+  todoStatus.textContent = message ?? "";
+  todoStatus.hidden = !message;
+}
+
 // ── PWA ───────────────────────────────────────────────────────────────
+
+// Version marker (v1.2 piece 0): set by js/version.js, shown so "which
+// build is this phone on?" is answerable from a screenshot.
+document.getElementById("app-version").textContent = `v${self.APP_VERSION}`;
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker

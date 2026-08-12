@@ -1,9 +1,12 @@
-// Strategy: network-first for our own files (staleness impossible while
-// online; cache is the offline fallback) and NO caching for Supabase —
-// data failures must stay visible, never masked by a stale cache
-// (SPEC: no offline entry). The esm.sh branch is gone: the Supabase
-// client is vendored and precached with the rest of the shell.
-const CACHE = "nest-v2";
+// Strategy (v1.2 piece 0): CACHE-FIRST for our own files — the shell
+// opens instantly from cache (and offline), while a background fetch
+// refreshes the cache so the NEXT launch is current. The accepted
+// trade-off: an update lands one launch late; the version marker in the
+// footer (js/version.js) is what makes that lag diagnosable instead of
+// ambiguous. Supabase requests are never cached — data failures must
+// stay visible, never masked by a stale cache (SPEC: no offline entry).
+importScripts("js/version.js");
+const CACHE = `nest-${self.APP_VERSION}`;
 const SHELL = [
   "./",
   "index.html",
@@ -15,7 +18,9 @@ const SHELL = [
   "js/identity.js",
   "js/dashboard-math.js",
   "js/ledger-view.js",
+  "js/todos-view.js",
   "js/amount-expr.js",
+  "js/version.js",
   "js/vendor/supabase-js-2.111.0.js",
   "manifest.webmanifest",
   "assets/icons/icon-192.png",
@@ -42,19 +47,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.hostname.endsWith("supabase.co")) return;
   if (url.origin === self.location.origin) {
-    event.respondWith(networkFirst(event.request));
+    event.respondWith(cacheFirst(event.request));
   }
 });
 
-async function networkFirst(request) {
+async function cacheFirst(request) {
   const cache = await caches.open(CACHE);
-  try {
-    const fresh = await fetch(request);
+  const cached = await cache.match(request, { ignoreSearch: true });
+  // Kick off the refresh either way; when we serve from cache it runs
+  // in the background and only updates the copy the next launch reads.
+  const refresh = fetch(request).then((fresh) => {
     if (fresh.ok) cache.put(request, fresh.clone());
     return fresh;
-  } catch (error) {
-    const cached = await cache.match(request, { ignoreSearch: true });
-    if (cached) return cached;
-    throw error;
+  });
+  if (cached) {
+    refresh.catch(() => {}); // offline: the cached copy already answered
+    return cached;
   }
+  return refresh;
 }

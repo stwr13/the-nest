@@ -113,6 +113,37 @@ export async function reassignAndDeleteCategory(fromId, toId) {
   if (error) throw error;
 }
 
+// ── to-dos: one shared household list (v1.2 ship 1) ──────────────────
+// Sorting/overdue live in todos-view.js (pure, Node-tested); the fetch
+// order is just a stable base.
+
+export async function fetchTodos() {
+  const { data, error } = await supabase
+    .from("todos")
+    .select("id, body, due_date, author, done_at, done_by, created_by, created_at")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function addTodo(fields) {
+  const { error } = await supabase.from("todos").insert(fields);
+  if (error) throw error;
+}
+
+// Check-off and un-check both land here; RLS lets either account update
+// any row — completing the other person's item is the point of a
+// shared list (see db/migrations/2026-08-12-todos-v1_2.sql).
+export async function updateTodo(id, fields) {
+  const { error } = await supabase.from("todos").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteTodo(id) {
+  const { error } = await supabase.from("todos").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // ── ideas: raw friction inbox, curated into IDEAS.md at scoping time ──
 
 export async function fetchIdeas() {

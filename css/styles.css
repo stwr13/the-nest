@@ -386,6 +386,82 @@ select:focus {
 .idea-list { margin-top: 1rem; }
 .idea-list .entry-title { font-weight: 400; }
 
+/* ── tab bar (v1.2 ship 1) ── */
+/* room for the fixed bar + iOS home-indicator inset */
+#app-view { padding-bottom: calc(64px + env(safe-area-inset-bottom) + 1rem); }
+
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--green-soft);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 16px rgb(41 88 63 / 0.08);
+}
+
+.tab-btn {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  min-height: 56px;
+  padding: 0.4rem 0;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-btn[aria-selected="true"] { color: var(--green-deep); background: var(--green-soft); }
+.tab-icon { font-size: 1.25rem; line-height: 1; }
+/* unselected tab icons dim so the active one reads at a glance */
+.tab-btn[aria-selected="false"] .tab-icon { filter: grayscale(1) opacity(0.55); }
+
+/* ── to-dos (v1.2 ship 1) ── */
+.todo-list { margin-top: 1rem; }
+/* three flex children (check · text · delete): the text takes the slack */
+.todo-list li .entry-main { flex: 1; }
+
+.todo-check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: #fff;
+  border: 2px solid var(--green);
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.todo-check:active { background: var(--green-soft); }
+.todo-done .todo-check { background: var(--green); }
+.todo-done .todo-body { text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
+.todo-due-overdue { color: var(--danger); font-weight: 700; }
+.todo-done-toggle { margin-top: 1rem; }
+.todo-done-list { margin-top: 0.5rem; }
+
+/* ── version marker (v1.2 piece 0) ── */
+.app-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
 @media (min-width: 700px) {
   .view { padding: 2rem; }
   #app-view { max-width: 40rem; margin: 0 auto; }
