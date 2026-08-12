@@ -19,6 +19,7 @@ const SHELL = [
   "js/dashboard-math.js",
   "js/ledger-view.js",
   "js/todos-view.js",
+  "js/category-default.js",
   "js/amount-expr.js",
   "js/version.js",
   "js/vendor/supabase-js-2.111.0.js",

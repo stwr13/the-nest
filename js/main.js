@@ -3,6 +3,7 @@ import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
+import { defaultCategoryId } from "./category-default.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
   fetchCategories,
@@ -162,6 +163,13 @@ async function loadApp() {
     categoriesCache = categories;
     renderCategoryOptions();
     renderCategoryManager();
+    // cold open lands on the category this user actually logs most
+    // (v1.2.1 — Shawn: daily use is Eating out, picking it every time
+    // is friction). Within a session, the last pick still sticks.
+    const usual = defaultCategoryId(expenses, currentUser?.id, todayISO());
+    if (usual !== null && [...categorySelect.options].some((o) => o.value === String(usual))) {
+      categorySelect.value = String(usual);
+    }
     renderAll(expenses);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));

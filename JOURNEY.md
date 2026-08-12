@@ -401,3 +401,17 @@ the Supabase SQL editor first, then merge → Pages deploy → phone
 check. Note for that check: cache-first means the SECOND launch after
 deploy shows v1.2.0 in the footer — the first launch still serves the
 old build. That's the feature working, not the deploy failing.
+
+## 2026-08-12 (later) — v1.2.1: the form opens on your usual category
+
+Raised by Shawn during the v1.2 phone-check wait: "can we have Eating
+out as the default — on a daily we use that in comparison to others."
+Built as a smart default rather than a hardcode: the expense form's
+cold open lands on the category the signed-in user logs most (their
+own entries, last 60 days, all-time fallback — pure logic in
+`js/category-default.js`, Node-tested). Today that IS Eating out for
+both accounts (72% of the ledger); if habits change or the category
+is renamed, the default follows without a code change. Per-person by
+design — Claire's habit sets Claire's default. Within a session the
+last pick still sticks (existing behaviour). Version bumped to 1.2.1
+— the phone-check target in the footer moves accordingly.
