@@ -415,3 +415,17 @@ is renamed, the default follows without a code change. Per-person by
 design — Claire's habit sets Claire's default. Within a session the
 last pick still sticks (existing behaviour). Version bumped to 1.2.1
 — the phone-check target in the footer moves accordingly.
+
+## 2026-08-12 (close) — phone check: Shawn verified; the one-time re-add
+
+The installed PWA would not pick up the deploy — WebKit's known sticky
+cache on standalone home-screen apps, the exact disease piece 0 cures,
+but the phone had to swallow the new build once to get the cure.
+Browser-on-phone confirmed the deploy reached the device (isolating it
+to the installed app's cache), so: delete icon → re-add from the share
+sheet. One-time cost; data untouched in Supabase. Shawn is on v1.2.1
+(Chrome on iOS — same WebKit), tabs live, smart default live, first
+to-do added. Pending to fully close ship 1: Claire's cross-account
+check-off (exercises the household-wide todos RLS) and her own
+re-add, no urgency — her old build keeps working against the
+migrated database.
