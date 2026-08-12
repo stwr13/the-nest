@@ -265,9 +265,16 @@ speculation.
   function (per-phone, fragile). Existing duplicate warning covers
   alert-vs-manual overlap.
 
-- **Separate shopping / to-buy list** (raised 2026-08-12 by Shawn,
-  same-day as ship 1 going live, anticipating to-do overcrowding).
-  Deliberately parked, not rejected: the to-do list was hours old at
+- **Separate shopping / to-buy list** — ~~parked~~ **BUILT same day
+  (v1.3.0, the 🛒 To-buy tab)**: the park lasted about an hour, until
+  Shawn surfaced that the household already runs this list over
+  Telegram — observed behaviour predating the app beats the two-week
+  wait, which exists to filter predictions, not to delay moving real
+  usage home. Next lane it opens: **Telegram bot reminders** (pg_cron +
+  Edge Function → household chat; recommended over iOS Web Push as the
+  first reminder channel; awaiting Shawn's go). Original park
+  reasoning kept below for the record.
+  Original entry: deliberately parked, not rejected: the to-do list was hours old at
   the time — crowding is a prediction, and the SPEC two-week rule
   exists for exactly this. Mitigations already in place: done-list
   collapses, due-first + urgent-first sort keeps the top relevant.
