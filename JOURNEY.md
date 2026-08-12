@@ -429,3 +429,21 @@ to-do added. Pending to fully close ship 1: Claire's cross-account
 check-off (exercises the household-wide todos RLS) and her own
 re-add, no urgency — her old build keeps working against the
 migrated database.
+
+## 2026-08-12 (v1.2.2) — ship 1 CLOSED by the household test; urgent flag
+
+Claire checked off Shawn's to-do from her account — the
+household-wide todos RLS verified in real use, closing ship 1's last
+gate. First live-use raises arrived within the hour, and the fast one
+shipped same-session: **urgent flag** — checkbox on the add form,
+urgent items pin above everything (even dateless ones above overdue
+dated ones — that gap was the ask), red URGENT tag, and an
+Urgent/Not-urgent toggle on open items for either account, because
+"this became urgent" is half the value. Column added additively
+(boolean default false — old clients unaffected); sort logic stays
+pure and Node-tested (26/26). Version 1.2.2.
+
+The second raise — a separate to-buy/shopping list against future
+overcrowding — was deliberately NOT built: the list is hours old, and
+the SPEC rule (usage, not imagination, earns a place) exists for
+exactly this. Parked in IDEAS with its reasoning.

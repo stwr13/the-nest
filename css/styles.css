@@ -450,6 +450,7 @@ select:focus {
 .todo-done .todo-check { background: var(--green); }
 .todo-done .todo-body { text-decoration: line-through; color: var(--ink-soft); font-weight: 400; }
 .todo-due-overdue { color: var(--danger); font-weight: 700; }
+.todo-urgent-tag { color: var(--danger); font-weight: 700; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.03em; }
 .todo-done-toggle { margin-top: 1rem; }
 .todo-done-list { margin-top: 0.5rem; }
 

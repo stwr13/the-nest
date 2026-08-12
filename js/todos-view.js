@@ -1,14 +1,17 @@
 // Pure to-do presentation logic (v1.2 ship 1), extracted for Node
-// tests. Open items sort due-first: earliest due date at the top,
-// dateless ones after, ties oldest-added first (a dump list grows at
-// the bottom). Done items sort newest-done-first. "Overdue" is computed
-// against the caller's today so tests control the clock.
+// tests. Open items sort urgent-first (v1.2.2: an urgent item pins
+// above every non-urgent one, dated or not), then due-first: earliest
+// due date at the top, dateless ones after, ties oldest-added first (a
+// dump list grows at the bottom). Done items sort newest-done-first.
+// "Overdue" is computed against the caller's today so tests control
+// the clock.
 
 export function todosView(todos, todayIso) {
   const open = todos
     .filter((t) => !t.done_at)
     .sort(
       (a, b) =>
+        (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) ||
         compareDue(a.due_date, b.due_date) ||
         a.created_at.localeCompare(b.created_at) ||
         a.id - b.id,

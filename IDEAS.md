@@ -264,3 +264,15 @@ speculation.
   = iOS Shortcuts message-trigger automation posting to the same
   function (per-phone, fragile). Existing duplicate warning covers
   alert-vs-manual overlap.
+
+- **Separate shopping / to-buy list** (raised 2026-08-12 by Shawn,
+  same-day as ship 1 going live, anticipating to-do overcrowding).
+  Deliberately parked, not rejected: the to-do list was hours old at
+  the time — crowding is a prediction, and the SPEC two-week rule
+  exists for exactly this. Mitigations already in place: done-list
+  collapses, due-first + urgent-first sort keeps the top relevant.
+  If the list crowds in real use, a shopping list is a genuinely
+  different interaction (in-store checking, no dates, maybe
+  quantities) and deserves its own shape — not a category bolted onto
+  to-dos. Evidence to watch: either user scrolling to find items, or
+  purchase-type entries drowning task-type entries.

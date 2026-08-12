@@ -166,6 +166,10 @@
                aria-label="New to-do" autocomplete="off" />
         <label for="todo-due">Due <span class="optional">(optional)</span></label>
         <input id="todo-due" name="due_date" type="date" />
+        <label class="cat-flag">
+          <input id="todo-urgent" name="urgent" type="checkbox" />
+          <span>Urgent — keep it on top</span>
+        </label>
         <p id="todo-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="todo-submit" class="btn btn-primary">Add</button>
       </form>

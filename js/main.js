@@ -937,6 +937,7 @@ todoForm.addEventListener("submit", async (event) => {
     await addTodo({
       body: todoForm.body.value.trim(),
       due_date: todoForm.due_date.value || null,
+      urgent: todoForm.urgent.checked,
       author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
     });
     todoForm.reset();
@@ -1003,6 +1004,12 @@ function renderTodo(todo) {
 
   const meta = document.createElement("p");
   meta.className = "entry-meta";
+  if (todo.urgent && !isDone) {
+    const tag = document.createElement("span");
+    tag.className = "todo-urgent-tag";
+    tag.textContent = "urgent · ";
+    meta.append(tag);
+  }
   const author = document.createElement("span");
   author.textContent = todo.author;
   meta.append(author);
@@ -1020,10 +1027,30 @@ function renderTodo(todo) {
 
   const side = document.createElement("div");
   side.className = "entry-side";
+  // "this became urgent" is half the flag's value — open items can be
+  // marked/unmarked by either account (household-wide update RLS)
+  if (!isDone) {
+    side.append(
+      entryButton(todo.urgent ? "Not urgent" : "Urgent", () => setTodoUrgent(todo)),
+    );
+  }
   side.append(entryButton("Delete", () => confirmDeleteTodo(todo)));
 
   li.append(check, main, side);
   return li;
+}
+
+async function setTodoUrgent(todo) {
+  try {
+    await updateTodo(todo.id, { urgent: !todo.urgent });
+    await refreshTodos();
+  } catch (error) {
+    showTodoStatus(
+      error.message?.includes("fetch")
+        ? "No connection — not updated."
+        : `Couldn't update: ${error.message}`,
+    );
+  }
 }
 
 async function toggleTodo(todo) {

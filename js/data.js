@@ -120,7 +120,7 @@ export async function reassignAndDeleteCategory(fromId, toId) {
 export async function fetchTodos() {
   const { data, error } = await supabase
     .from("todos")
-    .select("id, body, due_date, author, done_at, done_by, created_by, created_at")
+    .select("id, body, due_date, urgent, author, done_at, done_by, created_by, created_at")
     .order("created_at", { ascending: true });
   if (error) throw error;
   return data;
