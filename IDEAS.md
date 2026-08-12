@@ -30,6 +30,21 @@ Blocking the merge:
    Cache-first caveat for that check: the footer shows v1.2.0 on the
    SECOND launch after deploy — the first still serves the old build.
 
+**NEXT BUILD — deadline-bound (Shawn, 2026-08-12 sign-off): card
+tracking on expenses, live BEFORE September** so the new month is
+tagged from day one. The need: entries should record WHICH card paid,
+so the household can see where miles are maximized (and where they're
+not). Was explicitly out of scope in v1.0 ("card/miles tagging") —
+real use has now called it up. Shape to decide at next session's
+lock, not tonight: (a) a `cards` table managed in-app like categories
+(name, owner, notes on miles earn) vs a simple text/choice column;
+(b) required on every entry or optional with an "unspecified"
+default; (c) smart per-person default (same pattern as the category
+default — each person's usual card preselected); (d) where the
+readout lives — dashboard split by card, ledger filter, or both;
+(e) whether history needs backfilling or starts clean from September.
+Additive migration either way; old clients keep working.
+
 Household / passive:
 
 4. **Claire's two stragglers** — the tithe + a book purchase still in
