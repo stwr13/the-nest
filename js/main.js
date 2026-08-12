@@ -71,6 +71,7 @@ const todoEmpty = document.getElementById("todo-empty");
 const todoList = document.getElementById("todo-list");
 const todoDoneToggle = document.getElementById("todo-done-toggle");
 const todoDoneList = document.getElementById("todo-done-list");
+const todoCancel = document.getElementById("todo-cancel");
 const buyForm = document.getElementById("buy-form");
 const buyStatus = document.getElementById("buy-status");
 const buySubmit = document.getElementById("buy-submit");
@@ -78,6 +79,7 @@ const buyEmpty = document.getElementById("buy-empty");
 const buyList = document.getElementById("buy-list");
 const buyDoneToggle = document.getElementById("buy-done-toggle");
 const buyDoneList = document.getElementById("buy-done-list");
+const buyCancel = document.getElementById("buy-cancel");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -941,20 +943,32 @@ for (const [name, button] of Object.entries(tabButtons)) {
 let todosCacheRows = [];
 let doneOpenTodo = false; // collapsed by default; the open list is the point
 let doneOpenBuy = false;
+// v1.3.1: items are edited through their list's form (the expense-form
+// pattern) — urgency, wording, and due date all change via Edit, so
+// the row itself carries just Edit/Delete (Shawn: the toggle crowded it)
+let todoEditingId = null;
+let buyEditingId = null;
 
 todoForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showTodoStatus(null);
   todoSubmit.disabled = true;
-  todoSubmit.textContent = "Adding…";
+  todoSubmit.textContent = todoEditingId === null ? "Adding…" : "Updating…";
   try {
-    await addTodo({
+    const fields = {
       body: todoForm.body.value.trim(),
       due_date: todoForm.due_date.value || null,
       urgent: todoForm.urgent.checked,
-      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
-    });
-    todoForm.reset();
+    };
+    if (todoEditingId === null) {
+      await addTodo({
+        ...fields,
+        author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+      });
+    } else {
+      await updateTodo(todoEditingId, fields);
+    }
+    exitTodoEdit();
     await refreshTodos();
   } catch (error) {
     showTodoStatus(
@@ -964,9 +978,18 @@ todoForm.addEventListener("submit", async (event) => {
     );
   } finally {
     todoSubmit.disabled = false;
-    todoSubmit.textContent = "Add";
+    todoSubmit.textContent = todoEditingId === null ? "Add" : "Update";
   }
 });
+
+todoCancel.addEventListener("click", exitTodoEdit);
+
+function exitTodoEdit() {
+  todoEditingId = null;
+  todoForm.reset();
+  todoSubmit.textContent = "Add";
+  todoCancel.hidden = true;
+}
 
 async function refreshTodos() {
   try {
@@ -1014,15 +1037,22 @@ buyForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   showBuyStatus(null);
   buySubmit.disabled = true;
-  buySubmit.textContent = "Adding…";
+  buySubmit.textContent = buyEditingId === null ? "Adding…" : "Updating…";
   try {
-    await addTodo({
+    const fields = {
       body: buyForm.body.value.trim(),
-      list: "shopping",
       urgent: buyForm.urgent.checked,
-      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
-    });
-    buyForm.reset();
+    };
+    if (buyEditingId === null) {
+      await addTodo({
+        ...fields,
+        list: "shopping",
+        author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
+      });
+    } else {
+      await updateTodo(buyEditingId, fields);
+    }
+    exitBuyEdit();
     await refreshTodos();
   } catch (error) {
     showBuyStatus(
@@ -1032,9 +1062,37 @@ buyForm.addEventListener("submit", async (event) => {
     );
   } finally {
     buySubmit.disabled = false;
-    buySubmit.textContent = "Add";
+    buySubmit.textContent = buyEditingId === null ? "Add" : "Update";
   }
 });
+
+buyCancel.addEventListener("click", exitBuyEdit);
+
+function exitBuyEdit() {
+  buyEditingId = null;
+  buyForm.reset();
+  buySubmit.textContent = "Add";
+  buyCancel.hidden = true;
+}
+
+function startTodoEdit(todo) {
+  if ((todo.list ?? "todo") === "shopping") {
+    buyEditingId = todo.id;
+    buyForm.body.value = todo.body;
+    buyForm.urgent.checked = Boolean(todo.urgent);
+    buySubmit.textContent = "Update";
+    buyCancel.hidden = false;
+    glideTo(buyForm);
+  } else {
+    todoEditingId = todo.id;
+    todoForm.body.value = todo.body;
+    todoForm.due_date.value = todo.due_date ?? "";
+    todoForm.urgent.checked = Boolean(todo.urgent);
+    todoSubmit.textContent = "Update";
+    todoCancel.hidden = false;
+    glideTo(todoForm);
+  }
+}
 
 function showBuyStatus(message) {
   buyStatus.textContent = message ?? "";
@@ -1088,12 +1146,11 @@ function renderTodo(todo) {
 
   const side = document.createElement("div");
   side.className = "entry-side";
-  // "this became urgent" is half the flag's value — open items can be
-  // marked/unmarked by either account (household-wide update RLS)
+  // Open rows carry Edit/Delete only (v1.3.1 — the urgent toggle
+  // crowded them); urgency changes ride the Edit flow with everything
+  // else. Household-wide RLS: either account edits either's items.
   if (!isDone) {
-    side.append(
-      entryButton(todo.urgent ? "Not urgent" : "Urgent", () => setTodoUrgent(todo)),
-    );
+    side.append(entryButton("Edit", () => startTodoEdit(todo)));
   }
   side.append(entryButton("Delete", () => confirmDeleteTodo(todo)));
 
@@ -1101,17 +1158,9 @@ function renderTodo(todo) {
   return li;
 }
 
-async function setTodoUrgent(todo) {
-  try {
-    await updateTodo(todo.id, { urgent: !todo.urgent });
-    await refreshTodos();
-  } catch (error) {
-    showTodoStatus(
-      error.message?.includes("fetch")
-        ? "No connection — not updated."
-        : `Couldn't update: ${error.message}`,
-    );
-  }
+// errors surface in the card the tap happened in
+function statusFnFor(todo) {
+  return (todo.list ?? "todo") === "shopping" ? showBuyStatus : showTodoStatus;
 }
 
 async function toggleTodo(todo) {
@@ -1125,7 +1174,7 @@ async function toggleTodo(todo) {
     await updateTodo(todo.id, fields);
     await refreshTodos();
   } catch (error) {
-    showTodoStatus(
+    statusFnFor(todo)(
       error.message?.includes("fetch")
         ? "No connection — not updated."
         : `Couldn't update: ${error.message}`,
@@ -1137,9 +1186,11 @@ async function confirmDeleteTodo(todo) {
   if (!window.confirm(`Delete "${todo.body}"?`)) return;
   try {
     await deleteTodo(todo.id);
+    if (todoEditingId === todo.id) exitTodoEdit();
+    if (buyEditingId === todo.id) exitBuyEdit();
     await refreshTodos();
   } catch (error) {
-    showTodoStatus(`Couldn't delete: ${error.message}`);
+    statusFnFor(todo)(`Couldn't delete: ${error.message}`);
   }
 }
 

@@ -468,3 +468,14 @@ channel they already use, and it opens the later bot→Nest capture
 lane) vs iOS Web Push (the Ship 2 spec; heavier, per-device permission
 + VAPID + subscription storage). Awaiting Shawn's go on the Telegram
 route.
+
+## 2026-08-12 (v1.3.1) — rows uncrowd: Edit/Delete replaces the toggle
+
+Shawn, minutes into using the urgent flag: the checkbox at add-time is
+right, but the per-row Urgent/Not-urgent toggle crowds the list — "once
+it's logged, edit/delete should be there." Replaced with the
+expense-form pattern both users already know: open rows carry Edit and
+Delete only; Edit loads the item back into its list's form (body, due
+date, urgent), the button flips to Update with a cancel. Urgency,
+wording, and due-date changes are now one affordance instead of three.
+No schema change. 27/27 tests. Version 1.3.1.
