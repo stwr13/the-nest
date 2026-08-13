@@ -916,6 +916,12 @@ function renderCards(expenses) {
       row.className = "cat-manage-row card-row";
       row.addEventListener("click", () => openCardDialog(cardsCache.find((x) => x.id === c.id)));
 
+      // CSS-drawn mini card face (v1.6) — colour is per-card data;
+      // real card artwork is off-limits (copyright + self-only CSP)
+      const art = document.createElement("span");
+      art.className = "mini-card";
+      art.style.setProperty("--card-c", c.color ?? "#3a7d5c");
+
       const left = document.createElement("span");
       left.className = "card-row-name";
       left.textContent = c.name;
@@ -936,7 +942,7 @@ function renderCards(expenses) {
       } else {
         right.textContent = `${sgd.format(c.spentCents / 100)} of ${sgdWhole.format(Math.round(c.capCents / 100))}`;
       }
-      row.append(left, right);
+      row.append(art, left, right);
       li.append(row);
 
       if (c.capCents != null) {
@@ -965,6 +971,7 @@ function openCardDialog(card) {
   dialogCardId = card?.id ?? null;
   cardDialogTitle.textContent = card ? "Edit card" : "Add card";
   cardForm.name.value = card?.name ?? "";
+  cardForm.color.value = card?.color ?? "#3a7d5c";
   cardForm.cap.value = card?.cap ?? "";
   cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
@@ -989,6 +996,7 @@ cardForm.addEventListener("submit", async (event) => {
   const fields = {
     name,
     cap,
+    color: cardForm.color.value,
     earn_types: normalizeTags(cardForm.tags.value),
     note: cardForm.note.value.trim() || null,
   };

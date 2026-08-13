@@ -542,3 +542,17 @@ manager order; with a chip active, tag-ranked matches still lead. The
 form's card dropdown deliberately keeps fixed order — pickers that
 reshuffle break muscle memory, and the smart default already does the
 speed work. 34/34 tests. Version 1.5.1.
+
+## 2026-08-14 (v1.6.0) — mini card faces
+
+Shawn: "just words gets boring after a while" — right, and cheap to
+fix. Each card row now leads with a CSS-drawn mini card: the card's
+own colour (a new `color` column, editable via a colour picker in the
+card dialog), a diagonal sheen, gold chip, and network circles.
+Deliberately NOT real card artwork — copyright, plus the repo is
+public and the CSP is self-only by design; a colour evokes the
+physical card without importing anyone's brand assets. Colours loaded
+for all 12 rows (rose-gold Solitaires, OCBC/HSBC twin reds, Citi/
+KrisFlyer navies, DBS pink, platinum PPVs, graphite PRVI, PayNow
+purple). Base colour paints everywhere; the gradient layers on where
+color-mix is supported. 34/34 tests. Version 1.6.0.
