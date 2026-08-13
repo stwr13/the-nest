@@ -529,3 +529,16 @@ cap-hit matches stay VISIBLE flagged "cap hit" (that's the warning
 that saves wasted spend), non-earning cards dim. All-capped-out gets
 said plainly. Chips can never go stale — they come from the cards'
 own data. 34/34 tests. Version 1.5.0.
+
+## 2026-08-13 (v1.5.1) — cards ordered by month spend; buckets split (data-only)
+
+Two refinements from live strategy use. (1) Data-only, no deploy:
+Shawn caught that pooled caps hide the moment that matters — "I won't
+know when I hit $750 dining" — so Solitaire and PPV became two card
+rows each (Dining/Transport at $750, Mobile-tap/Online at $600), true
+per-bucket caps with no schema change. (2) This release: the Cards
+area now orders by the viewed month's spend, busiest first, ties by
+manager order; with a chip active, tag-ranked matches still lead. The
+form's card dropdown deliberately keeps fixed order — pickers that
+reshuffle break muscle memory, and the smart default already does the
+speed work. 34/34 tests. Version 1.5.1.

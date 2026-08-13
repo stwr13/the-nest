@@ -880,12 +880,16 @@ function renderCards(expenses) {
     }),
   );
 
-  let displayOrder = summary;
+  // busiest cards first for the viewed month (v1.5.1, Shawn's ask);
+  // ties fall back to the manager's sort order
+  let displayOrder = [...summary].sort(
+    (a, b) => b.spentCents - a.spentCents || (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
   let matchedIds = null;
   if (activeTag) {
     const { ranked, best } = cardsForTag(summary, activeTag);
     matchedIds = new Set(ranked.map((c) => c.id));
-    displayOrder = [...ranked, ...summary.filter((c) => !matchedIds.has(c.id))];
+    displayOrder = [...ranked, ...displayOrder.filter((c) => !matchedIds.has(c.id))];
     cardsBest.hidden = false;
     if (best) {
       cardsBest.textContent =
