@@ -73,6 +73,9 @@
           </div>
         </fieldset>
 
+        <label for="exp-card">Card</label>
+        <select id="exp-card" name="card_id" required></select>
+
         <label for="exp-date">Date</label>
         <input id="exp-date" name="date" type="date" required />
 
@@ -100,6 +103,16 @@
       <p id="dash-months" class="dash-months" hidden></p>
       <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
       <ul id="dash-cats" class="dash-cats"></ul>
+    </section>
+
+    <section class="card cards-card">
+      <div class="card-head">
+        <h2 class="card-title">Cards <span id="cards-month" class="optional"></span></h2>
+        <button id="card-add" class="btn btn-ghost btn-small">Add</button>
+      </div>
+      <p id="cards-hint" class="muted cat-hint" hidden>Add your miles cards with their monthly caps — this is where "which card should I use?" gets answered.</p>
+      <p id="cards-best" class="cards-best" hidden></p>
+      <ul id="cards-list" class="dash-cats cards-list"></ul>
     </section>
 
     <section class="card ledger-card">
@@ -157,6 +170,22 @@
         <button type="submit" id="cat-save" class="btn btn-primary">Save</button>
         <button type="button" id="cat-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete…</button>
         <button type="button" id="cat-cancel" class="btn btn-ghost btn-block">Cancel</button>
+      </form>
+    </dialog>
+
+    <dialog id="card-dialog" class="cat-dialog">
+      <form id="card-form" novalidate>
+        <h2 id="card-dialog-title" class="card-title">Edit card</h2>
+        <label for="card-name">Name</label>
+        <input id="card-name" name="name" type="text" maxlength="40" required autocomplete="off" />
+        <label for="card-cap">Monthly cap (SGD) <span class="optional">(optional — the 4mpd ceiling)</span></label>
+        <input id="card-cap" name="cap" type="text" inputmode="decimal" maxlength="12" autocomplete="off" placeholder="e.g. 1000" />
+        <label for="card-note">Earn rule <span class="optional">(optional)</span></label>
+        <input id="card-note" name="note" type="text" maxlength="120" autocomplete="off" placeholder="e.g. 4mpd online only" />
+        <p id="card-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="card-save" class="btn btn-primary">Save</button>
+        <button type="button" id="card-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete</button>
+        <button type="button" id="card-cancel" class="btn btn-ghost btn-block">Cancel</button>
       </form>
     </dialog>
 

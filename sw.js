@@ -20,6 +20,7 @@ const SHELL = [
   "js/ledger-view.js",
   "js/todos-view.js",
   "js/category-default.js",
+  "js/cards-math.js",
   "js/amount-expr.js",
   "js/version.js",
   "js/vendor/supabase-js-2.111.0.js",

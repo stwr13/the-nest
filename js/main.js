@@ -3,7 +3,8 @@ import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
-import { defaultCategoryId } from "./category-default.js";
+import { defaultCategoryId, defaultCardId } from "./category-default.js";
+import { cardSummary, bestNextCard } from "./cards-math.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
   fetchCategories,
@@ -24,6 +25,10 @@ import {
   addTodo,
   updateTodo,
   deleteTodo,
+  fetchCards,
+  addCard,
+  updateCard,
+  deleteCard,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -80,6 +85,16 @@ const buyList = document.getElementById("buy-list");
 const buyDoneToggle = document.getElementById("buy-done-toggle");
 const buyDoneList = document.getElementById("buy-done-list");
 const buyCancel = document.getElementById("buy-cancel");
+const cardSelect = document.getElementById("exp-card");
+const cardsMonth = document.getElementById("cards-month");
+const cardsHint = document.getElementById("cards-hint");
+const cardsBest = document.getElementById("cards-best");
+const cardsList = document.getElementById("cards-list");
+const cardDialog = document.getElementById("card-dialog");
+const cardForm = document.getElementById("card-form");
+const cardDialogTitle = document.getElementById("card-dialog-title");
+const cardStatus = document.getElementById("card-status");
+const cardDeleteBtn = document.getElementById("card-delete");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -97,6 +112,8 @@ let editingId = null;
 let appLoaded = false;
 let categoriesCache = [];
 let dialogCategoryId = null; // null while adding a new category
+let cardsCache = [];
+let dialogCardId = null; // null while adding a new card
 let expensesCache = [];
 let dashDate = startOfMonth(new Date()); // which month the dashboard shows
 let ledgerFilter = "all";
@@ -165,19 +182,26 @@ function friendlyAuthError(error) {
 async function loadApp() {
   resetFormDefaults();
   try {
-    const [categories, expenses] = await Promise.all([
+    const [categories, cards, expenses] = await Promise.all([
       fetchCategories(),
+      fetchCards(),
       fetchExpenses(),
     ]);
     categoriesCache = categories;
+    cardsCache = cards;
     renderCategoryOptions();
     renderCategoryManager();
-    // cold open lands on the category this user actually logs most
-    // (v1.2.1 — Shawn: daily use is Eating out, picking it every time
-    // is friction). Within a session, the last pick still sticks.
+    renderCardOptions();
+    // cold open lands on the category and card this user actually logs
+    // most (v1.2.1 / v1.4 — picking the usual every time is friction).
+    // Within a session, the last pick still sticks.
     const usual = defaultCategoryId(expenses, currentUser?.id, todayISO());
     if (usual !== null && [...categorySelect.options].some((o) => o.value === String(usual))) {
       categorySelect.value = String(usual);
+    }
+    const usualCard = defaultCardId(expenses, currentUser?.id, todayISO());
+    if (usualCard !== null && [...cardSelect.options].some((o) => o.value === String(usualCard))) {
+      cardSelect.value = String(usualCard);
     }
     renderAll(expenses);
   } catch (error) {
@@ -201,6 +225,7 @@ async function refresh() {
 function renderAll(expenses) {
   expensesCache = expenses;
   renderDashboard(expenses);
+  renderCards(expenses);
   renderLedger(expenses);
 }
 
@@ -368,6 +393,7 @@ function shiftMonth(date, months) {
 function showMonth(date) {
   dashDate = startOfMonth(date);
   renderDashboard(expensesCache);
+  renderCards(expensesCache); // the cards area follows the viewed month
 }
 
 dashPrev.addEventListener("click", () => showMonth(shiftMonth(dashDate, -1)));
@@ -438,6 +464,8 @@ expenseForm.addEventListener("submit", async (event) => {
   const fields = {
     amount,
     category_id: Number(expenseForm.category_id.value),
+    // "" only ever appears while editing a pre-v1.4 untagged entry
+    card_id: expenseForm.card_id.value === "" ? null : Number(expenseForm.card_id.value),
     paid_by: expenseForm.paid_by.value,
     date: expenseForm.date.value,
     note: expenseForm.note.value.trim() || null,
@@ -522,6 +550,7 @@ function startEdit(expense) {
   expenseForm.amount.value = expense.amount;
   updateAmountPreview();
   expenseForm.category_id.value = String(expense.category_id);
+  setCardSelectValue(expense.card_id);
   expenseForm.paid_by.value = expense.paid_by;
   expenseForm.date.value = expense.date;
   expenseForm.note.value = expense.note ?? "";
@@ -537,6 +566,7 @@ function exitEditMode() {
   formTitle.textContent = "Log an expense";
   submitBtn.textContent = "Save";
   cancelBtn.hidden = true;
+  clearTempCardOption();
   resetFormDefaults();
 }
 
@@ -566,9 +596,9 @@ async function exportCsv() {
   exportBtn.textContent = "Exporting…";
   try {
     const rows = await fetchAllExpensesForExport();
-    const header = "date,amount,category,paid_by,note";
+    const header = "date,amount,category,paid_by,card,note";
     const lines = rows.map((r) =>
-      [r.date, r.amount, r.categories.name, r.paid_by, r.note ?? ""]
+      [r.date, r.amount, r.categories.name, r.paid_by, r.cards?.name ?? "", r.note ?? ""]
         .map(csvField)
         .join(","),
     );
@@ -787,6 +817,176 @@ function showCatStatus(message) {
 function showCatDeleteStatus(message) {
   catDeleteStatus.textContent = message ?? "";
   catDeleteStatus.hidden = !message;
+}
+
+// ── cards + miles caps (v1.4) ────────────────────────────────────────
+// The at-the-shop answer: per card, what this month absorbed vs its
+// bonus cap. Math in cards-math.js (pure, Node-tested); this renders
+// the viewed month (follows the dashboard's ‹ › navigation).
+
+function renderCardOptions() {
+  const selected = cardSelect.value;
+  cardSelect.replaceChildren(...cardsCache.map((c) => new Option(c.name, c.id)));
+  if ([...cardSelect.options].some((o) => o.value === selected)) {
+    cardSelect.value = selected;
+  }
+}
+
+// Editing a pre-v1.4 entry: card unknown. A temporary "(unspecified)"
+// option keeps the edit honest — saving without picking keeps null,
+// but the option vanishes once the edit ends so new entries must pick.
+function setCardSelectValue(cardId) {
+  clearTempCardOption();
+  if (cardId != null) {
+    cardSelect.value = String(cardId);
+    return;
+  }
+  const temp = new Option("(unspecified)", "");
+  temp.dataset.temp = "1";
+  cardSelect.prepend(temp);
+  cardSelect.value = "";
+}
+
+function clearTempCardOption() {
+  cardSelect.querySelector('option[data-temp]')?.remove();
+}
+
+function renderCards(expenses) {
+  const summary = cardSummary(expenses, cardsCache, dashDate);
+  cardsMonth.textContent = `· ${monthShortFmt.format(dashDate)}`;
+  const capped = summary.filter((c) => c.capCents != null);
+  cardsHint.hidden = capped.length > 0;
+
+  const best = bestNextCard(summary);
+  cardsBest.hidden = !(best && capped.length >= 2);
+  if (best) {
+    cardsBest.textContent = `Most headroom: ${best.name} — ${sgd.format(best.remainingCents / 100)} to cap`;
+  }
+
+  cardsList.replaceChildren(
+    ...summary.map((c) => {
+      const li = document.createElement("li");
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "cat-manage-row card-row";
+      row.addEventListener("click", () => openCardDialog(cardsCache.find((x) => x.id === c.id)));
+
+      const left = document.createElement("span");
+      left.className = "card-row-name";
+      left.textContent = c.name;
+      if (c.note) {
+        const note = document.createElement("span");
+        note.className = "card-row-note";
+        note.textContent = c.note;
+        left.append(note);
+      }
+
+      const right = document.createElement("span");
+      right.className = "card-row-amount";
+      if (c.capCents == null) {
+        right.textContent = sgd.format(c.spentCents / 100);
+      } else if (c.overCap) {
+        right.textContent = `${sgd.format(c.spentCents / 100)} · cap hit`;
+        right.classList.add("card-over");
+      } else {
+        right.textContent = `${sgd.format(c.spentCents / 100)} of ${sgdWhole.format(Math.round(c.capCents / 100))}`;
+      }
+      row.append(left, right);
+      li.append(row);
+
+      if (c.capCents != null) {
+        const bar = document.createElement("div");
+        bar.className = "cat-bar";
+        const fill = document.createElement("div");
+        fill.className = c.overCap ? "cat-bar-fill card-bar-over" : "cat-bar-fill";
+        fill.style.width = `${Math.min(100, Math.round((c.spentCents / c.capCents) * 100))}%`;
+        bar.append(fill);
+        li.append(bar);
+      }
+      return li;
+    }),
+  );
+}
+
+async function refreshCards() {
+  cardsCache = await fetchCards();
+  renderCardOptions();
+  renderCards(expensesCache);
+}
+
+document.getElementById("card-add").addEventListener("click", () => openCardDialog(null));
+
+function openCardDialog(card) {
+  dialogCardId = card?.id ?? null;
+  cardDialogTitle.textContent = card ? "Edit card" : "Add card";
+  cardForm.name.value = card?.name ?? "";
+  cardForm.cap.value = card?.cap ?? "";
+  cardForm.note.value = card?.note ?? "";
+  cardDeleteBtn.hidden = card === null;
+  showCardStatus(null);
+  cardDialog.showModal();
+}
+
+cardForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const name = cardForm.name.value.trim();
+  if (!name) {
+    showCardStatus("Give it a name.");
+    return;
+  }
+  const capText = cardForm.cap.value.trim();
+  const cap = capText === "" ? null : Number(capText);
+  if (cap !== null && (!Number.isFinite(cap) || cap <= 0)) {
+    showCardStatus("Cap should be a plain amount, like 1000.");
+    return;
+  }
+  const fields = { name, cap, note: cardForm.note.value.trim() || null };
+  try {
+    if (dialogCardId === null) {
+      const maxSort = Math.max(0, ...cardsCache.map((c) => c.sort_order ?? 0));
+      await addCard({ ...fields, sort_order: maxSort + 1 });
+    } else {
+      await updateCard(dialogCardId, fields);
+    }
+    cardDialog.close();
+    await refreshCards();
+  } catch (error) {
+    showCardStatus(friendlyCardError(error));
+  }
+});
+
+cardDeleteBtn.addEventListener("click", async () => {
+  const card = cardsCache.find((c) => c.id === dialogCardId);
+  if (!card) return;
+  if (cardsCache.length === 1) {
+    showCardStatus("Can't delete the only card.");
+    return;
+  }
+  if (!window.confirm(`Delete ${card.name}?`)) return;
+  try {
+    await deleteCard(card.id);
+    cardDialog.close();
+    await refreshCards();
+  } catch (error) {
+    showCardStatus(
+      error.message?.includes("foreign key") || error.code === "23503"
+        ? "This card has entries — it can't be deleted. Rename it instead."
+        : friendlyCardError(error),
+    );
+  }
+});
+
+document.getElementById("card-cancel").addEventListener("click", () => cardDialog.close());
+
+function friendlyCardError(error) {
+  if (error.message?.includes("duplicate key")) return "That name already exists.";
+  if (error.message?.includes("fetch")) return "No connection — not saved.";
+  return `Couldn't save: ${error.message}`;
+}
+
+function showCardStatus(message) {
+  cardStatus.textContent = message ?? "";
+  cardStatus.hidden = !message;
 }
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────

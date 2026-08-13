@@ -30,7 +30,7 @@ Blocking the merge:
    Cache-first caveat for that check: the footer shows v1.2.0 on the
    SECOND launch after deploy — the first still serves the old build.
 
-**NEXT BUILD — deadline-bound (Shawn, 2026-08-12 sign-off): card
+**BUILT 2026-08-13 (v1.4.0) — see JOURNEY; design locked in-session (in-app cards list · required + smart default · dedicated Cards area, not the ledger · clean start). The at-the-shop recommend feature shipped as cap-headroom guidance; merchant-aware earn rules deliberately deferred.** Original entry: card
 tracking on expenses, live BEFORE September** so the new month is
 tagged from day one. The need: entries should record WHICH card paid,
 so the household can see where miles are maximized (and where they're

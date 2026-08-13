@@ -454,6 +454,24 @@ select:focus {
 .todo-done-toggle { margin-top: 1rem; }
 .todo-done-list { margin-top: 0.5rem; }
 
+/* ── cards + miles caps (v1.4) ── */
+.cards-best {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 10px;
+}
+.cards-list li + li { margin-top: 0.75rem; }
+.card-row { padding: 0.35rem 0.25rem 0.25rem; justify-content: space-between; }
+.card-row-name { display: flex; flex-direction: column; font-weight: 600; min-width: 0; }
+.card-row-note { font-size: 0.75rem; font-weight: 400; color: var(--ink-soft); }
+.card-row-amount { flex-shrink: 0; font-size: 0.875rem; font-weight: 600; color: var(--green-deep); }
+.card-row-amount.card-over { color: var(--danger); }
+.card-bar-over { background: var(--danger); }
+
 /* ── version marker (v1.2 piece 0) ── */
 .app-footer {
   margin-top: 1.5rem;

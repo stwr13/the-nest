@@ -16,11 +16,41 @@ export async function fetchCategories() {
 export async function fetchExpenses() {
   const { data, error } = await supabase
     .from("expenses")
-    .select("id, amount, date, paid_by, note, created_by, category_id, categories(name, icon, excluded_from_totals)")
+    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, categories(name, icon, excluded_from_totals)")
     .order("date", { ascending: false })
     .order("id", { ascending: false });
   if (error) throw error;
   return data;
+}
+
+// ── cards: household-managed miles/cap list (v1.4) ───────────────────
+
+export async function fetchCards() {
+  const { data, error } = await supabase
+    .from("cards")
+    .select("id, name, cap, note, sort_order")
+    .order("sort_order")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function addCard(fields) {
+  const { error } = await supabase.from("cards").insert(fields);
+  if (error) throw error;
+}
+
+export async function updateCard(id, fields) {
+  const { error } = await supabase.from("cards").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+// FK on expenses.card_id is on-delete-restrict: deleting a card with
+// history fails at the database — the UI maps that to a friendly
+// message rather than offering a reassign flow nobody has needed yet.
+export async function deleteCard(id) {
+  const { error } = await supabase.from("cards").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // Checks the database, not the local list — catches the other person's
@@ -46,7 +76,7 @@ export async function fetchAllExpensesForExport() {
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from("expenses")
-      .select("date, amount, paid_by, note, categories(name)")
+      .select("date, amount, paid_by, note, categories(name), cards(name)")
       .order("date", { ascending: true })
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);

@@ -490,3 +490,24 @@ do the scrolling). And the Money icon swaps 💸 → 💰 — a money bag, not
 money flying away, which on reflection was the wrong omen for a
 household ledger. Tab bar: Money · To-dos · To-buy. 27/27 tests.
 Version 1.3.2.
+
+## 2026-08-13 — v1.4.0: cards + miles-cap tracking (the deadline build)
+
+The sign-off ask, built next morning, well before the Sep 1 deadline.
+Shawn's lock answers reframed the feature: not "tag entries with a
+card" but CAP TRACKING — the at-the-shop question is "which card
+still has bonus headroom?" Shipped: in-app cards manager (name,
+monthly cap, earn-rule note; seeded "PayNow / transfer" so the
+required select works from launch); required card on every new entry
+with the per-person smart default (defaults generalized in
+category-default.js); a Cards area on Money — per card for the viewed
+month (follows the dashboard's ‹ › nav): spent vs cap, progress bar,
+red "cap hit" flag, and a "Most headroom" line, which IS the v1
+recommend feature (cap-aware; merchant-aware earn rules stay out
+until real use demands them — the note field carries the rule for
+human eyes instead). Card sums deliberately include
+excluded-from-totals categories: Blessing spend still earns miles.
+Editing a pre-v1.4 entry shows a temporary "(unspecified)" option —
+old entries stay honest (clean-start decision), new entries must
+pick. CSV export gains a card column. FK on-delete-restrict; deleting
+a card with history maps to "rename it instead". 31/31 tests.
