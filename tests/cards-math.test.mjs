@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardSummary, bestNextCard } from "../js/cards-math.js";
+import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "../js/cards-math.js";
 
 const AUG = new Date(2026, 7, 1); // August 2026
 const cards = [
@@ -43,6 +43,48 @@ test("excluded-from-totals spend still counts toward the card (miles don't care)
   // cardSummary never looks at category exclusion — this documents it
   const s = cardSummary([e("2026-08-03", 100, 1)], cards, AUG);
   assert.equal(s.find((c) => c.id === 1).spentCents, 10000);
+});
+
+test("normalizeTags: trims, lowercases, dedupes, drops empties", () => {
+  assert.deepEqual(normalizeTags(" Dining, contactless , dining,, ONLINE "), [
+    "dining",
+    "contactless",
+    "online",
+  ]);
+  assert.deepEqual(normalizeTags(""), []);
+  assert.deepEqual(normalizeTags(null), []);
+});
+
+test("allTags: sorted union across cards", () => {
+  assert.deepEqual(
+    allTags([
+      { earn_types: ["online", "dining"] },
+      { earn_types: ["dining", "retail"] },
+      { earn_types: [] },
+      {}, // pre-migration shape
+    ]),
+    ["dining", "online", "retail"],
+  );
+});
+
+test("cardsForTag: open-cap matches by headroom, then uncapped, cap-hit last but visible", () => {
+  const tagged = [
+    { ...cards[0], earn_types: ["retail", "contactless"] }, // A cap 1000
+    { ...cards[1], earn_types: ["retail"] }, // B cap 600
+    { ...cards[2], earn_types: ["retail"] }, // PayNow, uncapped
+  ];
+  // A has spent 900 (100 left), B spent 0 (600 left)
+  const s = cardSummary([e("2026-08-01", 900, 1)], tagged, AUG);
+  const { ranked, best } = cardsForTag(s, "retail");
+  assert.deepEqual(ranked.map((c) => c.id), [2, 1, 3]);
+  assert.equal(best.id, 2);
+  // cap-hit match sinks to the bottom but is not hidden
+  const s2 = cardSummary([e("2026-08-01", 1000, 1), e("2026-08-02", 600, 2)], tagged, AUG);
+  const r2 = cardsForTag(s2, "retail");
+  assert.deepEqual(r2.ranked.map((c) => c.id), [3, 1, 2]);
+  assert.equal(r2.best.id, 3); // uncapped match still earns
+  // no match for an unknown tag
+  assert.deepEqual(cardsForTag(s, "petrol"), { ranked: [], best: null });
 });
 
 test("bestNextCard: most headroom among capped cards; uncapped never competes", () => {

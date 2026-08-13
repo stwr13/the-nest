@@ -4,7 +4,7 @@ import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
 import { defaultCategoryId, defaultCardId } from "./category-default.js";
-import { cardSummary, bestNextCard } from "./cards-math.js";
+import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
   fetchCategories,
@@ -95,6 +95,7 @@ const cardForm = document.getElementById("card-form");
 const cardDialogTitle = document.getElementById("card-dialog-title");
 const cardStatus = document.getElementById("card-status");
 const cardDeleteBtn = document.getElementById("card-delete");
+const cardsTags = document.getElementById("cards-tags");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
@@ -851,21 +852,61 @@ function clearTempCardOption() {
   cardSelect.querySelector('option[data-temp]')?.remove();
 }
 
+let activeTag = null; // the tapped "which card for…" chip
+
 function renderCards(expenses) {
   const summary = cardSummary(expenses, cardsCache, dashDate);
   cardsMonth.textContent = `· ${monthShortFmt.format(dashDate)}`;
   const capped = summary.filter((c) => c.capCents != null);
   cardsHint.hidden = capped.length > 0;
 
-  const best = bestNextCard(summary);
-  cardsBest.hidden = !(best && capped.length >= 2);
-  if (best) {
-    cardsBest.textContent = `Most headroom: ${best.name} — ${sgd.format(best.remainingCents / 100)} to cap`;
+  // "Which card for…" chips — vocabulary comes from the cards' own
+  // earn tags, so it can never disagree with the data
+  const tags = allTags(cardsCache);
+  if (activeTag && !tags.includes(activeTag)) activeTag = null;
+  cardsTags.hidden = tags.length === 0;
+  cardsTags.replaceChildren(
+    ...tags.map((tag) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "tag-chip";
+      chip.textContent = tag;
+      chip.setAttribute("aria-pressed", String(tag === activeTag));
+      chip.addEventListener("click", () => {
+        activeTag = activeTag === tag ? null : tag;
+        renderCards(expensesCache);
+      });
+      return chip;
+    }),
+  );
+
+  let displayOrder = summary;
+  let matchedIds = null;
+  if (activeTag) {
+    const { ranked, best } = cardsForTag(summary, activeTag);
+    matchedIds = new Set(ranked.map((c) => c.id));
+    displayOrder = [...ranked, ...summary.filter((c) => !matchedIds.has(c.id))];
+    cardsBest.hidden = false;
+    if (best) {
+      cardsBest.textContent =
+        best.capCents == null
+          ? `For ${activeTag}: ${best.name} — no cap to worry about`
+          : `For ${activeTag}: ${best.name} — ${sgd.format(best.remainingCents / 100)} to cap`;
+    } else {
+      cardsBest.textContent = `All ${activeTag} cards are capped out this month.`;
+    }
+  } else {
+    const best = bestNextCard(summary);
+    cardsBest.hidden = !(best && capped.length >= 2);
+    if (best) {
+      cardsBest.textContent = `Most headroom: ${best.name} — ${sgd.format(best.remainingCents / 100)} to cap`;
+    }
   }
 
   cardsList.replaceChildren(
-    ...summary.map((c) => {
+    ...displayOrder.map((c) => {
       const li = document.createElement("li");
+      if (matchedIds && !matchedIds.has(c.id)) li.className = "card-dim";
       const row = document.createElement("button");
       row.type = "button";
       row.className = "cat-manage-row card-row";
@@ -921,6 +962,7 @@ function openCardDialog(card) {
   cardDialogTitle.textContent = card ? "Edit card" : "Add card";
   cardForm.name.value = card?.name ?? "";
   cardForm.cap.value = card?.cap ?? "";
+  cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
   cardDeleteBtn.hidden = card === null;
   showCardStatus(null);
@@ -940,7 +982,12 @@ cardForm.addEventListener("submit", async (event) => {
     showCardStatus("Cap should be a plain amount, like 1000.");
     return;
   }
-  const fields = { name, cap, note: cardForm.note.value.trim() || null };
+  const fields = {
+    name,
+    cap,
+    earn_types: normalizeTags(cardForm.tags.value),
+    note: cardForm.note.value.trim() || null,
+  };
   try {
     if (dialogCardId === null) {
       const maxSort = Math.max(0, ...cardsCache.map((c) => c.sort_order ?? 0));

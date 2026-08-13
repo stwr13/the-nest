@@ -24,13 +24,48 @@ export function cardSummary(expenses, cards, monthDate) {
   });
 }
 
-// The v1 "which card should I use?" answer: the capped card with the
-// most headroom left. Uncapped cards don't compete (they have no bonus
-// ceiling to maximize). Null when no capped card has room.
+// The generic "which card should I use?" answer: the capped card with
+// the most headroom left. Uncapped cards don't compete (they have no
+// bonus ceiling to maximize). Null when no capped card has room.
 export function bestNextCard(summary) {
   return (
     summary
       .filter((c) => c.capCents != null && !c.overCap)
       .sort((a, b) => b.remainingCents - a.remainingCents)[0] ?? null
   );
+}
+
+// ── earn tags (v1.5): the situation-specific answer ──────────────────
+// Tags are the household's own vocabulary ("dining", "contactless",
+// "retail"…), typed per card — deliberately not a fixed menu, so the
+// model can't be wrong about how a specific card earns; the app only
+// contributes ranking and cap math.
+
+export function normalizeTags(text) {
+  const seen = new Set();
+  for (const raw of (text ?? "").split(",")) {
+    const tag = raw.trim().toLowerCase();
+    if (tag) seen.add(tag);
+  }
+  return [...seen];
+}
+
+export function allTags(cards) {
+  const seen = new Set();
+  for (const c of cards) for (const t of c.earn_types ?? []) seen.add(t);
+  return [...seen].sort();
+}
+
+// Cards that earn on `tag`, ranked: open-cap matches by headroom first
+// (uncapped matches after — they earn, but there's no ceiling to
+// protect), cap-hit matches last (flagged, not hidden: "it earns here
+// but it's full" is the warning that saves the wasted spend).
+export function cardsForTag(summary, tag) {
+  const matches = summary.filter((c) => (c.earn_types ?? []).includes(tag));
+  const open = matches
+    .filter((c) => !c.overCap && c.capCents != null)
+    .sort((a, b) => b.remainingCents - a.remainingCents);
+  const uncapped = matches.filter((c) => c.capCents == null);
+  const full = matches.filter((c) => c.overCap);
+  return { ranked: [...open, ...uncapped, ...full], best: open[0] ?? uncapped[0] ?? null };
 }

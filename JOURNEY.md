@@ -511,3 +511,21 @@ Editing a pre-v1.4 entry shows a temporary "(unspecified)" option —
 old entries stay honest (clean-start decision), new entries must
 pick. CSV export gains a card column. FK on-delete-restrict; deleting
 a card with history maps to "rename it instead". 31/31 tests.
+
+## 2026-08-13 (v1.5.0) — "which card at this shop?" answered with chips
+
+Shawn pushed back on the v1.4 deferral with two concrete cases
+(Watsons; an F&B place) — and the pushback was right: what stays out
+is merchant DETECTION (no data source), but the decision logic itself
+is buildable. Shipped: **earn tags** per card — free-form,
+comma-separated, the household's own vocabulary, deliberately not a
+fixed menu (a fixed set would inevitably be wrong for specific cards;
+this way the model can't disagree with reality, because the user IS
+the model — the app contributes ranking and cap math). The Cards area
+grows a **"Which card for…" chip row** built from the union of all
+tags: tap `retail` at Watsons → answer pill names the best card and
+its headroom, matching cards float up ranked by remaining cap,
+cap-hit matches stay VISIBLE flagged "cap hit" (that's the warning
+that saves wasted spend), non-earning cards dim. All-capped-out gets
+said plainly. Chips can never go stale — they come from the cards'
+own data. 34/34 tests. Version 1.5.0.

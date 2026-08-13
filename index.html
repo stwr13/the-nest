@@ -111,6 +111,7 @@
         <button id="card-add" class="btn btn-ghost btn-small">Add</button>
       </div>
       <p id="cards-hint" class="muted cat-hint" hidden>Add your miles cards with their monthly caps — this is where "which card should I use?" gets answered.</p>
+      <div id="cards-tags" class="tag-chips" role="group" aria-label="Which card for…" hidden></div>
       <p id="cards-best" class="cards-best" hidden></p>
       <ul id="cards-list" class="dash-cats cards-list"></ul>
     </section>
@@ -180,8 +181,10 @@
         <input id="card-name" name="name" type="text" maxlength="40" required autocomplete="off" />
         <label for="card-cap">Monthly cap (SGD) <span class="optional">(optional — the 4mpd ceiling)</span></label>
         <input id="card-cap" name="cap" type="text" inputmode="decimal" maxlength="12" autocomplete="off" placeholder="e.g. 1000" />
-        <label for="card-note">Earn rule <span class="optional">(optional)</span></label>
-        <input id="card-note" name="note" type="text" maxlength="120" autocomplete="off" placeholder="e.g. 4mpd online only" />
+        <label for="card-tags">Earns bonus on <span class="optional">(comma-separated, your words)</span></label>
+        <input id="card-tags" name="tags" type="text" maxlength="120" autocomplete="off" placeholder="e.g. dining, contactless, online" />
+        <label for="card-note">Earn rule note <span class="optional">(optional)</span></label>
+        <input id="card-note" name="note" type="text" maxlength="120" autocomplete="off" placeholder="e.g. 4mpd, min $500/month" />
         <p id="card-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="card-save" class="btn btn-primary">Save</button>
         <button type="button" id="card-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete</button>
