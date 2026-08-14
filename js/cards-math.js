@@ -9,7 +9,10 @@ export function cardSummary(expenses, cards, monthDate) {
   const centsByCard = new Map();
   for (const e of expenses) {
     if (e.card_id == null || !e.date.startsWith(mk)) continue;
-    centsByCard.set(e.card_id, (centsByCard.get(e.card_id) ?? 0) + Math.round(e.amount * 100));
+    // v1.8: caps count what the CARD absorbed — on a group bill that's
+    // the full charge (card_charged), not the household's share (amount)
+    const charged = e.card_charged ?? e.amount;
+    centsByCard.set(e.card_id, (centsByCard.get(e.card_id) ?? 0) + Math.round(charged * 100));
   }
   return cards.map((c) => {
     const spentCents = centsByCard.get(c.id) ?? 0;

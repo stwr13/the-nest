@@ -16,7 +16,7 @@ export async function fetchCategories() {
 export async function fetchExpenses() {
   const { data, error } = await supabase
     .from("expenses")
-    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, categories(name, icon, excluded_from_totals)")
+    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, card_charged, categories(name, icon, excluded_from_totals)")
     .order("date", { ascending: false })
     .order("id", { ascending: false });
   if (error) throw error;
@@ -93,7 +93,7 @@ export async function fetchAllExpensesForExport() {
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from("expenses")
-      .select("date, amount, paid_by, note, categories(name), cards(name)")
+      .select("date, amount, card_charged, paid_by, note, categories(name), cards(name)")
       .order("date", { ascending: true })
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);

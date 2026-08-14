@@ -591,3 +591,26 @@ qualifier labels on shared faces (the two Solitaire buckets both wear
 the rose card; their tiles now read just "Dining" / "Transport").
 The "(unspecified)" tile stays first while editing a pre-card entry.
 35/35 tests. Version 1.7.1.
+
+## 2026-08-14 (v1.8.0) — the group-bill split, and two SW bugs it flushed out
+
+Shawn: what about group dining — what the card was charged vs what I
+actually spent? A real hole: one number was doing two diverging jobs.
+Shipped: **amount stays the household's true expense** (dashboards,
+categories); a new optional **"Charged to card"** field records what
+hit the card (blank = same as amount, so the everyday flow is
+unchanged); card caps and the which-card chips now count the charged
+figure — the bank neither knows nor cares who PayNow'd you back.
+Same calculator rules in both fields. CSV gains the column.
+Deliberately NOT built: IOU/who-owes tracking — the field records the
+split's effect on caps, not the debts.
+
+Preview testing flushed out two real service-worker bugs, both fixed
+in this release: (1) the background refresh wasn't under
+event.waitUntil, so a quickly-closed page could let the browser kill
+the SW mid-write and the cache never advanced; (2) install's addAll
+went through the HTTP cache, so a SW installing inside the CDN's
+10-minute max-age window could bake STALE files into its new cache —
+a torn build (fresh version.js, stale index.html — watched it happen
+live). Install now uses cache:"reload" Requests; the runtime refresh
+uses cache:"no-cache" revalidation. 36/36 tests. Version 1.8.0.

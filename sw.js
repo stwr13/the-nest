@@ -31,7 +31,13 @@ const SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      // cache:"reload" bypasses the HTTP cache — without it, installing
+      // within the CDN's max-age window bakes STALE files into the new
+      // cache and the build arrives torn (v1.8 fix, caught in preview)
+      .then((cache) => cache.addAll(SHELL.map((u) => new Request(u, { cache: "reload" }))))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -48,23 +54,24 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.hostname.endsWith("supabase.co")) return;
-  if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(event.request));
-  }
-});
+  if (url.origin !== self.location.origin) return;
 
-async function cacheFirst(request) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(request, { ignoreSearch: true });
-  // Kick off the refresh either way; when we serve from cache it runs
-  // in the background and only updates the copy the next launch reads.
-  const refresh = fetch(request).then((fresh) => {
-    if (fresh.ok) cache.put(request, fresh.clone());
-    return fresh;
-  });
-  if (cached) {
-    refresh.catch(() => {}); // offline: the cached copy already answered
-    return cached;
-  }
-  return refresh;
-}
+  const refresh = caches.open(CACHE).then((cache) =>
+    // no-cache: revalidate with the server (etag makes this cheap) so
+    // the background refresh can't be satisfied by a stale HTTP cache
+    fetch(new Request(event.request, { cache: "no-cache" })).then((fresh) => {
+      if (fresh.ok) return cache.put(event.request, fresh.clone()).then(() => fresh);
+      return fresh;
+    }),
+  );
+  // waitUntil keeps the worker alive until the refresh lands — without
+  // it, a quickly-closed page lets the browser kill the SW mid-put and
+  // the cache never advances (v1.8 fix, caught in preview testing)
+  event.waitUntil(refresh.catch(() => {}));
+  event.respondWith(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.match(event.request, { ignoreSearch: true }))
+      .then((cached) => cached ?? refresh),
+  );
+});

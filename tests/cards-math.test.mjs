@@ -32,6 +32,18 @@ test("sums per card for the viewed month only; untagged entries don't count", ()
   );
 });
 
+test("card_charged overrides amount for cap math (group-bill split); null falls back", () => {
+  const s = cardSummary(
+    [
+      { date: "2026-08-05", amount: 50, card_id: 1, card_charged: 200 }, // paid $200, share $50
+      { date: "2026-08-06", amount: 30, card_id: 1 }, // normal entry
+    ],
+    cards,
+    AUG,
+  );
+  assert.equal(s.find((c) => c.id === 1).spentCents, 23000); // 200 + 30, not 50 + 30
+});
+
 test("cap hit flags at and beyond the cap; remaining floors at zero", () => {
   const s = cardSummary([e("2026-08-01", 600, 2), e("2026-08-02", 50, 2)], cards, AUG);
   const b = s.find((c) => c.id === 2);

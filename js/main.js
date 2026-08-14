@@ -467,6 +467,15 @@ expenseForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  // group-bill split (v1.8): what hit the card, when it isn't your
+  // share — same calculator rules; blank means "same as amount"
+  const chargedText = expenseForm.card_charged.value.trim();
+  const cardCharged = chargedText === "" ? null : evaluateAmount(chargedText);
+  if (chargedText !== "" && (cardCharged === null || cardCharged <= 0 || cardCharged > 99999999)) {
+    showFormStatus("Check the charged-to-card figure — a number or a sum, or leave it blank.");
+    return;
+  }
+
   submitBtn.disabled = true;
   submitBtn.textContent = "Saving…";
 
@@ -475,6 +484,7 @@ expenseForm.addEventListener("submit", async (event) => {
     category_id: Number(expenseForm.category_id.value),
     // "" only ever appears while editing a pre-v1.4 untagged entry
     card_id: expenseForm.card_id.value === "" ? null : Number(expenseForm.card_id.value),
+    card_charged: cardCharged,
     paid_by: expenseForm.paid_by.value,
     date: expenseForm.date.value,
     note: expenseForm.note.value.trim() || null,
@@ -494,6 +504,7 @@ expenseForm.addEventListener("submit", async (event) => {
     else await updateExpense(editingId, fields);
     exitEditMode();
     expenseForm.amount.value = "";
+    expenseForm.card_charged.value = "";
     expenseForm.note.value = "";
     updateAmountPreview();
     // show the month the entry landed in, so the save is always visible
@@ -523,6 +534,7 @@ function duplicateMessage(fields, dupe) {
 cancelBtn.addEventListener("click", () => {
   exitEditMode();
   expenseForm.amount.value = "";
+  expenseForm.card_charged.value = "";
   expenseForm.note.value = "";
   updateAmountPreview();
 });
@@ -560,6 +572,7 @@ function startEdit(expense) {
   updateAmountPreview();
   expenseForm.category_id.value = String(expense.category_id);
   setCardSelectValue(expense.card_id);
+  expenseForm.card_charged.value = expense.card_charged ?? "";
   expenseForm.paid_by.value = expense.paid_by;
   expenseForm.date.value = expense.date;
   expenseForm.note.value = expense.note ?? "";
@@ -605,9 +618,9 @@ async function exportCsv() {
   exportBtn.textContent = "Exporting…";
   try {
     const rows = await fetchAllExpensesForExport();
-    const header = "date,amount,category,paid_by,card,note";
+    const header = "date,amount,card_charged,category,paid_by,card,note";
     const lines = rows.map((r) =>
-      [r.date, r.amount, r.categories.name, r.paid_by, r.cards?.name ?? "", r.note ?? ""]
+      [r.date, r.amount, r.card_charged ?? "", r.categories.name, r.paid_by, r.cards?.name ?? "", r.note ?? ""]
         .map(csvField)
         .join(","),
     );
