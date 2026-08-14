@@ -29,6 +29,7 @@ import {
   addCard,
   updateCard,
   deleteCard,
+  fetchCardImageUrls,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -114,7 +115,9 @@ let appLoaded = false;
 let categoriesCache = [];
 let dialogCategoryId = null; // null while adding a new category
 let cardsCache = [];
+let cardImageUrls = new Map(); // card_id -> signed URL (private bucket)
 let dialogCardId = null; // null while adding a new card
+const cardPicker = document.getElementById("card-picker");
 let expensesCache = [];
 let dashDate = startOfMonth(new Date()); // which month the dashboard shows
 let ledgerFilter = "all";
@@ -190,6 +193,9 @@ async function loadApp() {
     ]);
     categoriesCache = categories;
     cardsCache = cards;
+    // signed URLs for the private card images; on any failure the CSS
+    // mini-cards simply stay — never let art block the ledger
+    cardImageUrls = await fetchCardImageUrls(cards).catch(() => new Map());
     renderCategoryOptions();
     renderCategoryManager();
     renderCardOptions();
@@ -204,6 +210,7 @@ async function loadApp() {
     if (usualCard !== null && [...cardSelect.options].some((o) => o.value === String(usualCard))) {
       cardSelect.value = String(usualCard);
     }
+    syncCardPicker();
     renderAll(expenses);
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
@@ -831,6 +838,55 @@ function renderCardOptions() {
   if ([...cardSelect.options].some((o) => o.value === selected)) {
     cardSelect.value = selected;
   }
+  syncCardPicker();
+}
+
+// The visual picker (v1.7): tappable card faces driving the hidden
+// select. Rebuilt from the select's own options so the two can never
+// disagree — including the temporary "(unspecified)" option while
+// editing a pre-card entry.
+function miniCardArt(card) {
+  const url = card && cardImageUrls.get(card.id);
+  if (url) {
+    const img = document.createElement("img");
+    img.className = "mini-card-img";
+    img.src = url;
+    img.alt = "";
+    img.loading = "lazy";
+    return img;
+  }
+  const art = document.createElement("span");
+  art.className = "mini-card";
+  art.style.setProperty("--card-c", card?.color ?? "#3a7d5c");
+  return art;
+}
+
+function syncCardPicker() {
+  const options = [...cardSelect.options];
+  cardPicker.hidden = options.length === 0;
+  cardSelect.hidden = options.length > 0; // picker takes over once cards exist
+  cardPicker.replaceChildren(
+    ...options.map((o) => {
+      const card = cardsCache.find((c) => String(c.id) === o.value);
+      const pick = document.createElement("button");
+      pick.type = "button";
+      pick.className = "card-pick";
+      pick.setAttribute("role", "option");
+      pick.setAttribute("aria-selected", String(o.value === cardSelect.value));
+      pick.append(miniCardArt(card));
+      const name = document.createElement("span");
+      name.className = "card-pick-name";
+      name.textContent = card?.name ?? o.textContent;
+      pick.append(name);
+      pick.addEventListener("click", () => {
+        cardSelect.value = o.value;
+        syncCardPicker();
+      });
+      return pick;
+    }),
+  );
+  // keep the chosen card in view on the scroll strip
+  cardPicker.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 // Editing a pre-v1.4 entry: card unknown. A temporary "(unspecified)"
@@ -840,16 +896,19 @@ function setCardSelectValue(cardId) {
   clearTempCardOption();
   if (cardId != null) {
     cardSelect.value = String(cardId);
+    syncCardPicker();
     return;
   }
   const temp = new Option("(unspecified)", "");
   temp.dataset.temp = "1";
   cardSelect.prepend(temp);
   cardSelect.value = "";
+  syncCardPicker();
 }
 
 function clearTempCardOption() {
   cardSelect.querySelector('option[data-temp]')?.remove();
+  syncCardPicker();
 }
 
 let activeTag = null; // the tapped "which card for…" chip
@@ -916,11 +975,9 @@ function renderCards(expenses) {
       row.className = "cat-manage-row card-row";
       row.addEventListener("click", () => openCardDialog(cardsCache.find((x) => x.id === c.id)));
 
-      // CSS-drawn mini card face (v1.6) — colour is per-card data;
-      // real card artwork is off-limits (copyright + self-only CSP)
-      const art = document.createElement("span");
-      art.className = "mini-card";
-      art.style.setProperty("--card-c", c.color ?? "#3a7d5c");
+      // real card face when the private bucket has one (v1.7),
+      // CSS-drawn mini card (v1.6) as the ever-present fallback
+      const art = miniCardArt(c);
 
       const left = document.createElement("span");
       left.className = "card-row-name";
@@ -961,6 +1018,7 @@ function renderCards(expenses) {
 
 async function refreshCards() {
   cardsCache = await fetchCards();
+  cardImageUrls = await fetchCardImageUrls(cardsCache).catch(() => new Map());
   renderCardOptions();
   renderCards(expensesCache);
 }
@@ -972,6 +1030,7 @@ function openCardDialog(card) {
   cardDialogTitle.textContent = card ? "Edit card" : "Add card";
   cardForm.name.value = card?.name ?? "";
   cardForm.color.value = card?.color ?? "#3a7d5c";
+  cardForm.image.value = card?.image ?? "";
   cardForm.cap.value = card?.cap ?? "";
   cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
@@ -997,6 +1056,7 @@ cardForm.addEventListener("submit", async (event) => {
     name,
     cap,
     color: cardForm.color.value,
+    image: cardForm.image.value.trim() || null,
     earn_types: normalizeTags(cardForm.tags.value),
     note: cardForm.note.value.trim() || null,
   };

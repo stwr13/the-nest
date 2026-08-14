@@ -28,7 +28,7 @@ export async function fetchExpenses() {
 export async function fetchCards() {
   const { data, error } = await supabase
     .from("cards")
-    .select("id, name, cap, note, earn_types, color, sort_order")
+    .select("id, name, cap, note, earn_types, color, image, sort_order")
     .order("sort_order")
     .order("name");
   if (error) throw error;
@@ -43,6 +43,23 @@ export async function addCard(fields) {
 export async function updateCard(id, fields) {
   const { error } = await supabase.from("cards").update(fields).eq("id", id);
   if (error) throw error;
+}
+
+// Card images live in the private "cards" storage bucket; signed URLs
+// keep them household-only (the bucket is not public). 12h expiry
+// comfortably outlives a session. Returns Map(card_id -> url), empty
+// on any failure — the CSS mini-card is always the fallback.
+export async function fetchCardImageUrls(cards) {
+  const withImage = cards.filter((c) => c.image);
+  if (withImage.length === 0) return new Map();
+  const { data, error } = await supabase.storage
+    .from("cards")
+    .createSignedUrls(withImage.map((c) => c.image), 60 * 60 * 12);
+  if (error) throw error;
+  const byPath = new Map(data.filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  return new Map(
+    withImage.filter((c) => byPath.has(c.image)).map((c) => [c.id, byPath.get(c.image)]),
+  );
 }
 
 // FK on expenses.card_id is on-delete-restrict: deleting a card with

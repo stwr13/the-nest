@@ -8,7 +8,7 @@
        (GitHub Pages can't set response headers, hence the meta tag;
        frame-ancestors can't be set this way and is accepted as a gap.) -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://jgenasvgeyyigfnkdvxu.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'" />
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://jgenasvgeyyigfnkdvxu.supabase.co; connect-src 'self' https://jgenasvgeyyigfnkdvxu.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#29583f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -74,7 +74,10 @@
         </fieldset>
 
         <label for="exp-card">Card</label>
-        <select id="exp-card" name="card_id" required></select>
+        <!-- visual picker drives the (hidden) select; the select stays
+             the single source of truth for the form value -->
+        <div id="card-picker" class="card-picker" role="listbox" aria-label="Card" hidden></div>
+        <select id="exp-card" name="card_id"></select>
 
         <label for="exp-date">Date</label>
         <input id="exp-date" name="date" type="date" required />
@@ -183,6 +186,8 @@
         <input id="card-color" name="color" type="color" class="card-color-input" />
         <label for="card-cap">Monthly cap (SGD) <span class="optional">(optional — the 4mpd ceiling)</span></label>
         <input id="card-cap" name="cap" type="text" inputmode="decimal" maxlength="12" autocomplete="off" placeholder="e.g. 1000" />
+        <label for="card-image">Image path <span class="optional">(optional — file name in the private cards bucket)</span></label>
+        <input id="card-image" name="image" type="text" maxlength="120" autocomplete="off" placeholder="e.g. solitaire.png" />
         <label for="card-tags">Earns bonus on <span class="optional">(comma-separated, your words)</span></label>
         <input id="card-tags" name="tags" type="text" maxlength="120" autocomplete="off" placeholder="e.g. dining, contactless, online" />
         <label for="card-note">Earn rule note <span class="optional">(optional)</span></label>

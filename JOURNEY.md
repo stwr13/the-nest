@@ -556,3 +556,24 @@ for all 12 rows (rose-gold Solitaires, OCBC/HSBC twin reds, Citi/
 KrisFlyer navies, DBS pink, platinum PPVs, graphite PRVI, PayNow
 purple). Base colour paints everywhere; the gradient layers on where
 color-mix is supported. 34/34 tests. Version 1.6.0.
+
+## 2026-08-14 (v1.7.0) — real card faces, kept private
+
+Shawn asked for actual card pictures in the entry form and the card
+list. The line that made it buildable: bank card art must never enter
+the PUBLIC repo (that's republishing copyrighted assets) — but a
+PRIVATE Supabase Storage bucket behind auth is personal use, same
+boundary as the card names and caps themselves. Shipped: `cards`
+bucket (private; household-read policy; uploads owner-only via
+dashboard), `image` column, signed-URL loading (12h expiry, batch,
+falls back silently to the v1.6 CSS minis on any failure — art must
+never block the ledger), CSP img-src widened to the app's own
+Supabase domain only. The form's card dropdown became a **visual
+picker** — a scrollable strip of tappable card faces driving the
+hidden select, so validation, smart default, and the "(unspecified)"
+edit case all survive unchanged. Cards area rows show the real faces.
+All 9 official card images sourced from the banks' own sites by
+research agents (UOB PRVI ships only as an animated GIF cycling
+networks — first frame extracted), normalized, uploaded, and wired;
+both Solitaire buckets share the physical card's face, ditto the PPV
+pair; PayNow keeps its purple CSS mini. 34/34 tests. Version 1.7.0.
