@@ -3,7 +3,7 @@ import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
-import { defaultCategoryId, defaultCardId } from "./category-default.js";
+import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator } from "./amount-expr.js";
 import {
@@ -193,6 +193,7 @@ async function loadApp() {
     ]);
     categoriesCache = categories;
     cardsCache = cards;
+    expensesCache = expenses; // before the picker syncs — it orders by usage
     // signed URLs for the private card images; on any failure the CSS
     // mini-cards simply stay — never let art block the ledger
     cardImageUrls = await fetchCardImageUrls(cards).catch(() => new Map());
@@ -861,12 +862,31 @@ function miniCardArt(card) {
   return art;
 }
 
+// Tiles that share a face (the two Solitaire buckets, the two PPV
+// tracks) are told apart by the part after the "·" — the face already
+// names the card, the label names the bucket.
+function cardPickLabel(name) {
+  return name.includes("·") ? name.split("·").pop().trim() : name;
+}
+
 function syncCardPicker() {
   const options = [...cardSelect.options];
   cardPicker.hidden = options.length === 0;
   cardSelect.hidden = options.length > 0; // picker takes over once cards exist
+  // v1.7.1: a wrapped GRID, everything visible, one tap — Shawn: the
+  // slide-strip hid most cards. Your most-used cards take the top-left
+  // (per-person usage rank); never-used ones keep the manager's order.
+  const rank = usageRank(expensesCache, currentUser?.id, todayISO(), (e) => e.card_id);
+  const ordered = [...options].sort((a, b) => {
+    if (a.value === "") return -1; // "(unspecified)" stays first while editing
+    if (b.value === "") return 1;
+    return (
+      (rank.get(Number(a.value)) ?? 999) - (rank.get(Number(b.value)) ?? 999) ||
+      options.indexOf(a) - options.indexOf(b)
+    );
+  });
   cardPicker.replaceChildren(
-    ...options.map((o) => {
+    ...ordered.map((o) => {
       const card = cardsCache.find((c) => String(c.id) === o.value);
       const pick = document.createElement("button");
       pick.type = "button";
@@ -876,7 +896,7 @@ function syncCardPicker() {
       pick.append(miniCardArt(card));
       const name = document.createElement("span");
       name.className = "card-pick-name";
-      name.textContent = card?.name ?? o.textContent;
+      name.textContent = card ? cardPickLabel(card.name) : o.textContent;
       pick.append(name);
       pick.addEventListener("click", () => {
         cardSelect.value = o.value;
@@ -885,8 +905,6 @@ function syncCardPicker() {
       return pick;
     }),
   );
-  // keep the chosen card in view on the scroll strip
-  cardPicker.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 // Editing a pre-v1.4 entry: card unknown. A temporary "(unspecified)"

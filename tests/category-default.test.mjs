@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { defaultCategoryId } from "../js/category-default.js";
+import { defaultCategoryId, usageRank } from "../js/category-default.js";
 
 const SHAWN = "uuid-shawn";
 const CLAIRE = "uuid-claire";
@@ -44,6 +44,22 @@ test("recent habit beats all-time habit", () => {
     ...Array.from({ length: 5 }, (_, i) => e(`2026-01-0${i + 1}`, 1)),
   ];
   assert.equal(defaultCategoryId(expenses, SHAWN, TODAY), 9);
+});
+
+test("usageRank: recent frequency first, all-time as tiebreak, per person, unused absent", () => {
+  const ex = (date, card_id, created_by = SHAWN) => ({ date, card_id, created_by });
+  const expenses = [
+    ex("2026-08-10", 5),
+    ex("2026-08-09", 5),
+    ex("2026-08-08", 2),
+    ex("2026-01-05", 7), // ancient heavy use
+    ex("2026-01-04", 7),
+    ex("2026-01-03", 7),
+    ex("2026-08-07", 9, CLAIRE), // not Shawn's
+  ];
+  const rank = usageRank(expenses, SHAWN, TODAY, (e) => e.card_id);
+  assert.deepEqual([...rank.entries()], [[5, 0], [2, 1], [7, 2]]);
+  assert.equal(rank.has(9), false);
 });
 
 test("tie resolves to the category appearing first (newest-first fetch order)", () => {

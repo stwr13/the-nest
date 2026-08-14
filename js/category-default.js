@@ -22,6 +22,28 @@ function mostUsedId(expenses, userId, todayIso, key) {
   return mode(recent, key) ?? mode(mine, key);
 }
 
+// v1.7.1: full usage ranking for the card picker grid — the user's
+// most-picked cards first (last 60 days, then all time as tiebreak),
+// unused cards keep their given order after. Returns a comparator-
+// ready rank Map(id -> rank); lower rank = shown earlier.
+export function usageRank(expenses, userId, todayIso, key) {
+  const mine = expenses.filter((e) => e.created_by === userId && key(e) != null);
+  const recentCounts = new Map();
+  const allCounts = new Map();
+  const cutoff = shiftDays(todayIso, -60);
+  for (const e of mine) {
+    const k = key(e);
+    allCounts.set(k, (allCounts.get(k) ?? 0) + 1);
+    if (e.date >= cutoff) recentCounts.set(k, (recentCounts.get(k) ?? 0) + 1);
+  }
+  const ids = [...allCounts.keys()].sort(
+    (a, b) =>
+      (recentCounts.get(b) ?? 0) - (recentCounts.get(a) ?? 0) ||
+      allCounts.get(b) - allCounts.get(a),
+  );
+  return new Map(ids.map((id, i) => [id, i]));
+}
+
 function mode(list, key) {
   if (list.length === 0) return null;
   const counts = new Map();

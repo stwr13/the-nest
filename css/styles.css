@@ -530,30 +530,27 @@ select:focus {
   object-fit: contain;
 }
 
-/* visual card picker on the expense form (v1.7) */
+/* visual card picker on the expense form (v1.7; grid since v1.7.1 —
+   every card visible, one tap, no sliding) */
 .card-picker {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding: 0.3rem 0.1rem;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  padding: 0.3rem 0;
 }
-.card-picker::-webkit-scrollbar { display: none; }
 .card-pick {
-  flex: 0 0 auto;
-  width: 96px;
   display: grid;
   gap: 3px;
   justify-items: center;
-  padding: 8px 6px 6px;
+  padding: 6px 3px 4px;
+  min-width: 0;
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 500;
   color: var(--ink-soft);
   background: #fff;
   border: 2px solid var(--green-soft);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -564,9 +561,9 @@ select:focus {
   font-weight: 700;
 }
 .card-pick .mini-card-img,
-.card-pick .mini-card { width: 74px; height: 47px; }
+.card-pick .mini-card { width: 100%; max-width: 64px; height: 40px; object-fit: contain; }
 .card-pick-name {
-  max-width: 84px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

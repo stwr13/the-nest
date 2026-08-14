@@ -577,3 +577,17 @@ research agents (UOB PRVI ships only as an animated GIF cycling
 networks — first frame extracted), normalized, uploaded, and wired;
 both Solitaire buckets share the physical card's face, ditto the PPV
 pair; PayNow keeps its purple CSS mini. 34/34 tests. Version 1.7.0.
+
+## 2026-08-14 (v1.7.1) — picker strip → grid
+
+Shawn, on first phone contact with the strip: "drop down is faster to
+select isn't it? Sliding left and right may not be most efficient."
+Half right — a dropdown is actually three interactions (open, wheel,
+pick); the strip's real sin was hiding most cards off-screen. Fix:
+a wrapped 4-across GRID — every card visible, one tap, no sliding —
+ordered by the current user's own usage (pure `usageRank`,
+Node-tested; never-used cards keep manager order at the back), with
+qualifier labels on shared faces (the two Solitaire buckets both wear
+the rose card; their tiles now read just "Dining" / "Transport").
+The "(unspecified)" tile stays first while editing a pre-card entry.
+35/35 tests. Version 1.7.1.
