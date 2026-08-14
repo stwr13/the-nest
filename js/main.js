@@ -5,7 +5,7 @@ import { ledgerView } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
-import { evaluateAmount, hasOperator } from "./amount-expr.js";
+import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -467,20 +467,15 @@ expenseForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  // group-bill split (v1.8.1, total-first — Shawn: "I will put the
-  // total amount first"): the Amount field is always what YOU PAID;
-  // ticking the box reveals "our share", which becomes the recorded
-  // expense while the paid total feeds the card's cap math.
+  // group-bill split (v1.8.2 — Shawn: "not me having to input the
+  // total again"): the expression already contains both truths —
+  // "815÷5×2" charges the card 815 and records 326 as the expense.
   let expenseAmount = amount;
   let cardCharged = null;
   if (expenseForm.split.checked) {
-    const share = evaluateAmount(expenseForm.share.value);
-    if (share === null || share <= 0 || share > 99999999) {
-      showFormStatus("Check our share — a number like 50, or a sum like 405/4.");
-      return;
-    }
-    expenseAmount = share;
-    cardCharged = amount; // the full bill the card absorbed
+    const charged = leadingNumber(expenseForm.amount.value);
+    // equal means no real split was expressed — store nothing extra
+    cardCharged = charged !== null && charged !== amount ? charged : null;
   }
 
   submitBtn.disabled = true;
@@ -546,35 +541,36 @@ cancelBtn.addEventListener("click", () => {
   updateAmountPreview();
 });
 
-// ── group-bill split UI (v1.8.1) ─────────────────────────────────────
+// ── group-bill split UI (v1.8.2) ─────────────────────────────────────
+// One checkbox, no second field: the live legend shows exactly what
+// will be saved — "Card charged $815 · our expense $326" — derived
+// from the expression's first number and its result.
 
-const shareWrap = document.getElementById("share-wrap");
-const sharePreview = document.getElementById("share-preview");
+const splitLegend = document.getElementById("split-legend");
 
-expenseForm.split.addEventListener("change", () => {
-  shareWrap.hidden = !expenseForm.split.checked;
-  if (expenseForm.split.checked) expenseForm.share.focus({ preventScroll: true });
-});
+expenseForm.split.addEventListener("change", updateSplitLegend);
 
 function resetSplit() {
   expenseForm.split.checked = false;
-  expenseForm.share.value = "";
-  shareWrap.hidden = true;
-  updateSharePreview();
+  updateSplitLegend();
 }
 
-function updateSharePreview() {
-  const text = expenseForm.share.value;
-  if (!hasOperator(text)) {
-    sharePreview.hidden = true;
+function updateSplitLegend() {
+  if (!expenseForm.split.checked) {
+    splitLegend.hidden = true;
     return;
   }
-  const result = evaluateAmount(text);
-  sharePreview.hidden = false;
-  sharePreview.textContent = result === null ? "= …" : `= ${sgd.format(result)}`;
+  const charged = leadingNumber(expenseForm.amount.value);
+  const share = evaluateAmount(expenseForm.amount.value);
+  splitLegend.hidden = false;
+  if (charged === null || share === null) {
+    splitLegend.textContent = "Type the bill as a sum — e.g. 815÷5×2";
+  } else if (charged === share) {
+    splitLegend.textContent = `Card charged ${sgd.format(charged)} — add ÷ or × to record a smaller share`;
+  } else {
+    splitLegend.textContent = `Card charged ${sgd.format(charged)} · our expense ${sgd.format(share)}`;
+  }
 }
-
-expenseForm.share.addEventListener("input", updateSharePreview);
 
 // ── inline amount calculator (v1.1 piece 4) ─────────────────────────
 
@@ -589,7 +585,10 @@ function updateAmountPreview() {
   amountPreview.textContent = result === null ? "= …" : `= ${sgd.format(result)}`;
 }
 
-expenseForm.amount.addEventListener("input", updateAmountPreview);
+expenseForm.amount.addEventListener("input", () => {
+  updateAmountPreview();
+  updateSplitLegend();
+});
 
 // The iOS decimal keypad has no operator keys — these chips insert
 // them. pointerdown + preventDefault keeps focus (and the keypad) in
@@ -600,24 +599,29 @@ for (const button of document.querySelectorAll(".calc-op")) {
     expenseForm.amount.value += button.dataset.op;
     expenseForm.amount.focus({ preventScroll: true });
     updateAmountPreview();
+    updateSplitLegend();
   });
 }
 
 function startEdit(expense) {
   editingId = expense.id;
-  // split entries edit total-first too: Amount = what the card was
-  // charged, share = the recorded expense
+  // A split entry reopens as a synthesized sum whose first number is
+  // the card charge and whose result is the expense — same contract
+  // as capture ("815-489" → card 815, expense 326); the legend
+  // explains it on sight. The original typed expression isn't stored.
   if (expense.card_charged != null) {
-    expenseForm.amount.value = expense.card_charged;
+    const diff = Math.round((expense.card_charged - expense.amount) * 100) / 100;
+    expenseForm.amount.value =
+      diff >= 0
+        ? `${expense.card_charged}-${diff}`
+        : `${expense.card_charged}+${Math.abs(diff)}`;
     expenseForm.split.checked = true;
-    expenseForm.share.value = expense.amount;
-    shareWrap.hidden = false;
   } else {
     expenseForm.amount.value = expense.amount;
-    resetSplit();
+    expenseForm.split.checked = false;
   }
   updateAmountPreview();
-  updateSharePreview();
+  updateSplitLegend();
   expenseForm.category_id.value = String(expense.category_id);
   setCardSelectValue(expense.card_id);
   expenseForm.paid_by.value = expense.paid_by;

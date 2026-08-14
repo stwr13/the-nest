@@ -628,3 +628,19 @@ the recorded expense. Unticked = the everyday one-number flow,
 untouched. Editing a split entry reopens total-first. Data model
 unchanged from v1.8.0 — this was purely capture ergonomics.
 36/36 tests. Version 1.8.1.
+
+## 2026-08-14 (v1.8.2) — the split reads itself from the expression
+
+Shawn, with a live screenshot mid-dinner-log: he types 815÷5×2
+anyway — the total bill, five ways, times two for the household. "Not
+me having to input the total again." He's right for the third time
+today: the expression already CONTAINS both truths. Now the checkbox
+is the whole interaction — ticked, the FIRST NUMBER of the expression
+is what the card was charged (815) and the RESULT is the recorded
+expense (326). No second field at all (v1.8.1's share field lived
+four hours). A live legend under the checkbox spells out exactly what
+will save: "Card charged $815.00 · our expense $326.00" — and nudges
+when the expression is a plain number (no split expressed). Editing a
+split entry synthesizes a sum with the same contract (charged-diff),
+legend making it legible. leadingNumber() joins the pure calculator
+module, tested. Data model untouched. 37/37 tests. Version 1.8.2.

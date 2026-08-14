@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluateAmount, hasOperator } from "../js/amount-expr.js";
+import { evaluateAmount, hasOperator, leadingNumber } from "../js/amount-expr.js";
+
+test("leadingNumber: first literal of the expression, unicode ops, cents rounding", () => {
+  assert.equal(leadingNumber("815÷5×2"), 815);
+  assert.equal(leadingNumber("815 / 5 * 2"), 815);
+  assert.equal(leadingNumber("12.405+1"), 12.41);
+  assert.equal(leadingNumber("326"), 326);
+  assert.equal(leadingNumber("+5"), null);
+  assert.equal(leadingNumber(""), null);
+});
 
 test("plain amounts pass through", () => {
   assert.equal(evaluateAmount("12.40"), 12.4);

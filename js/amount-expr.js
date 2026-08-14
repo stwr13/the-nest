@@ -56,3 +56,16 @@ export function evaluateAmount(text) {
 export function hasOperator(text) {
   return /[+*/×÷]/.test(text) || /.-/.test(text.trim());
 }
+
+// Group-bill split (v1.8.2): the first number in "815÷5×2" is what the
+// card was charged — the expression the user naturally types already
+// contains both the bill and their share. Null when no leading number.
+export function leadingNumber(text) {
+  const cleaned = text
+    .replaceAll("×", "*")
+    .replaceAll("÷", "/")
+    .replaceAll("−", "-")
+    .replaceAll(" ", "");
+  const m = cleaned.match(/^(\d+(?:\.\d+)?)/);
+  return m ? Math.round(Number(m[1]) * 100) / 100 : null;
+}

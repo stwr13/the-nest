@@ -81,13 +81,9 @@
 
         <label class="cat-flag">
           <input id="exp-split" name="split" type="checkbox" />
-          <span>Group bill — I paid for others too</span>
+          <span>Group bill — first number is what the card was charged</span>
         </label>
-        <div id="share-wrap" hidden>
-          <label for="exp-share">Our share (SGD) <span id="share-preview" class="amount-preview" hidden></span></label>
-          <input id="exp-share" name="share" type="text" inputmode="decimal"
-                 maxlength="60" autocomplete="off" placeholder="e.g. 405/4" />
-        </div>
+        <p id="split-legend" class="muted split-legend" hidden></p>
 
         <label for="exp-date">Date</label>
         <input id="exp-date" name="date" type="date" required />
