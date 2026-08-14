@@ -467,20 +467,27 @@ expenseForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  // group-bill split (v1.8): what hit the card, when it isn't your
-  // share — same calculator rules; blank means "same as amount"
-  const chargedText = expenseForm.card_charged.value.trim();
-  const cardCharged = chargedText === "" ? null : evaluateAmount(chargedText);
-  if (chargedText !== "" && (cardCharged === null || cardCharged <= 0 || cardCharged > 99999999)) {
-    showFormStatus("Check the charged-to-card figure — a number or a sum, or leave it blank.");
-    return;
+  // group-bill split (v1.8.1, total-first — Shawn: "I will put the
+  // total amount first"): the Amount field is always what YOU PAID;
+  // ticking the box reveals "our share", which becomes the recorded
+  // expense while the paid total feeds the card's cap math.
+  let expenseAmount = amount;
+  let cardCharged = null;
+  if (expenseForm.split.checked) {
+    const share = evaluateAmount(expenseForm.share.value);
+    if (share === null || share <= 0 || share > 99999999) {
+      showFormStatus("Check our share — a number like 50, or a sum like 405/4.");
+      return;
+    }
+    expenseAmount = share;
+    cardCharged = amount; // the full bill the card absorbed
   }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Saving…";
 
   const fields = {
-    amount,
+    amount: expenseAmount,
     category_id: Number(expenseForm.category_id.value),
     // "" only ever appears while editing a pre-v1.4 untagged entry
     card_id: expenseForm.card_id.value === "" ? null : Number(expenseForm.card_id.value),
@@ -504,7 +511,7 @@ expenseForm.addEventListener("submit", async (event) => {
     else await updateExpense(editingId, fields);
     exitEditMode();
     expenseForm.amount.value = "";
-    expenseForm.card_charged.value = "";
+    resetSplit();
     expenseForm.note.value = "";
     updateAmountPreview();
     // show the month the entry landed in, so the save is always visible
@@ -534,10 +541,40 @@ function duplicateMessage(fields, dupe) {
 cancelBtn.addEventListener("click", () => {
   exitEditMode();
   expenseForm.amount.value = "";
-  expenseForm.card_charged.value = "";
+  resetSplit();
   expenseForm.note.value = "";
   updateAmountPreview();
 });
+
+// ── group-bill split UI (v1.8.1) ─────────────────────────────────────
+
+const shareWrap = document.getElementById("share-wrap");
+const sharePreview = document.getElementById("share-preview");
+
+expenseForm.split.addEventListener("change", () => {
+  shareWrap.hidden = !expenseForm.split.checked;
+  if (expenseForm.split.checked) expenseForm.share.focus({ preventScroll: true });
+});
+
+function resetSplit() {
+  expenseForm.split.checked = false;
+  expenseForm.share.value = "";
+  shareWrap.hidden = true;
+  updateSharePreview();
+}
+
+function updateSharePreview() {
+  const text = expenseForm.share.value;
+  if (!hasOperator(text)) {
+    sharePreview.hidden = true;
+    return;
+  }
+  const result = evaluateAmount(text);
+  sharePreview.hidden = false;
+  sharePreview.textContent = result === null ? "= …" : `= ${sgd.format(result)}`;
+}
+
+expenseForm.share.addEventListener("input", updateSharePreview);
 
 // ── inline amount calculator (v1.1 piece 4) ─────────────────────────
 
@@ -568,11 +605,21 @@ for (const button of document.querySelectorAll(".calc-op")) {
 
 function startEdit(expense) {
   editingId = expense.id;
-  expenseForm.amount.value = expense.amount;
+  // split entries edit total-first too: Amount = what the card was
+  // charged, share = the recorded expense
+  if (expense.card_charged != null) {
+    expenseForm.amount.value = expense.card_charged;
+    expenseForm.split.checked = true;
+    expenseForm.share.value = expense.amount;
+    shareWrap.hidden = false;
+  } else {
+    expenseForm.amount.value = expense.amount;
+    resetSplit();
+  }
   updateAmountPreview();
+  updateSharePreview();
   expenseForm.category_id.value = String(expense.category_id);
   setCardSelectValue(expense.card_id);
-  expenseForm.card_charged.value = expense.card_charged ?? "";
   expenseForm.paid_by.value = expense.paid_by;
   expenseForm.date.value = expense.date;
   expenseForm.note.value = expense.note ?? "";

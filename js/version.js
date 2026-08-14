@@ -4,4 +4,4 @@
 // it on the worker's global). The SW cache name derives from it, so a
 // bump also retires the old cache. Shown in the app footer so "which
 // build are you on?" is answerable from a phone screenshot.
-self.APP_VERSION = "1.8.0";
+self.APP_VERSION = "1.8.1";

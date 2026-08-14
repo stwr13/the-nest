@@ -614,3 +614,17 @@ went through the HTTP cache, so a SW installing inside the CDN's
 a torn build (fresh version.js, stale index.html — watched it happen
 live). Install now uses cache:"reload" Requests; the runtime refresh
 uses cache:"no-cache" revalidation. 36/36 tests. Version 1.8.0.
+
+## 2026-08-14 (v1.8.1) — group split goes total-first
+
+Shawn, within the hour: "why not a simple checkbox — in Log an
+expense I will put the total amount first." Right about the capture
+order: at the terminal the number in your head is the TOTAL, and
+v1.8.0 made you compute your share first. Reworked: Amount is always
+what you paid; a "Group bill — I paid for others too" checkbox
+reveals "Our share" (own calculator + live preview, so 200/4 shows
+= $50.00). On save the total feeds the card's cap math, the share is
+the recorded expense. Unticked = the everyday one-number flow,
+untouched. Editing a split entry reopens total-first. Data model
+unchanged from v1.8.0 — this was purely capture ergonomics.
+36/36 tests. Version 1.8.1.
