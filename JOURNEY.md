@@ -714,3 +714,9 @@ policy; the returned id made a courtesy, not a contract — if it ever
 came back empty, throwing would report "couldn't save" on an entry
 that DID save, the double-log trap; the jump falls back to the ledger
 top; headers wrap on tiny screens. 41/41 tests. Version 1.10.0.
+
+## 2026-08-17 (v1.10.1) — the oval takes the total in
+
+Refinement on sight of v1.10.0: the anchor pill should hold the date
+AND the day's amount as one unit — they're one fact ("today: this
+much"), so they share one shape. Version 1.10.1.

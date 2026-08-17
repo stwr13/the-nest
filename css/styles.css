@@ -401,8 +401,12 @@ select:focus {
 /* newest header's right side: the previous two days, an FYI not a
    headline — muted, whole dollars */
 .day-fyi { margin-left: auto; font-weight: 600; letter-spacing: 0; white-space: nowrap; }
-/* oval on the newest day — the anchor the eye lands on (Shawn) */
+/* oval on the newest day — the anchor the eye lands on (Shawn);
+   v1.10.1: it wraps the date AND the day's total as one unit */
 .day-current {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
   padding: 0.2rem 0.55rem;
   color: var(--green-deep);
   background: var(--green-soft);

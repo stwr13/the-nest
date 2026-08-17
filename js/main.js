@@ -277,16 +277,24 @@ function dayHeader(date, items, fyiGroups) {
   li.className = "day-header";
   const day = document.createElement("span");
   day.textContent = dateFmt.format(new Date(date + "T00:00:00"));
-  // the newest header carries the most text — the pill anchors the eye
-  // on the day, everything else reads as its satellites
-  if (fyiGroups) day.className = "day-current";
-  li.append(day);
   const total = dayTotal(items);
+  let sum = null;
   if (total !== null) {
-    const sum = document.createElement("span");
+    sum = document.createElement("span");
     sum.className = "day-total";
     sum.textContent = sgd.format(total);
-    li.append(sum);
+  }
+  // the newest header carries the most text — one pill around the day
+  // AND its total anchors the eye; the FYI reads as its satellite
+  if (fyiGroups) {
+    const pill = document.createElement("span");
+    pill.className = "day-current";
+    pill.append(day);
+    if (sum) pill.append(sum);
+    li.append(pill);
+  } else {
+    li.append(day);
+    if (sum) li.append(sum);
   }
   if (fyiGroups) {
     const fyi = document.createElement("span");
