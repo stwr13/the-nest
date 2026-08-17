@@ -71,6 +71,20 @@ input:focus {
   border-color: var(--green);
 }
 
+/* iOS gives date inputs an intrinsic width (they overflow the card)
+   and center their value; flatten to match every other field
+   (v1.9.1, caught on the phone) */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  min-height: 42px; /* appearance:none collapses the native height */
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
 .btn {
   min-height: 44px; /* Apple minimum tap target */
   padding: 0.6rem 1.25rem;

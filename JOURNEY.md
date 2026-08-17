@@ -671,3 +671,13 @@ layout instinct beat the first implementation — he wasn't asking for
 shape gave both. Whole form now fits one screen through Save. Other
 surfaces verified by render (To-dos, ledger, dialogs — they inherit
 the tightened primitives). 37/37 tests. Version 1.9.0.
+
+## 2026-08-17 (v1.9.1) — the date box learns to stay in its lane
+
+Shawn's phone check of v1.9.0: everything landed except the Date
+field — wider than every other input, value centered. iOS renders
+`type=date` at intrinsic width with centered text, ignoring the shared
+input styling; the desktop-engine preview couldn't show it. Fix:
+`-webkit-appearance: none` plus the `::-webkit-date-and-time-value`
+text-align reset — the one field the mock can't vouch for is exactly
+the one the phone check exists to catch. Version 1.9.1.
