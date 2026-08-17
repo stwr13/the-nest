@@ -112,9 +112,14 @@ function shiftDate(dateStr, days) {
 }
 
 // created_by is stamped server-side (default auth.uid()) and verified by RLS.
+// Returns the new row's id so the form can offer a jump to it (v1.10).
+// The id is a courtesy, not a contract: if the returning row were ever
+// withheld, throwing here would report "couldn't save" on an entry
+// that DID save — the double-log trap. Missing id degrades to null.
 export async function addExpense(fields) {
-  const { error } = await supabase.from("expenses").insert(fields);
+  const { data, error } = await supabase.from("expenses").insert(fields).select("id");
   if (error) throw error;
+  return data?.[0]?.id ?? null;
 }
 
 export async function updateExpense(id, fields) {

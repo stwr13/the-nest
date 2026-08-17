@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ledgerView } from "../js/ledger-view.js";
+import { ledgerView, dayTotal, recentDayTotals } from "../js/ledger-view.js";
 
 const e = (id, date, paid_by, category_id = 1) => ({ id, date, paid_by, category_id });
 const expenses = [
@@ -56,4 +56,40 @@ test("empty input yields no groups", () => {
   assert.deepEqual(ledgerView([], "all"), []);
   assert.deepEqual(ledgerView(expenses, "Nobody"), []);
   assert.deepEqual(ledgerView(expenses, "all", "99"), []);
+});
+
+test("dayTotal sums counted spending, skips excluded categories", () => {
+  const items = [
+    { amount: "8.20", categories: { excluded_from_totals: false } },
+    { amount: 10, categories: { excluded_from_totals: true } },
+    { amount: 1.8, categories: null },
+  ];
+  assert.equal(dayTotal(items), 10);
+});
+
+test("dayTotal is null when nothing counts — header omits the figure", () => {
+  assert.equal(dayTotal([]), null);
+  assert.equal(dayTotal([{ amount: 50, categories: { excluded_from_totals: true } }]), null);
+});
+
+test("recentDayTotals walks calendar days back from the anchor, zero-filling gaps", () => {
+  const groups = [
+    { date: "2026-08-17", items: [{ amount: 50, categories: null }] },
+    { date: "2026-08-15", items: [{ amount: 87.1, categories: null }] },
+  ];
+  // 08-16 has no group — a quiet day shows as 0, not skipped
+  assert.deepEqual(recentDayTotals(groups, "2026-08-17"), [
+    { date: "2026-08-16", total: 0 },
+    { date: "2026-08-15", total: 87.1 },
+  ]);
+});
+
+test("recentDayTotals crosses month boundaries and treats excluded-only days as 0", () => {
+  const groups = [
+    { date: "2026-07-31", items: [{ amount: 20, categories: { excluded_from_totals: true } }] },
+  ];
+  assert.deepEqual(recentDayTotals(groups, "2026-08-01"), [
+    { date: "2026-07-31", total: 0 },
+    { date: "2026-07-30", total: 0 },
+  ]);
 });

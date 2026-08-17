@@ -691,3 +691,26 @@ on some WebKit versions, so stating it beats trusting the default).
 Lesson: a quirk report names the symptom, not the verdict on every
 symptom's sibling — the misalignment was the complaint, the centering
 was the design. Version 1.9.2.
+
+## 2026-08-17 (v1.10.0) — the ledger answers back: day totals + the saved-jump
+
+Two asks in one sitting, both from real use. **Shawn:** after logging,
+the verification trip to the ledger is a long scroll — give it a
+button. Shipped as a "Saved ✓ — check it in the ledger ↓" line that
+appears after every save: a tap glides to the new row and flashes it;
+if the active filter would hide the row, the jump resets to All first —
+a jump that lands nowhere reads as a lost entry. Deliberately a button,
+not an auto-scroll: auto would hijack back-to-back logging. **Claire:**
+see daily spending, and the past two days. Day headers now carry the
+day's counted total beside the date (excluded categories stay
+uncounted, matching the dashboard's "spent"; totals follow the active
+filters), and the newest header's right side glances back two calendar
+days in whole dollars, zero-filled — a quiet day is a fact, not a gap.
+Three design rounds against rendered previews, all Shawn: total beside
+the date, not far right; the freed right edge takes the two-day FYI;
+an oval on the newest date so the eye anchors there first. Pre-push
+audit: insert().select("id") verified against the household-read RLS
+policy; the returned id made a courtesy, not a contract — if it ever
+came back empty, throwing would report "couldn't save" on an entry
+that DID save, the double-log trap; the jump falls back to the ledger
+top; headers wrap on tiny screens. 41/41 tests. Version 1.10.0.

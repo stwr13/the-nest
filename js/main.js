@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
-import { ledgerView } from "./ledger-view.js";
+import { ledgerView, dayTotal, recentDayTotals } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
@@ -102,6 +102,7 @@ const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" 
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
 const monthFmt = new Intl.DateTimeFormat("en-SG", { month: "long" });
 const monthShortFmt = new Intl.DateTimeFormat("en-SG", { month: "short" });
+const weekdayFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short" });
 // whole dollars for trend glances; cents belong in the ledger
 const sgdWhole = new Intl.NumberFormat("en-SG", {
   style: "currency",
@@ -259,17 +260,42 @@ function renderLedger(expenses) {
   // textContent throughout: notes are user input and must never be
   // interpreted as HTML
   ledgerList.replaceChildren(
-    ...groups.flatMap((group) => [
-      dayHeader(group.date),
+    ...groups.flatMap((group, i) => [
+      dayHeader(group.date, group.items, i === 0 ? groups : null),
       ...group.items.map(renderEntry),
     ]),
   );
 }
 
-function dayHeader(date) {
+// v1.10: the header carries the day's counted total beside the date
+// (Claire's ask) — it sums the rows *as filtered*, so filtering to one
+// person shows that person's days. The newest header's right side
+// glances back at the two days before it (Shawn's layout), whole
+// dollars per the trend-glance convention.
+function dayHeader(date, items, fyiGroups) {
   const li = document.createElement("li");
   li.className = "day-header";
-  li.textContent = dateFmt.format(new Date(date + "T00:00:00"));
+  const day = document.createElement("span");
+  day.textContent = dateFmt.format(new Date(date + "T00:00:00"));
+  // the newest header carries the most text — the pill anchors the eye
+  // on the day, everything else reads as its satellites
+  if (fyiGroups) day.className = "day-current";
+  li.append(day);
+  const total = dayTotal(items);
+  if (total !== null) {
+    const sum = document.createElement("span");
+    sum.className = "day-total";
+    sum.textContent = sgd.format(total);
+    li.append(sum);
+  }
+  if (fyiGroups) {
+    const fyi = document.createElement("span");
+    fyi.className = "day-fyi";
+    fyi.textContent = recentDayTotals(fyiGroups, date)
+      .map((d) => `${weekdayFmt.format(new Date(d.date + "T00:00:00"))} ${sgdWhole.format(d.total)}`)
+      .join(" · ");
+    li.append(fyi);
+  }
   return li;
 }
 
@@ -286,6 +312,7 @@ ledgerCategorySelect.addEventListener("change", () => {
 
 function renderEntry(expense) {
   const li = document.createElement("li");
+  li.dataset.id = expense.id; // the saved-jump's landing anchor
 
   const main = document.createElement("div");
   main.className = "entry-main";
@@ -502,7 +529,8 @@ expenseForm.addEventListener("submit", async (event) => {
     }
     if (!proceed) return;
 
-    if (editingId === null) await addExpense(fields);
+    let savedId = editingId;
+    if (editingId === null) savedId = await addExpense(fields);
     else await updateExpense(editingId, fields);
     exitEditMode();
     expenseForm.amount.value = "";
@@ -513,6 +541,9 @@ expenseForm.addEventListener("submit", async (event) => {
     // even while browsing an older month
     dashDate = startOfMonth(new Date(fields.date + "T00:00:00"));
     await refresh();
+    // v1.10: offer the check without forcing it — a tap glides to the
+    // saved row; auto-scrolling would hijack back-to-back logging
+    showSavedJump(savedId);
   } catch (error) {
     showFormStatus(
       error.message?.includes("fetch")
@@ -586,6 +617,7 @@ function updateAmountPreview() {
 }
 
 expenseForm.amount.addEventListener("input", () => {
+  savedLine.hidden = true; // typing the next entry retires the offer
   updateAmountPreview();
   updateSplitLegend();
 });
@@ -1303,7 +1335,42 @@ function todayISO() {
 function showFormStatus(message) {
   formStatus.textContent = message ?? "";
   formStatus.hidden = !message;
+  if (message) savedLine.hidden = true; // an error replaces the offer
 }
+
+// ── saved-jump (v1.10) ────────────────────────────────────────────────
+// After a save, "check it in the ledger ↓" glides to the new row and
+// flashes it — the verification trip without the scroll (Shawn's ask).
+const savedLine = document.getElementById("form-saved");
+let lastSavedId = null;
+
+function showSavedJump(id) {
+  lastSavedId = id;
+  savedLine.hidden = false;
+}
+
+document.getElementById("saved-jump").addEventListener("click", () => {
+  let row = lastSavedId === null ? null : ledgerList.querySelector(`li[data-id="${lastSavedId}"]`);
+  if (!row && lastSavedId !== null) {
+    // the active filter hides the new row — reset to All so the check
+    // can land; a jump that arrives nowhere reads as a lost entry
+    ledgerFilter = "all";
+    ledgerCategory = "all";
+    document.querySelector('#ledger-filter input[value="all"]').checked = true;
+    ledgerCategorySelect.value = "all";
+    renderLedger(expensesCache);
+    row = ledgerList.querySelector(`li[data-id="${lastSavedId}"]`);
+  }
+  if (!row) {
+    // no id or the row is gone — still honour the tap: land on the ledger
+    glideTo(document.querySelector(".ledger-card"));
+    return;
+  }
+  glideTo(row);
+  row.classList.remove("entry-flash");
+  void row.offsetWidth; // restart the animation on a repeat tap
+  row.classList.add("entry-flash");
+});
 
 function showLedgerStatus(message) {
   ledgerStatus.textContent = message ?? "";

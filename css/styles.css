@@ -381,7 +381,11 @@ select:focus {
 .ledger-filter { margin: 0 0 0.5rem; }
 .ledger-category { margin: 0 0 0.75rem; }
 .ledger li.day-header {
-  display: block;
+  display: flex;
+  justify-content: flex-start; /* the base .ledger li space-between must not split date from total */
+  align-items: baseline;
+  flex-wrap: wrap; /* tiny screens: the FYI drops a line rather than overflowing */
+  gap: 0.15rem 0.5rem;
   padding: 1rem 0 0.15rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -391,6 +395,19 @@ select:focus {
   border-top: none;
 }
 .ledger li.day-header + li { border-top: none; }
+/* the day's counted total (v1.10) — beside the date, the green marks
+   it as a figure, not a date */
+.day-total { color: var(--green-deep); letter-spacing: 0; }
+/* newest header's right side: the previous two days, an FYI not a
+   headline — muted, whole dollars */
+.day-fyi { margin-left: auto; font-weight: 600; letter-spacing: 0; white-space: nowrap; }
+/* oval on the newest day — the anchor the eye lands on (Shawn) */
+.day-current {
+  padding: 0.2rem 0.55rem;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 999px;
+}
 
 .entry-main { min-width: 0; }
 .entry-title { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
@@ -420,6 +437,24 @@ select:focus {
 }
 
 .btn-link:last-child { color: var(--danger); }
+
+/* ── saved-jump (v1.10) ── */
+.form-saved {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 10px;
+}
+/* outranks the .btn-link:last-child danger rule above */
+.form-saved .btn-link { color: var(--green-deep); text-decoration: underline; font-size: inherit; }
+.entry-flash { animation: entry-flash 1.6s ease-out; }
+@keyframes entry-flash {
+  0%, 35% { background: var(--green-soft); }
+  100% { background: transparent; }
+}
 
 /* ── idea box ── */
 .idea-jump { min-width: 44px; padding: 0.35rem 0.6rem; }
