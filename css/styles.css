@@ -80,8 +80,11 @@ input[type="date"] {
   min-width: 0;
   min-height: 42px; /* appearance:none collapses the native height */
 }
+/* centered value is the wanted look (Shawn, v1.9.2) — only the
+   overflowing width was the bug; center explicitly since
+   appearance:none left-aligns it on some WebKit versions */
 input[type="date"]::-webkit-date-and-time-value {
-  text-align: left;
+  text-align: center;
   margin: 0;
 }
 

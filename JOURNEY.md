@@ -681,3 +681,13 @@ input styling; the desktop-engine preview couldn't show it. Fix:
 `-webkit-appearance: none` plus the `::-webkit-date-and-time-value`
 text-align reset — the one field the mock can't vouch for is exactly
 the one the phone check exists to catch. Version 1.9.1.
+
+## 2026-08-17 (v1.9.2) — centered date, by choice this time
+
+Correction from Shawn on v1.9.1: the centered date value was never the
+bug — he wants it centered; only the overflowing width was wrong. The
+left-align reset is now an explicit center (appearance:none left-aligns
+on some WebKit versions, so stating it beats trusting the default).
+Lesson: a quirk report names the symptom, not the verdict on every
+symptom's sibling — the misalignment was the complaint, the centering
+was the design. Version 1.9.2.
