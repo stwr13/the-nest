@@ -644,3 +644,30 @@ when the expression is a plain number (no split expressed). Editing a
 split entry synthesizes a sum with the same contract (charged-diff),
 legend making it legible. leadingNumber() joins the pure calculator
 module, tested. Data model untouched. 37/37 tests. Version 1.8.2.
+
+## 2026-08-17 (v1.9.0) — the compact form: everything on one screen
+
+Shawn, from a live phone screenshot: the Money form ran past the fold —
+the screen ended at Group bill, with Date, Note and Save below it.
+Ask: compact, mobile-first — "more is on the screen." Three iterations
+in one sitting, each against a rendered iPhone-width preview (headless
+Chromium on mock data — the preview-before-commit loop, no deploy
+burned): (1) ops beside the amount input in one row — rejected, the box
+got too small for sums like 3.5+6+2; (2) his counter-design: calc keys
+stacked 2×2 beside a full-height amount box — the box grew ~2.4× wider
+AND taller while the keys kept their footprint; (3) Paid by moved
+beside Category on the same pattern — pills stacked like the keys,
+select stretched to match. His final catch: the amount and category
+boxes ended at different right edges — "visually it's ugly." Fixed with
+one shared `--form-aside` width for both right-side columns; the two
+blocks now mirror exactly. Density pass rode along: card padding
+1.5→1.1rem on phones (desktop keeps 1.5), tighter labels/inputs/gaps —
+font held at 1rem, the iOS auto-zoom floor. Placeholder shrank to
+"0.00": the visible keys teach the calculator now. **Deliberate
+tradeoff:** pills and keys sit at 36–38px, under Apple's 44px
+guideline — they're chunky, isolated targets. **Lesson:** the user's
+layout instinct beat the first implementation — he wasn't asking for
+"ops on the right," he was asking for a bigger box; the stacked-keys
+shape gave both. Whole form now fits one screen through Save. Other
+surfaces verified by render (To-dos, ledger, dialogs — they inherit
+the tightened primitives). 37/37 tests. Version 1.9.0.

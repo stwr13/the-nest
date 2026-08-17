@@ -53,25 +53,34 @@
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">
         <label for="exp-amount">Amount (SGD) <span id="amount-preview" class="amount-preview" hidden></span></label>
-        <input id="exp-amount" name="amount" type="text" inputmode="decimal"
-               maxlength="60" autocomplete="off" placeholder="0.00 · or 405/4" required />
-        <div class="calc-ops" aria-label="Insert a calculation sign">
-          <button type="button" class="calc-op" data-op="+" aria-label="plus">+</button>
-          <button type="button" class="calc-op" data-op="−" aria-label="minus">−</button>
-          <button type="button" class="calc-op" data-op="×" aria-label="times">×</button>
-          <button type="button" class="calc-op" data-op="÷" aria-label="divide">÷</button>
+        <!-- v1.9: input + op keys share one row — the ops teach the
+             calculator now, so the placeholder no longer has to -->
+        <div class="amount-row">
+          <input id="exp-amount" name="amount" type="text" inputmode="decimal"
+                 maxlength="60" autocomplete="off" placeholder="0.00" required />
+          <div class="calc-ops" aria-label="Insert a calculation sign">
+            <button type="button" class="calc-op" data-op="+" aria-label="plus">+</button>
+            <button type="button" class="calc-op" data-op="−" aria-label="minus">−</button>
+            <button type="button" class="calc-op" data-op="×" aria-label="times">×</button>
+            <button type="button" class="calc-op" data-op="÷" aria-label="divide">÷</button>
+          </div>
         </div>
 
-        <label for="exp-category">Category</label>
-        <select id="exp-category" name="category_id" required></select>
-
-        <fieldset class="paid-by">
-          <legend>Paid by</legend>
-          <div class="segment">
-            <label><input type="radio" name="paid_by" value="Shawn" required /><span>Shawn</span></label>
-            <label><input type="radio" name="paid_by" value="Claire" /><span>Claire</span></label>
+        <!-- v1.9: Paid by stacks beside Category, same pattern as the
+             calc keys beside the amount box -->
+        <div class="cat-paid-row">
+          <div class="cat-col">
+            <label for="exp-category">Category</label>
+            <select id="exp-category" name="category_id" required></select>
           </div>
-        </fieldset>
+          <fieldset class="paid-by">
+            <legend>Paid by</legend>
+            <div class="segment segment-stack">
+              <label><input type="radio" name="paid_by" value="Shawn" required /><span>Shawn</span></label>
+              <label><input type="radio" name="paid_by" value="Claire" /><span>Claire</span></label>
+            </div>
+          </fieldset>
+        </div>
 
         <label for="exp-card">Card</label>
         <!-- visual picker drives the (hidden) select; the select stays
