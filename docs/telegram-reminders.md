@@ -42,6 +42,17 @@ way. Admin can be removed after — sending needs no admin.)
    - `TELEGRAM_CHAT_ID` — from step 2
    - `CRON_SECRET` — any long random string (e.g. from a password
      generator). It only needs to match step 4's SQL.
+   - `TELEGRAM_TOPIC_ID` — optional, only for a group with topics
+     enabled: post in the target topic, tap a message → Copy Link — the
+     link reads `t.me/c/<chat>/<topic-id>/<msg>`; the middle number is
+     the topic id. Skip the secret entirely to post to the group root.
+
+Privacy note (why the bot can't read the couple chat): bots default to
+Telegram's privacy mode — in groups they receive only /commands and
+direct replies, never normal conversation. Keep the bot a plain member
+(admin only briefly for step 2, then remove) and that guarantee holds.
+For maximum separation, use a small dedicated group (us two + bot)
+instead of the main chat.
 
 ## 4. Schedule it (browser, ~1 min)
 

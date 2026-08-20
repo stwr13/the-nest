@@ -13,6 +13,8 @@
 // Secrets (Dashboard → Edge Functions → Secrets):
 //   TELEGRAM_BOT_TOKEN  — from @BotFather
 //   TELEGRAM_CHAT_ID    — the household group chat id
+//   TELEGRAM_TOPIC_ID   — optional: a topic's message_thread_id, to post
+//                         into one topic of a forum-style group
 //   CRON_SECRET         — any long random string; must match the cron SQL
 // (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.)
 
@@ -73,7 +75,14 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       // plain text, no parse_mode: to-do bodies are user input and must
       // never be interpreted as markup (same rule as textContent in-app)
-      body: JSON.stringify({ chat_id: Deno.env.get("TELEGRAM_CHAT_ID"), text }),
+      body: JSON.stringify({
+        chat_id: Deno.env.get("TELEGRAM_CHAT_ID"),
+        // optional topic targeting — absent secret = plain group post
+        ...(Deno.env.get("TELEGRAM_TOPIC_ID")
+          ? { message_thread_id: Number(Deno.env.get("TELEGRAM_TOPIC_ID")) }
+          : {}),
+        text,
+      }),
     },
   );
 
