@@ -71,6 +71,26 @@ input:focus {
   border-color: var(--green);
 }
 
+textarea {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font-size: 1rem; /* same iOS no-zoom floor as inputs */
+  font-family: inherit;
+  line-height: 1.35;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--green-soft);
+  border-radius: 10px;
+  resize: none;    /* it grows itself — no drag handle */
+  overflow: hidden;
+}
+
+textarea:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
 /* iOS gives date inputs an intrinsic width (they overflow the card)
    and center their value; flatten to match every other field
    (v1.9.1, caught on the phone) */
@@ -258,6 +278,16 @@ select:focus {
   font-weight: 600;
   color: var(--ink-soft);
 }
+
+/* Note + Date row (v1.11): note flexes and auto-grows, date sits in
+   the shared aside column — "way smaller, we don't need it long" */
+.note-date-row { display: flex; align-items: stretch; gap: 0.4rem; margin-top: 0.6rem; }
+.note-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.note-col textarea { flex: 1; min-height: 42px; }
+.note-col label, .date-col label { margin: 0 0 0.2rem; }
+.date-col { width: var(--form-aside); flex-shrink: 0; display: flex; flex-direction: column; }
+/* the narrow column: give the value every pixel */
+.date-col input { padding-left: 0.25rem; padding-right: 0.25rem; }
 
 .segment { display: flex; gap: 0.5rem; }
 .segment-stack { flex-direction: column; gap: 0.3rem; }

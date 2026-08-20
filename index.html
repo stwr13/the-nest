@@ -94,11 +94,19 @@
         </label>
         <p id="split-legend" class="muted split-legend" hidden></p>
 
-        <label for="exp-date">Date</label>
-        <input id="exp-date" name="date" type="date" required />
-
-        <label for="exp-note">Note <span class="optional">(optional)</span></label>
-        <input id="exp-note" name="note" type="text" maxlength="200" autocomplete="off" />
+        <!-- v1.11: third mirrored row — the note takes the width (it
+             holds the details and grows as you type), the date shrinks
+             to the shared aside column -->
+        <div class="note-date-row">
+          <div class="note-col">
+            <label for="exp-note">Note <span class="optional">(optional)</span></label>
+            <textarea id="exp-note" name="note" maxlength="200" rows="1" autocomplete="off"></textarea>
+          </div>
+          <div class="date-col">
+            <label for="exp-date">Date</label>
+            <input id="exp-date" name="date" type="date" required />
+          </div>
+        </div>
 
         <p id="form-status" class="form-error" role="alert" hidden></p>
         <p id="form-saved" class="form-saved" hidden>Saved ✓ —

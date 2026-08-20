@@ -720,3 +720,19 @@ top; headers wrap on tiny screens. 41/41 tests. Version 1.10.0.
 Refinement on sight of v1.10.0: the anchor pill should hold the date
 AND the day's amount as one unit — they're one fact ("today: this
 much"), so they share one shape. Version 1.10.1.
+
+## 2026-08-20 (v1.11.0) — Note grows, Date shrinks: the third mirrored row
+
+Shawn, closing the compact-form thread: the date "doesn't need to be
+so long", the note needs room — "we type the details often... so we
+can see what we type". Note and Date now share the form's third
+big-left/small-right row: Date drops into the shared --form-aside
+column (same width as the calc keys and the Paid-by pills — three rows,
+one rhythm), and Note takes the rest as a one-line textarea that grows
+with its content. Growing beats the smaller-font idea he floated:
+under 16px, iOS zooms the page on focus (the standing no-zoom floor),
+and smaller text still scrolls out of a one-line input — wrapping is
+what actually shows you what you typed. Newlines collapse to spaces on
+save (a note is one thought); the ledger renders unchanged. resizeNote
+fires on input, on edit pre-fill, and on both resets, so the box never
+stays stretched after its content is gone. 41/41 tests. Version 1.11.0.

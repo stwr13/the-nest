@@ -524,7 +524,8 @@ expenseForm.addEventListener("submit", async (event) => {
     card_charged: cardCharged,
     paid_by: expenseForm.paid_by.value,
     date: expenseForm.date.value,
-    note: expenseForm.note.value.trim() || null,
+    // textarea since v1.11 — collapse newlines: notes are one thought
+    note: expenseForm.note.value.replace(/\s+/g, " ").trim() || null,
   };
 
   try {
@@ -544,6 +545,7 @@ expenseForm.addEventListener("submit", async (event) => {
     expenseForm.amount.value = "";
     resetSplit();
     expenseForm.note.value = "";
+    resizeNote();
     updateAmountPreview();
     // show the month the entry landed in, so the save is always visible
     // even while browsing an older month
@@ -577,6 +579,7 @@ cancelBtn.addEventListener("click", () => {
   expenseForm.amount.value = "";
   resetSplit();
   expenseForm.note.value = "";
+  resizeNote();
   updateAmountPreview();
 });
 
@@ -624,6 +627,14 @@ function updateAmountPreview() {
   amountPreview.textContent = result === null ? "= …" : `= ${sgd.format(result)}`;
 }
 
+// v1.11: the note grows with its content — you see what you type
+const noteField = document.getElementById("exp-note");
+function resizeNote() {
+  noteField.style.height = "auto";
+  noteField.style.height = `${noteField.scrollHeight}px`;
+}
+noteField.addEventListener("input", resizeNote);
+
 expenseForm.amount.addEventListener("input", () => {
   savedLine.hidden = true; // typing the next entry retires the offer
   updateAmountPreview();
@@ -667,6 +678,7 @@ function startEdit(expense) {
   expenseForm.paid_by.value = expense.paid_by;
   expenseForm.date.value = expense.date;
   expenseForm.note.value = expense.note ?? "";
+  resizeNote();
   formTitle.textContent = "Edit expense";
   submitBtn.textContent = "Update";
   cancelBtn.hidden = false;
