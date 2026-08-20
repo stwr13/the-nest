@@ -750,3 +750,22 @@ of detail; past the cap it scrolls inside rather than stretching the
 form. En route the mock exposed that flex-basis and the JS-set height
 fight over a textarea differently per engine — flex:none ends the
 argument. Version 1.11.1.
+
+## 2026-08-20 (v1.12, code side) — the Nest learns to speak: Telegram reminders
+
+The parked next lane gets built — Shawn's go after a cost/architecture
+walkthrough (his sharp questions: does his Telegram need to be open
+anywhere? No — cloud-to-cloud, the bot is its own account; does the API
+burn tokens? No — Telegram's "token" is a password, not a currency;
+zero AI anywhere). First server-side piece of the app: pg_cron (01:00
+UTC = 09:00 SGT) → `send-reminders` Edge Function → one digest of
+due-today + overdue to-dos to the household chat, silent when nothing's
+due, ‼️ for the urgent flag, "today" computed in Asia/Singapore.
+Security holds the standing lines: token/chat-id/cron-secret live in
+the function's secret store only — the committed cron SQL carries a
+`<CRON-SECRET>` placeholder because the repo is public; the function
+answers 403 to anything but the matching header; plain-text sends (no
+parse_mode) for the same reason the app only uses textContent. Not live
+yet: activation is Shawn's ~10-minute paste run (docs/telegram-
+reminders.md, written paste-by-paste). No client change, no version
+bump — the footer version stays an app-build marker.

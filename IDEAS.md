@@ -287,7 +287,10 @@ speculation.
   wait, which exists to filter predictions, not to delay moving real
   usage home. Next lane it opens: **Telegram bot reminders** (pg_cron +
   Edge Function → household chat; recommended over iOS Web Push as the
-  first reminder channel; awaiting Shawn's go). Original park
+  first reminder channel; awaiting Shawn's go). **GO given 2026-08-20 —
+  code side BUILT same day (v1.12): function + cron SQL + setup doc in
+  repo; goes live when Shawn runs docs/telegram-reminders.md (~10 min,
+  BotFather + two dashboard pastes).** Original park
   reasoning kept below for the record.
   Original entry: deliberately parked, not rejected: the to-do list was hours old at
   the time — crowding is a prediction, and the SPEC two-week rule
