@@ -82,7 +82,7 @@ textarea {
   border: 1px solid var(--green-soft);
   border-radius: 10px;
   resize: none;    /* it grows itself — no drag handle */
-  overflow: hidden;
+  overflow-y: auto; /* scrolls only past the 2-line cap */
 }
 
 textarea:focus {
@@ -279,15 +279,23 @@ select:focus {
   color: var(--ink-soft);
 }
 
-/* Note + Date row (v1.11): note flexes and auto-grows, date sits in
-   the shared aside column — "way smaller, we don't need it long" */
+/* Date + Note row (v1.11; v1.11.1 flips them): date left in the aside
+   column — rarely touched, out of the way — note flexes right and
+   auto-grows to 2 lines max, then scrolls (we rarely type more) */
 .note-date-row { display: flex; align-items: stretch; gap: 0.4rem; margin-top: 0.6rem; }
 .note-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.note-col textarea { flex: 1; min-height: 42px; }
+/* cap = 2 lines + padding + borders; inline height from resizeNote
+   clamps here and overflow-y takes over */
+/* flex:none — the JS-set height must own the box; a flex-basis would
+   fight it (and lose differently per engine) */
+.note-col textarea { flex: none; min-height: 42px; max-height: calc(2.7em + 1.2rem + 2px); }
 .note-col label, .date-col label { margin: 0 0 0.2rem; }
 .date-col { width: var(--form-aside); flex-shrink: 0; display: flex; flex-direction: column; }
-/* the narrow column: give the value every pixel */
-.date-col input { padding-left: 0.25rem; padding-right: 0.25rem; }
+/* the narrow column: give the value every pixel, and let the type
+   breathe — idle at 0.9rem, back to the 16px floor on focus so iOS
+   has no reason to zoom the page */
+.date-col input { padding-left: 0.25rem; padding-right: 0.25rem; font-size: 0.9rem; }
+.date-col input:focus { font-size: 1rem; }
 
 .segment { display: flex; gap: 0.5rem; }
 .segment-stack { flex-direction: column; gap: 0.3rem; }

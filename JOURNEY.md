@@ -736,3 +736,17 @@ what actually shows you what you typed. Newlines collapse to spaces on
 save (a note is one thought); the ledger renders unchanged. resizeNote
 fires on input, on edit pre-fill, and on both resets, so the box never
 stays stretched after its content is gone. 41/41 tests. Version 1.11.0.
+
+## 2026-08-20 (v1.11.1) — date left, note capped at two lines
+
+Phone check of v1.11.0, two refinements from Shawn. Date moves to the
+LEFT of the row — the rarely-touched field steps aside, the note takes
+the prime slot — and its type drops to 0.9rem so the value sits in the
+narrow box with air instead of cramping (idle-small, 16px on focus:
+the iOS zoom trigger reads the focused size, so the floor is honoured
+exactly when it matters). The note's growth is capped at two lines —
+household fact, recorded as asked: we don't type more than two lines
+of detail; past the cap it scrolls inside rather than stretching the
+form. En route the mock exposed that flex-basis and the JS-set height
+fight over a textarea differently per engine — flex:none ends the
+argument. Version 1.11.1.
