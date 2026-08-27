@@ -132,6 +132,7 @@ const amountPreview = document.getElementById("amount-preview");
 // token refresh, so this is the single place that decides the view.
 supabase.auth.onAuthStateChange((_event, session) => {
   currentUser = session?.user ?? null;
+  showLoginError(null); // retire the boot watchdog's message once auth answers
   loginView.hidden = Boolean(session);
   appView.hidden = !session;
   if (session) {
@@ -145,6 +146,21 @@ supabase.auth.onAuthStateChange((_event, session) => {
     appLoaded = false;
   }
 });
+
+// Boot watchdog (v1.12.1): the handler above is the only thing that
+// unhides a view, and INITIAL_SESSION won't fire until supabase-js has
+// refreshed an expired token — a network round-trip. On a cold open
+// (first launch of the day, radio still waking) that refresh can hang,
+// which used to leave the app permanently blank; close-and-reopen was
+// the only cure. If no view is visible after 4s, surface the login view
+// with a visible status line instead — never a silent blank. Whenever
+// auth does answer, the handler wins: it clears this message and shows
+// the correct view.
+setTimeout(() => {
+  if (!loginView.hidden || !appView.hidden) return; // auth already answered
+  loginView.hidden = false;
+  showLoginError("Still connecting — this screen will sort itself out in a moment.");
+}, 4000);
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
