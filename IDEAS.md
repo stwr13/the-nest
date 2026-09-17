@@ -10,64 +10,78 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-09-06 (resume here)
+## Open decisions — board as of 2026-09-18 (resume here)
 
-Everything on the 2026-08-12 board is done. The todos migration ran,
-`v1.2` merged, and nine versions shipped after it: v1.3 (To-buy tab) →
-v1.4–v1.8 (cards, earn tags, card faces, group-bill split) → v1.9–v1.11
-(the compact-form rework) → v1.12 (Telegram reminders, code side).
-Live app is **v1.12.1**; main is clean and in sync with origin.
+Live app is **v1.13.0**. Shawn set the frame for this round himself:
+"strapped for time and unable to sit down to spend time and think.
+currently its working and the tracking becomes a habit already." The
+habit is the strongest signal this app has produced — the daily capture
+job is done, so what's left is about living with the data, not catching
+it. Sessions now default to *build it and show him*, not *ask him to
+decide*.
 
-Blocking — one item, and it is not a build:
+In build:
 
-1. **Activate Telegram reminders.** The only place where the code is
-   finished and only a person is missing. `docs/telegram-reminders.md`,
-   ~10 minutes across phone + Supabase dashboard: BotFather → chat id →
-   deploy `send-reminders` with Verify JWT **off** and three secrets →
-   run `db/migrations/2026-08-20-telegram-reminders-v1_12.sql` with
-   `<CRON-SECRET>` filled in → test-fire. Waiting since 2026-08-20.
-   Optional `TELEGRAM_TOPIC_ID` if the digest should land in one topic.
+1. **Recurring commitments (v1.14).** Groundwork committed on branch
+   `v1.14`: migration (recurring table, `expenses.recurring_id`,
+   `confirm_recurring` / `skip_recurring` RPCs) and the date/money maths
+   with tests. Screens still to build — due strip, Recurring tab, "make
+   this recurring" from a logged expense. Prompted by Shawn naming the
+   real gap: some items "I don't even input because I don't 'spend'".
+   The diagnosis: no spend moment, therefore no trigger — habit cannot
+   fix it, only a due date can. Design settled in-session and recorded
+   in JOURNEY 2026-09-18; a tap-through prototype is what got the yes.
+   **Claude runs the migration via Chrome** — see item 4.
 
-Verify in passing:
+Declined / parked by Shawn this round:
 
-2. **v1.12.1 boot watchdog, on a real cold open.** Reproduced against a
-   deliberately hanging endpoint and verified in preview; the genuine
-   first-launch-of-the-day case hasn't come round since. Nothing to
-   build — just notice whether the blank screen is gone.
+2. **Telegram reminders — declined for now.** "A little bit painful at
+   this point in time; I don't really want to do it." Not dead, not
+   nagged: the code has been ready since 2026-08-20. Standing offer, made
+   once — Claude drives the Supabase dashboard through Chrome, leaving
+   Shawn about two minutes with BotFather on his phone.
+3. **Zero-touch capture — deferred, and not for lack of evidence.**
+   Fieldwork finally answered (Shawn, 2026-09-18): alerts arrive as SMS,
+   as email, and *sometimes* as bank-app push. So partial capture is the
+   realistic ceiling. That isn't the blocker — nothing auto-commits, so
+   an uncaptured alert just gets logged the way it is today; capture is
+   strictly additive. The real hazard is trusting it and silently
+   dropping what it misses. **Recurring decides this for free:** it
+   builds the same pending-confirm spine, so a month of living with a
+   confirm queue answers "does this household trust a pending pile?"
+   from behaviour rather than speculation. Revisit after v1.14 is in
+   use; email-only (Gmail auto-forward) is the sturdy path when it does.
 
-Before the next scoping session:
+Process:
 
-3. **Harvest the ideas table.** Last harvest 2026-08-01. Five weeks of
-   live use sit uncollected — and they are the app's busiest weeks
-   (cards, to-buy, the whole form rework landed inside them), so the
-   captures most likely to describe *shipped* behaviour are exactly the
-   ones unread. Claude drives the SQL editor through Chrome directly;
-   no copy-paste. Do this before scoping anything, or the next build
-   gets picked from memory instead of evidence.
-
-Roadmap honesty check:
-
-4. **Zero-touch capture is nine versions behind its own slot.** It was
-   agreed as the v1.2 headline on 2026-07-29; v1.2 through v1.12 went
-   elsewhere, every one of them to a live-use raise that arrived louder
-   and cheaper. That is the two-week rule working, not drift — but the
-   gap it leaves is the largest one between what the app does and what
-   Shawn said he wanted ("avoid manual input as much as possible"). It
-   stays gated on item 5 below, which costs nothing but attention and
-   still hasn't been done.
+4. **Dashboard chores are the real bottleneck, and Claude can take
+   them.** Both stalls in this project's history — Telegram since
+   August, and every migration before it — are steps needing Shawn's
+   hands in the Supabase dashboard, not code. Claude drives the SQL
+   editor through Chrome directly, so migrations no longer need him.
+   Applied from v1.14 onward.
+5. **The idea box is effectively dead as a channel.** Shawn, unprompted
+   (2026-09-18): "the truth is that both Claire and myself haven't been
+   doing this." Last harvest 2026-08-01. Every real raise in the last
+   two months arrived in session instead. A harvest is still worth one
+   cheap run, but the honest conclusion is that the relay described at
+   the top of this file no longer reflects how feedback actually
+   travels — and a backlog fed by a dead channel will quietly start
+   describing a household that stopped talking to it.
+6. **v1.12.1 boot watchdog** — no blank-screen report since it shipped
+   three weeks ago. Treating it as good; nothing to do.
 
 Household / passive:
 
-5. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
-   Gates zero-touch capture scoping: SMS and email are capturable, bank
-   app-push is sealed off by iOS and capturable by nothing. If most
-   alerts turn out to be app pushes, the real first step is enabling
-   per-transaction email alerts in the bank's settings. Passive
-   noticing, no deadline — open since 2026-07-29.
-6. **Claire's two stragglers** — the tithe + a book purchase still in
+7. **Claire's two stragglers** — the tithe + a book purchase still in
    Other; July's counted total reads high by the tithe amount until it
-   moves. (Confirmed still there in the 2026-08-02 category audit:
-   Other holds 3 entries.)
+   moves.
+
+Closed 2026-09-18: **ledger de-clutter** and **per-category
+month-on-month**, both shipped in v1.13.0 (see JOURNEY) — the first
+after two raises from Claire since July, the second fifteen versions
+after Shawn first named it. Both had been sitting parked-with-a-shape,
+which is exactly what made them cheap to ship the moment he said go.
 
 Closed 2026-09-06: the entire 2026-08-12 board — todos migration run,
 `v1.2` merged and phone-checked; card/miles tracking **BUILT 2026-08-13
@@ -126,7 +140,13 @@ speculation.
   case the entry said would build itself has built. Related polish:
   **category icons** (Shawn 07-18) — visual differentiation doubles as
   ledger scannability.
-- **Ledger filtering / de-clutter** (raised pre-launch 2026-07-16,
+- **Ledger filtering / de-clutter** — ~~parked~~ **SHIPPED 2026-09-18
+  (v1.13.0)**: the ledger now renders the last 25 entries with a "show
+  all" control, cutting on whole days so no day header ever prints a
+  total that disagrees with the rows under it. Claire's root need —
+  the whole list is too long on screen — is met; the original entry
+  and its long evidence trail are kept below for the record.
+  Original entry: (raised pre-launch 2026-07-16,
   incl. long-ledger scroll fold-in; re-raised in live use by both
   users independently). Shawn (07-17): filter by person — "the entire
   ledger is a clutter. I can't easily see if I logged something I just
@@ -185,7 +205,12 @@ speculation.
   separate calculator screen — both add taps/modes; likely
   over-engineering. Direction agreed 2026-07-29: inline shape, in the
   v1.1 working scope.
-- **Per-category month-on-month comparison** (raised 2026-07-29 by
+- **Per-category month-on-month comparison** — ~~waiting on live-use
+  demand~~ **SHIPPED 2026-09-18 (v1.13.0)**: every category bar now
+  carries its move against the previous month (▲ alert colour for a
+  rise, ▼ green for a fall, nothing where last month has no such
+  category). The data model had always supported it; only the delta was
+  missing. Original entry: (raised 2026-07-29 by
   Shawn during the 2b design review: "we might compare or analyse
   which category we spent more in comparison"). Today's dashboard
   compares months as absolute totals only; category bars exist for the
