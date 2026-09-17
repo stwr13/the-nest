@@ -183,7 +183,7 @@ input[type="date"]::-webkit-date-and-time-value {
 .dash-cats li + li { margin-top: 0.6rem; }
 
 .cat-row { display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 600; }
-.cat-row span:last-child { color: var(--green-deep); }
+.cat-row > span:last-child { color: var(--green-deep); }
 
 .cat-bar {
   height: 6px;
@@ -197,7 +197,7 @@ input[type="date"]::-webkit-date-and-time-value {
 
 /* excluded-from-totals categories (e.g. Blessing): visible, not summed */
 .cat-excluded .cat-row { font-weight: 500; color: var(--ink-soft); }
-.cat-excluded .cat-row span:last-child { color: var(--ink-soft); }
+.cat-excluded .cat-row > span:last-child { color: var(--ink-soft); }
 
 /* ── category manager (v1.1 piece 2b) ── */
 .cat-hint { margin: 0 0 0.5rem; }
@@ -714,4 +714,29 @@ select:focus {
   .view { padding: 2rem; }
   #app-view { max-width: 40rem; margin: 0 auto; }
   .card { padding: 1.5rem; }
+}
+
+/* ── v1.13.0: per-category month-on-month + ledger cap ── */
+.cat-values {
+  color: var(--green-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.05rem;
+}
+
+.cat-delta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* up is the direction worth noticing in a spending list */
+.cat-delta-up { color: var(--danger); }
+.cat-delta-down { color: var(--green); }
+
+.ledger-more {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
 }

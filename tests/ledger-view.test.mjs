@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ledgerView, dayTotal, recentDayTotals } from "../js/ledger-view.js";
+import { ledgerView, dayTotal, recentDayTotals, capGroups } from "../js/ledger-view.js";
 
 const e = (id, date, paid_by, category_id = 1) => ({ id, date, paid_by, category_id });
 const expenses = [
@@ -92,4 +92,34 @@ test("recentDayTotals crosses month boundaries and treats excluded-only days as 
     { date: "2026-07-31", total: 0 },
     { date: "2026-07-30", total: 0 },
   ]);
+});
+
+test("capGroups caps the ledger by whole days", () => {
+  const mk = (date, n) =>
+    Array.from({ length: n }, (_, i) => ({
+      date, paid_by: "Shawn", category_id: 1, amount: "1.00", id: `${date}-${i}`,
+    }));
+  const groups = ledgerView([...mk("2026-09-18", 10), ...mk("2026-09-17", 10), ...mk("2026-09-16", 10)]);
+
+  const capped = capGroups(groups, 25);
+  assert.equal(capped.shown.length, 2, "two whole days fit under 25; the third would exceed it");
+  assert.equal(capped.hiddenEntries, 10);
+  assert.equal(capped.hiddenDays, 1);
+
+  const expanded = capGroups(groups, null);
+  assert.equal(expanded.shown.length, 3, "null limit means expanded");
+  assert.equal(expanded.hiddenEntries, 0);
+
+  // a single day bigger than the cap still renders — today is never
+  // the thing hidden by its own size
+  const huge = ledgerView(mk("2026-09-18", 40));
+  const cappedHuge = capGroups(huge, 25);
+  assert.equal(cappedHuge.shown.length, 1);
+  assert.equal(cappedHuge.hiddenEntries, 0);
+
+  // days are never split: no part-day totals
+  const uneven = ledgerView([...mk("2026-09-18", 20), ...mk("2026-09-17", 20)]);
+  const cappedUneven = capGroups(uneven, 25);
+  assert.equal(cappedUneven.shown[0].items.length, 20, "whole days only");
+  assert.equal(cappedUneven.shown.length, 1);
 });

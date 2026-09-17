@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
-import { ledgerView, dayTotal, recentDayTotals } from "./ledger-view.js";
+import { ledgerView, dayTotal, recentDayTotals, capGroups } from "./ledger-view.js";
 import { todosView } from "./todos-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
@@ -50,6 +50,11 @@ const ledgerStatus = document.getElementById("ledger-status");
 const dashLabel = document.getElementById("dash-label");
 const dashTotal = document.getElementById("dash-total");
 const dashCompare = document.getElementById("dash-compare");
+// Ledger cap (v1.13.0): 25 is the middle of Shawn's 20–30, and covers
+// roughly the last fortnight at the household's real logging rate.
+const LEDGER_CAP = 25;
+let ledgerExpanded = false;
+const ledgerMore = document.getElementById("ledger-more");
 const dashCats = document.getElementById("dash-cats");
 const dashEmpty = document.getElementById("dash-empty");
 const dashMonths = document.getElementById("dash-months");
@@ -273,14 +278,33 @@ function renderLedger(expenses) {
     return;
   }
   showLedgerStatus(null);
+  const { shown, hiddenEntries } = capGroups(groups, ledgerExpanded ? null : LEDGER_CAP);
   // textContent throughout: notes are user input and must never be
   // interpreted as HTML
   ledgerList.replaceChildren(
-    ...groups.flatMap((group, i) => [
+    // the FYI on the newest header glances back over calendar days, so
+    // it reads the FULL group list — the cap is a display limit, never
+    // a change to what the numbers mean
+    ...shown.flatMap((group, i) => [
       dayHeader(group.date, group.items, i === 0 ? groups : null),
       ...group.items.map(renderEntry),
     ]),
   );
+  renderLedgerMore(hiddenEntries);
+}
+
+// The expand control only appears when something is actually hidden —
+// a "show all" on a list that already shows all is a lie about length.
+function renderLedgerMore(hiddenEntries) {
+  if (hiddenEntries > 0) {
+    ledgerMore.hidden = false;
+    ledgerMore.textContent = `Show all — ${hiddenEntries} more ${hiddenEntries === 1 ? "entry" : "entries"}`;
+  } else if (ledgerExpanded) {
+    ledgerMore.hidden = false;
+    ledgerMore.textContent = `Show recent only`;
+  } else {
+    ledgerMore.hidden = true;
+  }
 }
 
 // v1.10: the header carries the day's counted total beside the date
@@ -391,7 +415,7 @@ function renderEntry(expense) {
 // month's breakdown used to vanish — exactly when you want to review it
 // (Claire, idea box 2026-08-01).
 function renderDashboard(expenses) {
-  const { thisCents, byCategory, past, excluded } = summarize(expenses, dashDate);
+  const { thisCents, byCategory, prevByCategory, past, excluded } = summarize(expenses, dashDate);
   const viewingNow = monthKey(dashDate) === monthKey(new Date());
 
   dashLabel.textContent = viewingNow
@@ -436,8 +460,11 @@ function renderDashboard(expenses) {
     : `Nothing logged in ${monthFmt.format(dashDate)}.`;
   const maxCents = rows[0]?.[1] ?? 1;
   const excludedRows = [...excluded.entries()].sort((a, b) => b[1] - a[1]);
+  const prevLabel = monthShortFmt.format(shiftMonth(dashDate, -1));
   dashCats.replaceChildren(
-    ...rows.map(([label, cents]) => categoryRow(label, cents, maxCents)),
+    ...rows.map(([label, cents]) =>
+      categoryRow(label, cents, maxCents, prevByCategory.get(label), prevLabel),
+    ),
     ...excludedRows.map(([label, cents]) => excludedCategoryRow(label, cents)),
   );
 }
@@ -474,16 +501,43 @@ function excludedCategoryRow(label, cents) {
   return li;
 }
 
-function categoryRow(labelText, cents, maxCents) {
+// v1.13.0: each bar carries its own month-on-month move. Shawn, during
+// the 2b review: "we might compare or analyse which category we spent
+// more in comparison" — the data model always supported it (every entry
+// keeps category_id + date), only the delta was missing. Shown only
+// where last month actually has that category: a delta against nothing
+// is not a 100% rise, it's a category that didn't exist yet.
+function categoryRow(labelText, cents, maxCents, prevCents, prevLabel) {
   const li = document.createElement("li");
 
   const row = document.createElement("div");
   row.className = "cat-row";
   const label = document.createElement("span");
   label.textContent = labelText;
+
+  const values = document.createElement("span");
+  values.className = "cat-values";
   const value = document.createElement("span");
   value.textContent = sgd.format(cents / 100);
-  row.append(label, value);
+  values.append(value);
+
+  if (prevCents > 0) {
+    const diff = cents - prevCents;
+    const delta = document.createElement("span");
+    delta.className = "cat-delta";
+    if (diff === 0) {
+      delta.textContent = `same as ${prevLabel}`;
+    } else {
+      // up is the direction worth noticing in a spending list, so it
+      // takes the alert colour — semantic, not decorative
+      delta.classList.add(diff > 0 ? "cat-delta-up" : "cat-delta-down");
+      const arrow = diff > 0 ? "▲" : "▼";
+      delta.textContent = `${arrow} ${sgdWhole.format(Math.round(Math.abs(diff) / 100))} vs ${prevLabel}`;
+    }
+    values.append(delta);
+  }
+
+  row.append(label, values);
 
   const bar = document.createElement("div");
   bar.className = "cat-bar";
@@ -1385,8 +1439,21 @@ function showSavedJump(id) {
   savedLine.hidden = false;
 }
 
+ledgerMore.addEventListener("click", () => {
+  ledgerExpanded = !ledgerExpanded;
+  renderLedger(expensesCache);
+  if (!ledgerExpanded) glideTo(document.querySelector(".ledger-card"));
+});
+
 document.getElementById("saved-jump").addEventListener("click", () => {
   let row = lastSavedId === null ? null : ledgerList.querySelector(`li[data-id="${lastSavedId}"]`);
+  if (!row && lastSavedId !== null && !ledgerExpanded) {
+    // the cap is hiding it (an edit to an old entry keeps its old date,
+    // so the row can sit below the fold) — expand before giving up
+    ledgerExpanded = true;
+    renderLedger(expensesCache);
+    row = ledgerList.querySelector(`li[data-id="${lastSavedId}"]`);
+  }
   if (!row && lastSavedId !== null) {
     // the active filter hides the new row — reset to All so the check
     // can land; a jump that arrives nowhere reads as a lost entry

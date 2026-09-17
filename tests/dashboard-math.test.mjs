@@ -54,3 +54,19 @@ test("labels combine icon and name; icon optional", () => {
   assert.equal(categoryLabel(cat("Groceries", "🛒")), "🛒 Groceries");
   assert.equal(categoryLabel(cat("Other")), "Other");
 });
+
+test("summarize returns the previous month's per-category totals", () => {
+  const ex = (date, amount, name) => ({ date, amount, categories: { name, icon: null } });
+  const { byCategory, prevByCategory } = summarize(
+    [
+      ex("2026-09-10", "40.00", "Eating out"),
+      ex("2026-08-10", "25.00", "Eating out"),
+      ex("2026-08-11", "15.00", "Groceries"),
+    ],
+    new Date(2026, 8, 18),
+  );
+  assert.equal(byCategory.get("Eating out"), 4000);
+  assert.equal(prevByCategory.get("Eating out"), 2500, "August is the comparison month");
+  assert.equal(prevByCategory.get("Groceries"), 1500);
+  assert.equal(prevByCategory.get("Nope"), undefined);
+});
