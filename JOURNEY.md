@@ -812,3 +812,86 @@ thing is unreliable even when it isn't.
 Reproduced before it was fixed, against a stand-in endpoint made to
 hang, and verified in preview. Still wants one real cold-open
 confirmation on the phone. Version 1.12.1.
+
+## 2026-09-18 (v1.13.0) — the ledger gets shorter, the bars get a memory
+
+Two long-standing raises shipped in one sitting, both cleared by a
+session where Shawn was explicit about having no time to think: "strapped
+for time... currently it's working and the tracking becomes a habit
+already." A habit is the strongest signal this app has ever had — it
+means the daily job is done and the remaining asks are about living with
+the data, not capturing it.
+
+**Ledger cap** (Claire, raised twice since July — the whole list is
+"unnecessary and unsightly"; shape from Shawn: last 20–30 with an
+expand). `capGroups` cuts at 25 entries but on WHOLE days only: a
+part-day would print a day total that doesn't match the rows beneath it,
+and a total that lies is worse than a long list. The newest day always
+survives however big it is, so today is never what gets hidden. The
+expand control appears only when something is genuinely hidden — a "show
+all" over a list that already shows all is a lie about length. One trap
+closed on the way: editing an old entry keeps its old date, so its row
+can sit below the fold; the saved-jump now expands before giving up,
+because a jump that lands nowhere reads as a lost entry.
+
+**Per-category month-on-month** (Shawn, 2026-07-29, during the 2b
+review). `summarize` now returns the previous month's per-category
+totals from the same pass — the data model always supported this (every
+entry keeps category_id + date forever), only the delta was missing.
+Each bar carries its move: ▲ in the alert colour for a rise, ▼ in green
+for a fall, "same as Aug" when flat, and nothing at all where last month
+has no such category — a delta against nothing is not a 100% rise, it's
+a category that didn't exist yet.
+
+Pre-push catch: `.cat-row span:last-child` also matched the new delta
+span nested inside the value wrapper and overrode its colour — the
+classic descendant-selector collision. Scoped to a direct child, with
+the wrapper carrying the colour so the amount still inherits it. Caught
+by reading the existing CSS before writing the new rule, not by seeing
+it break. 43/43 tests. Version 1.13.0.
+
+## 2026-09-18 (v1.14 groundwork) — the registry that predicts, the ledger that records
+
+Recurring commitments get their foundation, prompted by Shawn naming the
+gap precisely: some things "I don't even input because I don't 'spend'"
+— Spotify, ChatGPT, Claude, insurance. The diagnosis that shaped the
+build: it isn't that recurring items are tedious to type, it's that
+**there is no spend moment, so there is no trigger**. Subscriptions are
+designed to be unconscious. No amount of habit fixes that; only a due
+date can.
+
+Settled first, in conversation, and worth keeping because it decides
+everything else: **the ledger mirrors money movement.** One row per
+actual charge, on the actual date, with the actual payment mode. Shawn's
+own reconciliation instinct produced the rule — splitting an annual
+premium into twelve phantom entries would break any attempt to check the
+ledger against a statement. So amortisation (a yearly premium shown as a
+monthly figure) is a REGISTRY view and never reaches the ledger. The
+registry predicts; the ledger records; the only bridge is a person
+tapping Confirm. Nothing auto-commits — the day you cancel Spotify is
+the day auto-commit starts lying, and it's the day nobody is looking.
+
+The third case settled itself on existing machinery: a $2,000/month
+investment-linked premium must be in the ledger (it left the account,
+reconciliation needs it) but must not count as spending (it would swamp
+the household number every month and teach both of them to distrust the
+total). That is exactly what `excluded_from_totals` already does for
+Blessing — no new mechanism, and the card-cap math already counts
+excluded spend because the bank does.
+
+Shipped in this commit: the migration (recurring table, nullable
+`expenses.recurring_id` with on-delete-restrict so a row with history is
+deactivated rather than deleted, two RPCs) and the pure maths with
+tests. `confirm_recurring` is atomic and pins the confirm to the due
+date the caller SAW — the due strip is household-shared, so without that
+guard both phones tapping at once write the charge twice. It dates the
+expense on the DUE date, never today: confirming a week late must not
+misdate the charge. `skip_recurring` is deliberately separate from
+deactivating, because a cancellation mistaken for a skip returns as a
+phantom next month while the reverse costs nothing.
+
+`anchor_day` is stored apart from `next_due` for one reason: an item
+anchored on the 31st must land on the 28th in February and RETURN to the
+31st in March. Stepping from the previous due date instead would pin it
+to the 28th permanently — tested both directions, leap years included.
+51/51 tests. Screens still to build.
