@@ -769,3 +769,46 @@ parse_mode) for the same reason the app only uses textContent. Not live
 yet: activation is Shawn's ~10-minute paste run (docs/telegram-
 reminders.md, written paste-by-paste). No client change, no version
 bump — the footer version stays an app-build marker.
+
+## 2026-08-20 (v1.12, addendum) — one topic, not the whole chat
+
+Same-day follow-up to the Telegram lane, from Shawn's question about
+where the digest would actually land: does a bot in the household chat
+mean a bot *reading* the household chat? No — Telegram bots run in
+privacy mode by default and receive only /commands and direct replies,
+never normal conversation, so a plain-member bot is deaf to the couple
+talk by design. That guarantee is now written into the setup doc rather
+than left as something to trust, along with the sharper option: a small
+dedicated group (us two + bot) buys separation that needs no guarantee
+at all. Code side, `TELEGRAM_TOPIC_ID` became an optional secret — when
+present the send carries `message_thread_id` so the digest lands in one
+topic of a forum-style group; absent, it posts to the group root. The
+doc explains where to find the id (tap a message → Copy Link, middle
+number). Optional-by-absence, so nobody who doesn't use topics has to
+think about it. No client change, no version bump.
+
+## 2026-08-28 (v1.12.1) — the blank screen only a reopen could cure
+
+A real symptom, finally understood: on the first launch of the day the
+app sometimes came up blank — no login, no ledger — and closing and
+reopening was the only fix. The cause sat in the boot path. Both views
+start hidden and the auth handler is the ONLY thing that unhides one,
+but supabase-js won't emit `INITIAL_SESSION` until it has refreshed an
+expired token — a network round-trip. On a cold open, radio still
+waking, that refresh can hang, and a hung refresh means no event, which
+means no view, forever. The app wasn't broken; it was waiting, silently,
+with nothing on screen to say so.
+
+Fix is a 4-second watchdog: if neither view is visible by then, surface
+the login view with a visible line — "Still connecting — this screen
+will sort itself out in a moment." When auth does answer, the handler
+wins: it clears the message and shows the correct view, so a slow
+network costs a beat of honest text instead of a dead screen. The rule
+underneath it is the same one the save path already follows: fail
+visibly. A blank screen is the worst failure mode available — it is
+indistinguishable from a broken app, and it teaches the user that the
+thing is unreliable even when it isn't.
+
+Reproduced before it was fixed, against a stand-in endpoint made to
+hang, and verified in preview. Still wants one real cold-open
+confirmation on the phone. Version 1.12.1.

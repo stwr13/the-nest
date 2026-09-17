@@ -10,49 +10,74 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-08-12 (resume here)
+## Open decisions — board as of 2026-09-06 (resume here)
 
-**v1.2 is LOCKED and BUILT on branch `v1.2`** (Shawn, 2026-08-12 —
-all four open calls answered in one sitting): Ship 1 only · piece 0
-first (version marker + cache-first SW, both shipped in the branch) ·
-branch-then-merge workflow (`v1.1` tag stays the rollback anchor; a
-separate "Nest 2.0" app was rejected — git protects the code, a fork
-would split the shared database) · scroll-jank one-liner waived
-(neither phone feels it; re-raise only if felt). Scope lives in
-SPEC.md's v1.2 section; build record in JOURNEY.md 2026-08-12.
+Everything on the 2026-08-12 board is done. The todos migration ran,
+`v1.2` merged, and nine versions shipped after it: v1.3 (To-buy tab) →
+v1.4–v1.8 (cards, earn tags, card faces, group-bill split) → v1.9–v1.11
+(the compact-form rework) → v1.12 (Telegram reminders, code side).
+Live app is **v1.12.1**; main is clean and in sync with origin.
 
-Blocking the merge:
+Blocking — one item, and it is not a build:
 
-1. **Run the todos migration** —
-   `db/migrations/2026-08-12-todos-v1_2.sql` in the Supabase SQL
-   editor (additive only; household-wide update/delete is deliberate —
-   rationale in the file). Then merge `v1.2` → main, phone-check.
-   Cache-first caveat for that check: the footer shows v1.2.0 on the
-   SECOND launch after deploy — the first still serves the old build.
+1. **Activate Telegram reminders.** The only place where the code is
+   finished and only a person is missing. `docs/telegram-reminders.md`,
+   ~10 minutes across phone + Supabase dashboard: BotFather → chat id →
+   deploy `send-reminders` with Verify JWT **off** and three secrets →
+   run `db/migrations/2026-08-20-telegram-reminders-v1_12.sql` with
+   `<CRON-SECRET>` filled in → test-fire. Waiting since 2026-08-20.
+   Optional `TELEGRAM_TOPIC_ID` if the digest should land in one topic.
 
-**BUILT 2026-08-13 (v1.4.0) — see JOURNEY; design locked in-session (in-app cards list · required + smart default · dedicated Cards area, not the ledger · clean start). The at-the-shop recommend feature shipped as cap-headroom guidance; merchant-aware earn rules deliberately deferred.** Original entry: card
-tracking on expenses, live BEFORE September** so the new month is
-tagged from day one. The need: entries should record WHICH card paid,
-so the household can see where miles are maximized (and where they're
-not). Was explicitly out of scope in v1.0 ("card/miles tagging") —
-real use has now called it up. Shape to decide at next session's
-lock, not tonight: (a) a `cards` table managed in-app like categories
-(name, owner, notes on miles earn) vs a simple text/choice column;
-(b) required on every entry or optional with an "unspecified"
-default; (c) smart per-person default (same pattern as the category
-default — each person's usual card preselected); (d) where the
-readout lives — dashboard split by card, ledger filter, or both;
-(e) whether history needs backfilling or starts clean from September.
-Additive migration either way; old clients keep working.
+Verify in passing:
+
+2. **v1.12.1 boot watchdog, on a real cold open.** Reproduced against a
+   deliberately hanging endpoint and verified in preview; the genuine
+   first-launch-of-the-day case hasn't come round since. Nothing to
+   build — just notice whether the blank screen is gone.
+
+Before the next scoping session:
+
+3. **Harvest the ideas table.** Last harvest 2026-08-01. Five weeks of
+   live use sit uncollected — and they are the app's busiest weeks
+   (cards, to-buy, the whole form rework landed inside them), so the
+   captures most likely to describe *shipped* behaviour are exactly the
+   ones unread. Claude drives the SQL editor through Chrome directly;
+   no copy-paste. Do this before scoping anything, or the next build
+   gets picked from memory instead of evidence.
+
+Roadmap honesty check:
+
+4. **Zero-touch capture is nine versions behind its own slot.** It was
+   agreed as the v1.2 headline on 2026-07-29; v1.2 through v1.12 went
+   elsewhere, every one of them to a live-use raise that arrived louder
+   and cheaper. That is the two-week rule working, not drift — but the
+   gap it leaves is the largest one between what the app does and what
+   Shawn said he wanted ("avoid manual input as much as possible"). It
+   stays gated on item 5 below, which costs nothing but attention and
+   still hasn't been done.
 
 Household / passive:
 
-4. **Claire's two stragglers** — the tithe + a book purchase still in
+5. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
+   Gates zero-touch capture scoping: SMS and email are capturable, bank
+   app-push is sealed off by iOS and capturable by nothing. If most
+   alerts turn out to be app pushes, the real first step is enabling
+   per-transaction email alerts in the bank's settings. Passive
+   noticing, no deadline — open since 2026-07-29.
+6. **Claire's two stragglers** — the tithe + a book purchase still in
    Other; July's counted total reads high by the tithe amount until it
    moves. (Confirmed still there in the 2026-08-02 category audit:
    Other holds 3 entries.)
-5. **Alert-channel fieldwork** — SMS / email / app-popup, per bank.
-   Gates zero-touch capture scoping. Passive noticing, no deadline.
+
+Closed 2026-09-06: the entire 2026-08-12 board — todos migration run,
+`v1.2` merged and phone-checked; card/miles tracking **BUILT 2026-08-13
+(v1.4.0)**, design locked in-session (in-app cards list · required with
+smart per-person default · dedicated Cards area rather than the ledger ·
+clean start, no backfill), the at-the-shop recommendation shipping as
+cap-headroom guidance while merchant-aware earn rules stayed deferred —
+and everything it grew into through v1.8 (earn tags, real card faces
+from private Storage, the usage-ordered picker, group-bill splitting).
+See JOURNEY 2026-08-13 → 2026-08-14.
 
 Closed 2026-08-02: v1.1 (tagged); Gifts/Blessing boundary (confirmed
 into SPEC); category reorder (waived by Shawn — audit found no
