@@ -13,8 +13,13 @@ export function categoryLabel(cat) {
 // surface separately in `excluded` for this month.
 export function summarize(expenses, now) {
   const thisKey = monthKey(now);
+  // the month before the one on screen — its per-category totals are
+  // what the bars compare against (v1.13.0). Computed in the same pass:
+  // the data was always here, only the delta was missing.
+  const prevKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
   let thisCents = 0;
   const byCategory = new Map();
+  const prevByCategory = new Map();
   const byMonth = new Map();
   const excluded = new Map();
 
@@ -31,6 +36,9 @@ export function summarize(expenses, now) {
       byCategory.set(label, (byCategory.get(label) ?? 0) + cents);
     } else {
       byMonth.set(key, (byMonth.get(key) ?? 0) + cents);
+      if (key === prevKey) {
+        prevByCategory.set(label, (prevByCategory.get(label) ?? 0) + cents);
+      }
     }
   }
 
@@ -48,7 +56,7 @@ export function summarize(expenses, now) {
     }
   }
 
-  return { thisCents, byCategory, past, excluded };
+  return { thisCents, byCategory, prevByCategory, past, excluded };
 }
 
 export function monthKey(date) {

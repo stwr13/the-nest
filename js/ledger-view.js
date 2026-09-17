@@ -47,3 +47,24 @@ export function recentDayTotals(groups, anchorDate, days = 2) {
   }
   return out;
 }
+
+// Ledger length cap (v1.13.0 — Claire, twice since July: the whole
+// ledger is "unnecessary and unsightly" on screen; shape from Shawn:
+// last 20–30 entries with an expand control). Whole days only — a
+// part-day would print a day total that doesn't match the rows beneath
+// it, and a total that lies is worse than a long list. The newest day
+// always survives, however big it is, so today is never the thing
+// hidden. `limit === null` means expanded: everything, no cap.
+export function capGroups(groups, limit) {
+  if (limit === null) return { shown: groups, hiddenEntries: 0, hiddenDays: 0 };
+  const shown = [];
+  let count = 0;
+  for (const group of groups) {
+    if (shown.length > 0 && count + group.items.length > limit) break;
+    shown.push(group);
+    count += group.items.length;
+  }
+  let hiddenEntries = 0;
+  for (let i = shown.length; i < groups.length; i++) hiddenEntries += groups[i].items.length;
+  return { shown, hiddenEntries, hiddenDays: groups.length - shown.length };
+}
