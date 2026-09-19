@@ -895,3 +895,52 @@ anchored on the 31st must land on the 28th in February and RETURN to the
 31st in March. Stepping from the previous due date instead would pin it
 to the 28th permanently — tested both directions, leap years included.
 51/51 tests. Screens still to build.
+
+## 2026-09-19 (v1.15.0) — Coming up: a snapshot, deliberately not a calendar
+
+Phase 3 of the founding vision ("shared calendar, things we want to
+do") finally built, and the design was decided by Shawn doubting his
+own request: "I'm not sure if I'm overbuilding this or over-engineering
+it, because calendars already exist."
+
+He wasn't — but only because of the word he reached for. He said "one
+snapshot", not "a calendar", and the two are different objects. A
+calendar holds your dentist appointment; Google already does that
+better, on both phones, and building it again would be pointless. A
+snapshot of what's coming *for the household* — a charge landing, a
+chore due, an evening booked — is something Google structurally cannot
+assemble, because it knows nothing about the money or the lists. The
+test is written into the module so it survives the session: **would a
+dentist appointment belong here? If yes, it belongs in Google.**
+
+That decision paid for itself immediately in what got left out. A
+forward-looking list, not a month grid. No recurrence rules, no
+invites, no reminders, no Google sync — each is a step toward being a
+worse copy of the calendar already on the phone, and the migration
+comment says so, because the pressure to add them will come later from
+someone who has forgotten why. Overdue items are excluded too: they
+already have two homes (the To-dos tab, the due strip), and repeating
+them here would quietly turn "what's coming" into "what's late", a
+different question with two existing answers. What it does carry that
+nothing else can: the figure the dashboard cannot know — what is still
+to land before the month ends.
+
+The risk, named to Shawn before building rather than discovered after:
+if most of their joint events live in Google, the view will feel thin,
+because adding them here is manual. Not solved with a sync build — too
+big, too fragile. The precedent says wait: the shopping list migrated
+out of Telegram once the app was a better home, and two weeks of use
+will say whether events do the same.
+
+**Someday** shipped alongside it as a third value on the todos `list`
+discriminator. A wish is not a task — no date, never overdue, and
+checking it off means "we did it" rather than "handled" — but it is
+structurally the same row, so it rides the existing machinery rather
+than earning a table. It earned a *section* inside To-dos, not a tab:
+six bottom tabs is past what a phone carries, and a wishlist is a
+monthly interaction, not a daily one. Five tabs verified legible at
+375px before committing to the arrangement.
+
+Migration run by Claude through the Supabase dashboard and verified in
+the database (events: 8 columns, 4 policies; `todos_list_check` now
+admits 'wish'). 58/58 tests. Version 1.15.0.
