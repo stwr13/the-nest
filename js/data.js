@@ -216,3 +216,63 @@ export async function deleteIdea(id) {
   const { error } = await supabase.from("ideas").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── recurring: standing commitments registry (v1.14) ─────────────────
+// The registry predicts; the ledger records. Nothing here writes an
+// expense directly — confirming goes through an RPC so the insert and
+// the schedule advance happen atomically (the due strip is shared, and
+// two phones tapping Confirm must not log the charge twice).
+
+export async function fetchRecurring() {
+  const { data, error } = await supabase
+    .from("recurring")
+    .select(
+      "id, name, amount, cadence, anchor_day, next_due, end_date, category_id, card_id, paid_by, active, last_confirmed, categories(name, icon, excluded_from_totals), cards(name)",
+    )
+    .order("next_due", { ascending: true, nullsFirst: false })
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function addRecurring(fields) {
+  const { error } = await supabase.from("recurring").insert(fields);
+  if (error) throw error;
+}
+
+export async function updateRecurring(id, fields) {
+  const { error } = await supabase.from("recurring").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+// expectedDue pins the confirm to the due date the caller SAW. If the
+// other phone got there first the function raises instead of writing a
+// second charge; the UI turns that into "already confirmed", not an
+// error the user has to interpret.
+export async function confirmRecurring(id, amount, expectedDue) {
+  const { data, error } = await supabase.rpc("confirm_recurring", {
+    p_id: id,
+    p_amount: amount,
+    p_expected_due: expectedDue,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function skipRecurring(id, expectedDue) {
+  const { error } = await supabase.rpc("skip_recurring", {
+    p_id: id,
+    p_expected_due: expectedDue,
+  });
+  if (error) throw error;
+}
+
+// Cancelling never deletes: the row holds the history its linked
+// expenses point at, and expenses.recurring_id is on-delete-restrict.
+export async function deactivateRecurring(id) {
+  const { error } = await supabase
+    .from("recurring")
+    .update({ active: false, next_due: null })
+    .eq("id", id);
+  if (error) throw error;
+}

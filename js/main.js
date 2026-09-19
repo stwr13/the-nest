@@ -2,6 +2,15 @@ import { supabase } from "./supabase.js";
 import { displayNameFor } from "./identity.js";
 import { summarize, categoryLabel, monthKey } from "./dashboard-math.js";
 import { ledgerView, dayTotal, recentDayTotals, capGroups } from "./ledger-view.js";
+import {
+  nextDue,
+  dueItems,
+  upcomingItems,
+  commitmentTotals,
+  remaining,
+  daysLate,
+  monthlyEquivalentCents,
+} from "./recurring-view.js";
 import { todosView } from "./todos-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
@@ -30,6 +39,11 @@ import {
   updateCard,
   deleteCard,
   fetchCardImageUrls,
+  fetchRecurring,
+  addRecurring,
+  confirmRecurring,
+  skipRecurring,
+  deactivateRecurring,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -105,6 +119,10 @@ const cardsTags = document.getElementById("cards-tags");
 
 const sgd = new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD" });
 const dateFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short", day: "numeric", month: "short" });
+const shortDateFmt = new Intl.DateTimeFormat("en-SG", { day: "numeric", month: "short" });
+// every stored date is a plain ISO day; the midday anchor keeps it from
+// sliding a day under a timezone offset
+const isoToDate = (iso) => new Date(iso + "T00:00:00");
 const monthFmt = new Intl.DateTimeFormat("en-SG", { month: "long" });
 const monthShortFmt = new Intl.DateTimeFormat("en-SG", { month: "short" });
 const weekdayFmt = new Intl.DateTimeFormat("en-SG", { weekday: "short" });
@@ -243,6 +261,7 @@ async function loadApp() {
   // shows its errors in its own card via its refresh's catch.
   refreshIdeas();
   refreshTodos();
+  refreshRecurring();
 }
 
 async function refresh() {
@@ -623,7 +642,7 @@ expenseForm.addEventListener("submit", async (event) => {
     await refresh();
     // v1.10: offer the check without forcing it — a tap glides to the
     // saved row; auto-scrolling would hijack back-to-back logging
-    showSavedJump(savedId);
+    showSavedJump(savedId, editingId === null ? fields : null);
   } catch (error) {
     showFormStatus(
       error.message?.includes("fetch")
@@ -846,6 +865,14 @@ function renderCategoryOptions() {
     ledgerCategory = "all"; // the filtered category was deleted
     renderLedger(expensesCache);
   }
+
+  const recSelected = recCategorySelect.value;
+  recCategorySelect.replaceChildren(
+    ...categoriesCache.map((c) => new Option(categoryLabel(c), c.id)),
+  );
+  if ([...recCategorySelect.options].some((o) => o.value === recSelected)) {
+    recCategorySelect.value = recSelected;
+  }
 }
 
 function renderCategoryManager() {
@@ -1024,6 +1051,12 @@ function renderCardOptions() {
   cardSelect.replaceChildren(...cardsCache.map((c) => new Option(c.name, c.id)));
   if ([...cardSelect.options].some((o) => o.value === selected)) {
     cardSelect.value = selected;
+  }
+
+  const recSelected = recCardSelect.value;
+  recCardSelect.replaceChildren(...cardsCache.map((c) => new Option(c.name, c.id)));
+  if ([...recCardSelect.options].some((o) => o.value === recSelected)) {
+    recCardSelect.value = recSelected;
   }
   syncCardPicker();
 }
@@ -1433,9 +1466,15 @@ function showFormStatus(message) {
 // flashes it — the verification trip without the scroll (Shawn's ask).
 const savedLine = document.getElementById("form-saved");
 let lastSavedId = null;
+let lastSavedFields = null;
+const savedRecurring = document.getElementById("saved-recurring");
 
-function showSavedJump(id) {
+function showSavedJump(id, fields = null) {
   lastSavedId = id;
+  lastSavedFields = fields;
+  // the offer only makes sense for a fresh expense with a note to name
+  // the commitment after — an edit is not a new standing charge
+  savedRecurring.hidden = !(fields && fields.note);
   savedLine.hidden = false;
 }
 
@@ -1488,11 +1527,13 @@ const tabPanels = {
   money: document.getElementById("tab-money"),
   todos: document.getElementById("tab-todos"),
   buy: document.getElementById("tab-buy"),
+  rec: document.getElementById("tab-rec"),
 };
 const tabButtons = {
   money: document.getElementById("tab-btn-money"),
   todos: document.getElementById("tab-btn-todos"),
   buy: document.getElementById("tab-btn-buy"),
+  rec: document.getElementById("tab-btn-rec"),
 };
 
 function showTab(name) {
@@ -1782,3 +1823,376 @@ if ("serviceWorker" in navigator) {
     .register("sw.js")
     .catch((error) => console.warn("Service worker registration failed:", error));
 }
+
+// ── recurring commitments (v1.14) ────────────────────────────────────
+// The gap this closes: subscriptions and premiums never get logged
+// because there is no spend moment to trigger it. Habit can't fix that;
+// only a due date can. So the registry carries the schedule, and the
+// strip turns a due date into the moment.
+//
+// Standing rule, enforced here and in the RPC: NOTHING auto-commits.
+// The day a subscription is cancelled is the day auto-logging starts
+// lying, and it is the day nobody is looking. The tap is the audit.
+
+const dueCard = document.getElementById("due-card");
+const dueList = document.getElementById("due-list");
+const dueCount = document.getElementById("due-count");
+const dueStatus = document.getElementById("due-status");
+const dueUpcoming = document.getElementById("due-upcoming");
+const recList = document.getElementById("rec-list");
+const recEmpty = document.getElementById("rec-empty");
+const recOffCard = document.getElementById("rec-off-card");
+const recOff = document.getElementById("rec-off");
+const recForm = document.getElementById("rec-form");
+const recStatus = document.getElementById("rec-status");
+const recCategorySelect = document.getElementById("rec-category");
+const recCardSelect = document.getElementById("rec-card");
+const commitTotal = document.getElementById("commit-total");
+const commitSpend = document.getElementById("commit-spend");
+const commitExcluded = document.getElementById("commit-excluded");
+
+let recurringCache = [];
+const editingAmount = new Set(); // ids showing the amount box
+const skipChoice = new Set(); // ids showing the skip/cancel fork
+
+async function refreshRecurring() {
+  try {
+    recurringCache = await fetchRecurring();
+    renderRecurring();
+  } catch (error) {
+    showDueStatus(
+      error.message?.includes("fetch")
+        ? "No connection — couldn't load recurring items."
+        : `Couldn't load recurring items: ${error.message}`,
+    );
+  }
+}
+
+function showDueStatus(message) {
+  dueStatus.textContent = message ?? "";
+  dueStatus.hidden = !message;
+}
+
+function renderRecurring() {
+  const today = todayISO();
+  const due = dueItems(recurringCache, today);
+
+  // the strip exists only when something is owed — an empty "Due now"
+  // card would be permanent furniture saying nothing
+  dueCard.hidden = due.length === 0;
+  dueCount.textContent = String(due.length);
+  dueList.replaceChildren(...due.map((item) => dueRow(item, today)));
+
+  const soon = upcomingItems(recurringCache, today);
+  dueUpcoming.hidden = soon.length === 0 || due.length === 0;
+  dueUpcoming.textContent = soon.length
+    ? "Coming up: " +
+      soon.map((r) => `${r.name} ${shortDateFmt.format(isoToDate(r.next_due))}`).join(" · ")
+    : "";
+
+  const totals = commitmentTotals(recurringCache);
+  commitTotal.textContent = sgd.format(totals.totalCents / 100);
+  commitSpend.textContent = sgd.format(totals.spendingCents / 100);
+  commitExcluded.textContent = sgd.format(totals.excludedCents / 100);
+
+  const active = recurringCache.filter((r) => r.active);
+  recEmpty.hidden = active.length > 0;
+  recList.replaceChildren(...active.map(registryRow));
+
+  const stopped = recurringCache.filter((r) => !r.active);
+  recOffCard.hidden = stopped.length === 0;
+  recOff.replaceChildren(...stopped.map(registryRow));
+}
+
+function dueRow(item, today) {
+  const row = document.createElement("div");
+  row.className = "due-row";
+
+  const top = document.createElement("div");
+  top.className = "due-top";
+  const name = document.createElement("span");
+  name.className = "due-name";
+  name.textContent = item.name; // textContent: names are user input
+  const amount = document.createElement("span");
+  amount.className = "due-amt";
+  amount.textContent = sgd.format(Number(item.amount));
+  top.append(name, amount);
+
+  const meta = document.createElement("div");
+  meta.className = "due-meta";
+  const late = daysLate(item.next_due, today);
+  const badge = document.createElement("span");
+  badge.className = late === 0 ? "badge badge-today" : "badge badge-late";
+  badge.textContent = late === 0 ? "due today" : `${late} day${late === 1 ? "" : "s"} late`;
+  meta.append(badge, metaText(shortDateFmt.format(isoToDate(item.next_due))));
+  meta.append(metaText(categoryLabel(item.categories)));
+  if (item.cards?.name) meta.append(metaText(item.cards.name));
+  meta.append(metaText(item.paid_by));
+  if (item.categories?.excluded_from_totals) {
+    const flag = document.createElement("span");
+    flag.className = "badge badge-quiet";
+    flag.textContent = "not counted as spending";
+    meta.append(flag);
+  }
+
+  row.append(top, meta);
+
+  if (editingAmount.has(item.id)) {
+    row.append(amountEditor(item));
+  } else if (skipChoice.has(item.id)) {
+    row.append(skipFork(item));
+  } else {
+    row.append(dueActions(item));
+  }
+  return row;
+}
+
+function metaText(text) {
+  const span = document.createElement("span");
+  span.textContent = text;
+  return span;
+}
+
+function dueActions(item) {
+  const actions = document.createElement("div");
+  actions.className = "due-actions";
+  actions.append(
+    smallButton("Confirm", "btn-primary", () => doConfirm(item, Number(item.amount))),
+    smallButton("Edit", "btn-ghost", () => {
+      editingAmount.add(item.id);
+      renderRecurring();
+    }),
+    smallButton("Skip", "btn-ghost", () => {
+      skipChoice.add(item.id);
+      renderRecurring();
+    }),
+  );
+  return actions;
+}
+
+// Confirm-with-edit updates the registry amount too: last month's
+// actual is next month's best prediction, so an FX swing or a price
+// rise is typed once rather than corrected every month.
+function amountEditor(item) {
+  const wrap = document.createElement("div");
+  const box = document.createElement("div");
+  box.className = "edit-row";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.inputMode = "decimal";
+  input.value = Number(item.amount).toFixed(2);
+  input.setAttribute("aria-label", `Amount charged for ${item.name}`);
+  const save = smallButton("Confirm", "btn-primary", () => {
+    const parsed = evaluateAmount(input.value);
+    if (parsed === null || parsed <= 0) {
+      showDueStatus("Enter an amount greater than zero.");
+      return;
+    }
+    editingAmount.delete(item.id);
+    doConfirm(item, parsed);
+  });
+  box.append(input, save);
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "The registry remembers this amount for next time.";
+  wrap.append(box, hint);
+  return wrap;
+}
+
+// Skip and cancel are deliberately different answers. A cancellation
+// mistaken for a skip returns as a phantom next month; a skip mistaken
+// for a cancellation costs nothing, because it can be switched back on.
+function skipFork(item) {
+  const wrap = document.createElement("div");
+  const actions = document.createElement("div");
+  actions.className = "due-actions";
+  actions.append(
+    smallButton("Skip just this one", "btn-ghost", async () => {
+      skipChoice.delete(item.id);
+      await guardDue(() => skipRecurring(item.id, item.next_due));
+    }),
+    smallButton("Cancelled — stop it", "btn-ghost", async () => {
+      skipChoice.delete(item.id);
+      await guardDue(() => deactivateRecurring(item.id));
+    }),
+  );
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "Stopping keeps the item and its history — it just won't come round again.";
+  wrap.append(actions, hint);
+  return wrap;
+}
+
+function smallButton(text, variant, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `btn btn-small ${variant}`;
+  button.textContent = text;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+// The confirm runs through the same duplicate check as a manual save:
+// the RPC writes server-side, so without this the "already logged it by
+// hand" case would double up silently — the one real trap in the shape.
+async function doConfirm(item, amount) {
+  showDueStatus(null);
+  try {
+    const dupes = await findPossibleDuplicates(amount, item.next_due);
+    if (dupes.length > 0) {
+      const when = dateFmt.format(isoToDate(dupes[0].date));
+      const proceed = window.confirm(
+        `Possible duplicate: ${sgd.format(amount)} is already logged ` +
+          `(${dupes[0].categories.name}, ${when}, paid by ${dupes[0].paid_by}).\n\n` +
+          `Confirm ${item.name} anyway?`,
+      );
+      if (!proceed) return;
+    }
+  } catch {
+    // the duplicate check is a courtesy; never let it block a confirm
+  }
+  await guardDue(() => confirmRecurring(item.id, amount, item.next_due));
+}
+
+// One place to turn an RPC failure into something readable. The
+// serialization_failure the function raises means the other phone got
+// there first — that is not an error the user caused, so it reads as
+// news rather than a fault.
+async function guardDue(action) {
+  try {
+    await action();
+    await Promise.all([refreshRecurring(), refresh()]);
+  } catch (error) {
+    const message = error?.message ?? String(error);
+    showDueStatus(
+      /already confirmed|already moved on/i.test(message)
+        ? "Already done on the other phone — refreshed."
+        : `Couldn't do that: ${message}`,
+    );
+    await refreshRecurring();
+  }
+}
+
+function registryRow(item) {
+  const row = document.createElement("div");
+  row.className = item.active ? "reg-row" : "reg-row reg-off";
+
+  const main = document.createElement("div");
+  main.className = "reg-main";
+  const name = document.createElement("div");
+  name.className = "reg-name";
+  name.textContent = item.name;
+  const meta = document.createElement("div");
+  meta.className = "reg-meta";
+  const bits = [];
+  if (item.active && item.next_due) {
+    bits.push(`Next ${shortDateFmt.format(isoToDate(item.next_due))}`);
+  } else {
+    bits.push("Stopped");
+  }
+  bits.push(categoryLabel(item.categories));
+  if (item.cards?.name) bits.push(item.cards.name);
+  bits.push(item.paid_by);
+  bits.push(
+    item.last_confirmed
+      ? `last ${shortDateFmt.format(isoToDate(item.last_confirmed))}`
+      : "never confirmed",
+  );
+  meta.textContent = bits.join(" · ");
+  main.append(name, meta);
+
+  // "$X every month until age Y" as a live number instead of a fact
+  // somebody has to remember
+  const left = remaining(item);
+  if (left) {
+    const runway = document.createElement("div");
+    runway.className = "runway";
+    runway.textContent = `${left.payments} left · ${sgdWhole.format(Math.round(left.cents / 100))} to go`;
+    main.append(runway);
+  }
+
+  const right = document.createElement("div");
+  right.className = "reg-right";
+  const amount = document.createElement("div");
+  amount.className = "reg-amt";
+  amount.textContent = sgd.format(Number(item.amount));
+  const cadence = document.createElement("div");
+  cadence.className = "reg-cad";
+  cadence.textContent = item.cadence;
+  right.append(amount, cadence);
+  if (item.cadence !== "monthly") {
+    const equiv = document.createElement("div");
+    equiv.className = "reg-cad";
+    equiv.textContent = `${sgd.format(monthlyEquivalentCents(item) / 100)}/mo`;
+    right.append(equiv);
+  }
+  if (item.active) {
+    right.append(
+      smallButton("Stop", "btn-ghost btn-danger-ghost", async () => {
+        if (!window.confirm(`Stop ${item.name}? It stays in the list with its history.`)) return;
+        await guardDue(() => deactivateRecurring(item.id));
+      }),
+    );
+  }
+
+  row.append(main, right);
+  return row;
+}
+
+recForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  recStatus.hidden = true;
+  const amount = evaluateAmount(document.getElementById("rec-amount").value);
+  if (amount === null || amount <= 0) {
+    recStatus.textContent = "Enter an amount greater than zero.";
+    recStatus.hidden = false;
+    return;
+  }
+  const nextDueValue = document.getElementById("rec-next").value;
+  const endValue = document.getElementById("rec-end").value;
+  if (endValue && endValue < nextDueValue) {
+    recStatus.textContent = "The end date can't be before the next due date.";
+    recStatus.hidden = false;
+    return;
+  }
+  try {
+    await addRecurring({
+      name: document.getElementById("rec-name").value.trim(),
+      amount,
+      cadence: document.getElementById("rec-cadence").value,
+      // the anchor comes from the first due date: it is what re-anchors
+      // a 31st item after a short month instead of drifting
+      anchor_day: Number(nextDueValue.slice(8, 10)),
+      next_due: nextDueValue,
+      end_date: endValue || null,
+      category_id: Number(recCategorySelect.value),
+      card_id: recCardSelect.value ? Number(recCardSelect.value) : null,
+      paid_by: recForm.querySelector('input[name="rec_paid_by"]:checked').value,
+    });
+    recForm.reset();
+    document.getElementById("rec-cadence").value = "monthly";
+    await refreshRecurring();
+  } catch (error) {
+    recStatus.textContent = `Couldn't add it: ${error.message}`;
+    recStatus.hidden = false;
+  }
+});
+
+// "Make this recurring" pre-fills the form from the expense just saved,
+// so the registry is seeded by money that actually moved rather than by
+// a form somebody has to remember to fill.
+document.getElementById("make-recurring").addEventListener("click", () => {
+  if (!lastSavedFields) return;
+  document.getElementById("rec-name").value = lastSavedFields.note || "";
+  document.getElementById("rec-amount").value = Number(lastSavedFields.amount).toFixed(2);
+  document.getElementById("rec-cadence").value = "monthly";
+  recCategorySelect.value = String(lastSavedFields.category_id);
+  if (lastSavedFields.card_id) recCardSelect.value = String(lastSavedFields.card_id);
+  const paid = recForm.querySelector(`input[name="rec_paid_by"][value="${lastSavedFields.paid_by}"]`);
+  if (paid) paid.checked = true;
+  // next due is one cadence on from the charge just logged
+  const d = isoToDate(lastSavedFields.date);
+  document.getElementById("rec-next").value = nextDue(lastSavedFields.date, "monthly", d.getDate());
+  showTab("rec");
+  glideTo(recForm);
+});
