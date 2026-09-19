@@ -944,3 +944,33 @@ monthly interaction, not a daily one. Five tabs verified legible at
 Migration run by Claude through the Supabase dashboard and verified in
 the database (events: 8 columns, 4 policies; `todos_list_check` now
 admits 'wish'). 58/58 tests. Version 1.15.0.
+
+## 2026-09-19 (v1.15.1) — the number that mixed two months
+
+Shawn, hours after v1.15.0 shipped, asking the right question about the
+summary line: "is it showing $500 of recurring charges coming up in the
+next 30 days?" It was — and that was the bug, though nothing was
+broken. The horizon window is a ROLLING thirty days, so on 19 September
+the figure quietly included a 2 October charge, while the words "still
+to land" implied "before this month ends". Anyone would have added that
+number to the dashboard's "spent this month". The result would have
+meant nothing, and nothing would have flagged it.
+
+The fix is a split, not a relabel. The headline is now the rest of the
+current month — the figure that actually composes with the dashboard —
+and whatever else sits in the window is shown beside it as its own
+fact, never summed into the first.
+
+His second question ("if I click that, will it show me what those
+are?") had the answer "no, scroll down and mentally filter out the
+chores and events", which is not an answer. The line is now a button:
+it opens to every charge with its date and amount, the ones past the
+month boundary greyed, so the headline is checkable against its own
+rows rather than taken on trust.
+
+Worth recording as a pattern, not just a fix: both catches came from
+him reading a single line of summary text closely and asking what it
+actually counted. A derived figure earns its place only if the reader
+can get back to the rows behind it — that is the same rule the ledger
+already follows, arriving late to the dashboard. 60/60 tests. No
+migration. Version 1.15.1.
