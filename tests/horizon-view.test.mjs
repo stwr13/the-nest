@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { horizon, addDays, upcomingChargeCents } from "../js/horizon-view.js";
+import { horizon, addDays, endOfMonth, upcomingCharges } from "../js/horizon-view.js";
 
 const TODAY = "2026-09-19";
 
@@ -76,10 +76,43 @@ test("the window is honoured at both edges", () => {
   assert.deepEqual(labels, ["Today counts", "Last day in"]);
 });
 
-test("upcomingChargeCents totals only the charges", () => {
+test("endOfMonth", () => {
+  assert.equal(endOfMonth("2026-09-19"), "2026-09-30");
+  assert.equal(endOfMonth("2027-02-03"), "2027-02-28");
+  assert.equal(endOfMonth("2028-02-03"), "2028-02-29");
+  assert.equal(endOfMonth("2026-12-31"), "2026-12-31");
+});
+
+test("upcomingCharges splits at the month boundary, not the window edge", () => {
   const groups = horizon(sources, TODAY);
-  assert.equal(upcomingChargeCents(groups), 28500 + 18640);
-  assert.equal(upcomingChargeCents([]), 0);
+  const c = upcomingCharges(groups, TODAY);
+  assert.equal(c.items.length, 2, "charges only — no chores, no events");
+  assert.equal(c.monthCents, 28500 + 18640, "both September charges");
+  assert.equal(c.laterCents, 0);
+
+  // the bug this guards: a rolling 30-day window reaches into next
+  // month, and a single total would silently mix the two
+  const spanning = horizon(
+    {
+      recurring: [
+        { id: 1, name: "This month", amount: "100.00", next_due: "2026-09-25", active: true, paid_by: "Shawn" },
+        { id: 2, name: "Next month", amount: "30.00", next_due: "2026-10-02", active: true, paid_by: "Shawn" },
+      ],
+    },
+    TODAY,
+  );
+  const split = upcomingCharges(spanning, TODAY);
+  assert.equal(split.monthCents, 10000);
+  assert.equal(split.monthCount, 1);
+  assert.equal(split.laterCents, 3000);
+  assert.equal(split.laterCount, 1);
+});
+
+test("upcomingCharges on an empty horizon", () => {
+  const c = upcomingCharges([], TODAY);
+  assert.equal(c.monthCents, 0);
+  assert.equal(c.laterCents, 0);
+  assert.deepEqual(c.items, []);
 });
 
 test("an empty household produces no groups, not an error", () => {

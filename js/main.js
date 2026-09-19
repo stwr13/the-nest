@@ -12,7 +12,7 @@ import {
   monthlyEquivalentCents,
 } from "./recurring-view.js";
 import { todosView } from "./todos-view.js";
-import { horizon, upcomingChargeCents } from "./horizon-view.js";
+import { horizon, upcomingCharges, endOfMonth } from "./horizon-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
@@ -2231,6 +2231,8 @@ const soonEmpty = document.getElementById("soon-empty");
 const soonStatus = document.getElementById("soon-status");
 const soonWindow = document.getElementById("soon-window");
 const soonCharges = document.getElementById("soon-charges");
+const soonChargeList = document.getElementById("soon-charge-list");
+let chargesOpen = false;
 const eventForm = document.getElementById("event-form");
 const eventStatus = document.getElementById("event-status");
 
@@ -2261,12 +2263,57 @@ function renderSoon() {
   soonWindow.textContent = "next 30 days";
   soonEmpty.hidden = groups.length > 0;
 
-  const chargeCents = upcomingChargeCents(groups);
-  soonCharges.hidden = chargeCents === 0;
-  soonCharges.textContent = `${sgd.format(chargeCents / 100)} of charges still to land`;
+  renderCharges(upcomingCharges(groups, today), today);
 
   soonList.replaceChildren(...groups.flatMap((group) => [soonDay(group), ...group.items.map(soonItem)]));
 }
+
+// The headline is the REST OF THIS MONTH, not the whole rolling
+// window (v1.15.1, Shawn's catch): the window spans two months, and a
+// figure that mixes them cannot be added to the dashboard's "spent
+// this month" — which is exactly what anyone would do with it. The
+// remainder of the window is still shown, as its own separate fact.
+function renderCharges(charges, today) {
+  const nothing = charges.items.length === 0;
+  soonCharges.hidden = nothing;
+  soonChargeList.hidden = nothing || !chargesOpen;
+  if (nothing) return;
+
+  const monthName = monthFmt.format(isoToDate(today));
+  const parts = [`${sgd.format(charges.monthCents / 100)} more in ${monthName}`];
+  if (charges.laterCount > 0) {
+    parts.push(`${sgd.format(charges.laterCents / 100)} after that`);
+  }
+  soonCharges.textContent = `${parts.join(" · ")}  ${chargesOpen ? "▴" : "▾"}`;
+  soonCharges.setAttribute("aria-expanded", String(chargesOpen));
+
+  const monthEnd = charges.items.filter((i) => i.date <= endOfMonth(today));
+  soonChargeList.replaceChildren(
+    ...charges.items.map((item) => {
+      const row = document.createElement("div");
+      row.className = "charge-row";
+      const when = document.createElement("span");
+      when.className = "charge-when";
+      when.textContent = shortDateFmt.format(isoToDate(item.date));
+      const name = document.createElement("span");
+      name.className = "charge-name";
+      name.textContent = item.label;
+      const amount = document.createElement("span");
+      amount.className = "charge-amt";
+      amount.textContent = sgd.format(item.amount);
+      // the month boundary is drawn, so "more in September" is
+      // checkable against the rows rather than taken on trust
+      if (!monthEnd.includes(item)) row.classList.add("charge-later");
+      row.append(when, name, amount);
+      return row;
+    }),
+  );
+}
+
+soonCharges.addEventListener("click", () => {
+  chargesOpen = !chargesOpen;
+  renderSoon();
+});
 
 function soonDay(group) {
   const head = document.createElement("div");

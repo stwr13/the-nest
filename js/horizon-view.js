@@ -15,10 +15,18 @@
 
 const RANK = { event: 0, recurring: 1, todo: 2 };
 
+const toIso = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
 export function addDays(iso, days) {
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return toIso(d);
+}
+
+export function endOfMonth(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return toIso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
 }
 
 export function horizon(sources, todayIso, days = 30) {
@@ -77,15 +85,31 @@ export function horizon(sources, todayIso, days = 30) {
   return groups;
 }
 
-// What the month is going to cost, from the charges in view — the
-// figure the dashboard's "spent so far" can't know, because it only
-// counts what has already happened.
-export function upcomingChargeCents(groups) {
-  let cents = 0;
+// The charges inside the view, split at the month boundary.
+//
+// Why split (v1.15.1, Shawn's catch): the horizon is a ROLLING 30 days,
+// so a single total silently mixes two months — on 19 September it
+// includes a 2 October charge. The headline figure has to be the one
+// that composes with the dashboard's "spent this month", or someone
+// will add the two and get a number that means nothing. The rest of
+// the window is still worth showing; it just isn't the same fact.
+export function upcomingCharges(groups, todayIso) {
+  const items = [];
   for (const group of groups) {
-    for (const item of group.items) {
-      if (item.kind === "recurring") cents += Math.round(item.amount * 100);
+    for (const item of group.items) if (item.kind === "recurring") items.push(item);
+  }
+  const monthEnd = endOfMonth(todayIso);
+  let monthCents = 0;
+  let laterCents = 0;
+  let monthCount = 0;
+  for (const item of items) {
+    const cents = Math.round(Number(item.amount) * 100);
+    if (item.date <= monthEnd) {
+      monthCents += cents;
+      monthCount += 1;
+    } else {
+      laterCents += cents;
     }
   }
-  return cents;
+  return { items, monthCents, laterCents, monthCount, laterCount: items.length - monthCount };
 }

@@ -945,3 +945,42 @@ select:focus {
 /* five tabs: the labels need the room, so the bar tightens up */
 .tab-btn { padding: 0 0.15rem; }
 .tab-btn { font-size: 0.68rem; }
+
+/* v1.15.1: the charges summary opens to show its own workings */
+.soon-charges {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.6rem;
+  padding: 0.55rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.soon-charges:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.soon-charge-list {
+  margin: -0.2rem 0 0.7rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.charge-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.25rem 0;
+  font-size: 0.82rem;
+}
+.charge-when { width: 4.2rem; flex: none; color: var(--ink-soft); }
+.charge-name { flex: 1 1 auto; min-width: 0; }
+.charge-amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* charges past the month boundary are the second fact, not the headline */
+.charge-later { color: var(--ink-soft); }
+.charge-later .charge-amt { font-weight: 600; }

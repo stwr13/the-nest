@@ -255,7 +255,9 @@
         <h2 class="card-title">Coming up</h2>
         <span id="soon-window" class="muted"></span>
       </div>
-      <p id="soon-charges" class="soon-charges" hidden></p>
+      <button type="button" id="soon-charges" class="soon-charges" hidden
+              aria-expanded="false" aria-controls="soon-charge-list"></button>
+      <div id="soon-charge-list" class="soon-charge-list" hidden></div>
       <p id="soon-empty" class="muted" hidden>Nothing in the next 30 days.</p>
       <p id="soon-status" class="form-error" role="alert" hidden></p>
       <div id="soon-list"></div>
