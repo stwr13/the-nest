@@ -10,72 +10,70 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-09-18 (resume here)
+## Open decisions — board as of 2026-09-19 (resume here)
 
-Live app is **v1.13.0**. Shawn set the frame for this round himself:
-"strapped for time and unable to sit down to spend time and think.
-currently its working and the tracking becomes a habit already." The
-habit is the strongest signal this app has produced — the daily capture
-job is done, so what's left is about living with the data, not catching
-it. Sessions now default to *build it and show him*, not *ask him to
-decide*.
+Live app is **v1.15.0**. Two versions shipped in two days, and the
+feature backlog raised by real use is now **empty** — everything
+Claire or Shawn has asked for since launch is built. What remains is
+new ground, not catch-up.
 
-In build:
+The operating change that made this possible, recorded because it
+resolves a stall this file has tracked since August: **Shawn granted
+Claude full Supabase access** (2026-09-19, "You should be able to do it
+yourself, right?"). Migrations no longer wait on him — v1.14 and v1.15
+were both run and verified by Claude against production. The
+dashboard-chore bottleneck is gone.
 
-1. **Recurring commitments (v1.14).** Groundwork committed on branch
-   `v1.14`: migration (recurring table, `expenses.recurring_id`,
-   `confirm_recurring` / `skip_recurring` RPCs) and the date/money maths
-   with tests. Screens still to build — due strip, Recurring tab, "make
-   this recurring" from a logged expense. Prompted by Shawn naming the
-   real gap: some items "I don't even input because I don't 'spend'".
-   The diagnosis: no spend moment, therefore no trigger — habit cannot
-   fix it, only a due date can. Design settled in-session and recorded
-   in JOURNEY 2026-09-18; a tap-through prototype is what got the yes.
-   **Claude runs the migration via Chrome** — see item 4.
+Now in use, unproven:
 
-Declined / parked by Shawn this round:
+1. **Recurring (v1.14)** and **Coming up + Someday (v1.15)** both have
+   zero real use. The two-week rule applies to them before anything is
+   built on top. What to watch, costing nothing: does the due strip get
+   cleared or does it accumulate? If it accumulates, the premise is
+   wrong. And do joint events actually migrate into Coming up, the way
+   the shopping list migrated out of Telegram — or do they stay in
+   Google, leaving the view thin?
 
-2. **Telegram reminders — declined for now.** "A little bit painful at
-   this point in time; I don't really want to do it." Not dead, not
-   nagged: the code has been ready since 2026-08-20. Standing offer, made
-   once — Claude drives the Supabase dashboard through Chrome, leaving
-   Shawn about two minutes with BotFather on his phone.
-3. **Zero-touch capture — deferred, and not for lack of evidence.**
-   Fieldwork finally answered (Shawn, 2026-09-18): alerts arrive as SMS,
-   as email, and *sometimes* as bank-app push. So partial capture is the
-   realistic ceiling. That isn't the blocker — nothing auto-commits, so
-   an uncaptured alert just gets logged the way it is today; capture is
-   strictly additive. The real hazard is trusting it and silently
-   dropping what it misses. **Recurring decides this for free:** it
-   builds the same pending-confirm spine, so a month of living with a
-   confirm queue answers "does this household trust a pending pile?"
-   from behaviour rather than speculation. Revisit after v1.14 is in
-   use; email-only (Gmail auto-forward) is the sturdy path when it does.
+Declined, with reasons, not parked by neglect:
 
-Process:
+2. **Telegram reminders** — declined twice now (2026-09-18 "a little
+   bit painful"; 2026-09-19 "a bit lazy at this point in time"). Code
+   ready since 2026-08-20. Claude can now do the Supabase half itself,
+   leaving ~2 minutes with BotFather. Not to be raised again unless
+   Shawn asks or a reminder need becomes concrete.
+3. **Zero-touch capture** — Shawn, 2026-09-19: "I'm still not convinced
+   that this can completely work. It's a bit tricky, but we can figure
+   it out another time." Fieldwork done: alerts arrive as SMS, email
+   and sometimes app push, so partial capture is the ceiling. Recurring
+   has now built the pending-confirm spine it would use, so the
+   groundwork is free either way.
 
-4. **Dashboard chores are the real bottleneck, and Claude can take
-   them.** Both stalls in this project's history — Telegram since
-   August, and every migration before it — are steps needing Shawn's
-   hands in the Supabase dashboard, not code. Claude drives the SQL
-   editor through Chrome directly, so migrations no longer need him.
-   Applied from v1.14 onward.
-5. **The idea box is effectively dead as a channel.** Shawn, unprompted
-   (2026-09-18): "the truth is that both Claire and myself haven't been
-   doing this." Last harvest 2026-08-01. Every real raise in the last
-   two months arrived in session instead. A harvest is still worth one
-   cheap run, but the honest conclusion is that the relay described at
-   the top of this file no longer reflects how feedback actually
-   travels — and a backlog fed by a dead channel will quietly start
-   describing a household that stopped talking to it.
-6. **v1.12.1 boot watchdog** — no blank-screen report since it shipped
-   three weeks ago. Treating it as good; nothing to do.
+Cheap and ready when wanted:
 
-Household / passive:
+4. **"Still to come" on the money dashboard** — one line turning "we've
+   spent $1,200" into "we'll end near $1,540". The registry now holds
+   the data and Coming up already computes the figure
+   (`upcomingChargeCents`), so this is arithmetic and a paragraph of
+   CSS. Offered 2026-09-19; Shawn chose the calendar instead.
+5. **Link-instead-of-duplicate** — if a manual expense matches a due
+   item, the strip could offer "this is it, link it" rather than a
+   duplicate warning. Wait for the itch; it may never come.
 
-7. **Claire's two stragglers** — the tithe + a book purchase still in
-   Other; July's counted total reads high by the tithe amount until it
-   moves.
+Passive:
+
+6. **Claire's two stragglers** — the tithe + a book purchase still in
+   Other, inflating July's counted total.
+7. **The idea box is dead as a channel** (confirmed 2026-09-18: neither
+   uses it). Every raise now arrives in session. A harvest remains
+   worth one cheap run, but this file's opening paragraph no longer
+   describes how feedback actually travels.
+
+Closed 2026-09-19: **recurring commitments registry** (v1.14 — parked
+by its own author 2026-07-26 as "may not be the immediate next fix",
+re-raised by him 2026-09-18 with a concrete failure: items that never
+get logged because there is no spend moment to trigger them) and
+**shared calendar / things we want to do** (v1.15 — the founding
+vision's phase 3, built as a household horizon rather than a calendar).
 
 Closed 2026-09-18: **ledger de-clutter** and **per-category
 month-on-month**, both shipped in v1.13.0 (see JOURNEY) — the first

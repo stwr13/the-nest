@@ -12,6 +12,7 @@ import {
   monthlyEquivalentCents,
 } from "./recurring-view.js";
 import { todosView } from "./todos-view.js";
+import { horizon, upcomingChargeCents } from "./horizon-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
@@ -44,6 +45,9 @@ import {
   confirmRecurring,
   skipRecurring,
   deactivateRecurring,
+  fetchEvents,
+  addEvent,
+  deleteEvent,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -262,6 +266,7 @@ async function loadApp() {
   refreshIdeas();
   refreshTodos();
   refreshRecurring();
+  refreshSoon();
 }
 
 async function refresh() {
@@ -1528,12 +1533,14 @@ const tabPanels = {
   todos: document.getElementById("tab-todos"),
   buy: document.getElementById("tab-buy"),
   rec: document.getElementById("tab-rec"),
+  soon: document.getElementById("tab-soon"),
 };
 const tabButtons = {
   money: document.getElementById("tab-btn-money"),
   todos: document.getElementById("tab-btn-todos"),
   buy: document.getElementById("tab-btn-buy"),
   rec: document.getElementById("tab-btn-rec"),
+  soon: document.getElementById("tab-btn-soon"),
 };
 
 function showTab(name) {
@@ -1556,6 +1563,7 @@ for (const [name, button] of Object.entries(tabButtons)) {
 let todosCacheRows = [];
 let doneOpenTodo = false; // collapsed by default; the open list is the point
 let doneOpenBuy = false;
+let doneOpenWish = false; // "we did it" list, collapsed by default
 // v1.3.1: items are edited through their list's form (the expense-form
 // pattern) — urgency, wording, and due date all change via Edit, so
 // the row itself carries just Edit/Delete (Shawn: the toggle crowded it)
@@ -1633,6 +1641,18 @@ function renderTodos(todos) {
   buyDoneToggle.textContent = `${doneOpenBuy ? "Hide" : "Show"} bought (${s.done.length})`;
   buyDoneList.hidden = !doneOpenBuy || s.done.length === 0;
   buyDoneList.replaceChildren(...s.done.map(renderTodo));
+
+  const w = todosView(todos, todayISO(), "wish");
+  wishEmpty.hidden = w.open.length > 0;
+  wishList.replaceChildren(...w.open.map(renderTodo));
+  wishDoneToggle.hidden = w.done.length === 0;
+  wishDoneToggle.textContent = `${doneOpenWish ? "Hide" : "Show"} done (${w.done.length})`;
+  wishDoneList.hidden = !doneOpenWish || w.done.length === 0;
+  wishDoneList.replaceChildren(...w.done.map(renderTodo));
+
+  // Coming up reads this cache — a checked-off chore must leave the
+  // horizon at the same moment it leaves the list
+  renderSoon();
 }
 
 // toggles re-render from cache — no refetch for a view change
@@ -1902,6 +1922,8 @@ function renderRecurring() {
   const stopped = recurringCache.filter((r) => !r.active);
   recOffCard.hidden = stopped.length === 0;
   recOff.replaceChildren(...stopped.map(registryRow));
+
+  renderSoon(); // a confirmed charge moves on; the horizon follows
 }
 
 function dueRow(item, today) {
@@ -2195,4 +2217,176 @@ document.getElementById("make-recurring").addEventListener("click", () => {
   document.getElementById("rec-next").value = nextDue(lastSavedFields.date, "monthly", d.getDate());
   showTab("rec");
   glideTo(recForm);
+});
+
+// ── Coming up: the household horizon (v1.15) ─────────────────────────
+// Not a calendar. The things the household jointly needs to see — a
+// charge landing, a chore due, an evening booked — assembled from data
+// the app already holds plus the few events worth sharing. A personal
+// appointment belongs in the calendar already on the phone; the test
+// for anything added here is whether both of you need to know.
+
+const soonList = document.getElementById("soon-list");
+const soonEmpty = document.getElementById("soon-empty");
+const soonStatus = document.getElementById("soon-status");
+const soonWindow = document.getElementById("soon-window");
+const soonCharges = document.getElementById("soon-charges");
+const eventForm = document.getElementById("event-form");
+const eventStatus = document.getElementById("event-status");
+
+let eventsCache = [];
+
+async function refreshSoon() {
+  try {
+    eventsCache = await fetchEvents();
+    soonStatus.hidden = true;
+    renderSoon();
+  } catch (error) {
+    soonStatus.textContent = error.message?.includes("fetch")
+      ? "No connection — couldn't load what's coming."
+      : `Couldn't load what's coming: ${error.message}`;
+    soonStatus.hidden = false;
+  }
+}
+
+// Reads from the caches the other tabs already fill, so switching to
+// this tab costs no fetch — and it stays right when a to-do is checked
+// off or a charge confirmed, because those call their own refresh.
+function renderSoon() {
+  const today = todayISO();
+  const groups = horizon(
+    { todos: todosCacheRows, recurring: recurringCache, events: eventsCache },
+    today,
+  );
+  soonWindow.textContent = "next 30 days";
+  soonEmpty.hidden = groups.length > 0;
+
+  const chargeCents = upcomingChargeCents(groups);
+  soonCharges.hidden = chargeCents === 0;
+  soonCharges.textContent = `${sgd.format(chargeCents / 100)} of charges still to land`;
+
+  soonList.replaceChildren(...groups.flatMap((group) => [soonDay(group), ...group.items.map(soonItem)]));
+}
+
+function soonDay(group) {
+  const head = document.createElement("div");
+  head.className = "soon-day";
+  const when = document.createElement("span");
+  const date = isoToDate(group.date);
+  when.textContent = dateFmt.format(date);
+  const rel = document.createElement("span");
+  rel.className = "soon-rel";
+  rel.textContent = relativeDay(group.date);
+  head.append(when, rel);
+  return head;
+}
+
+// "today" and "tomorrow" read faster than a date you have to compare
+// against today's; past that, a day count is the honest form.
+function relativeDay(iso) {
+  const days = Math.round((isoToDate(iso) - isoToDate(todayISO())) / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days < 7) return `in ${days} days`;
+  return `in ${Math.round(days / 7)} week${days < 11 ? "" : "s"}`;
+}
+
+const SOON_ICON = { event: "📅", recurring: "🔁", todo: "✅" };
+
+function soonItem(item) {
+  const row = document.createElement("div");
+  row.className = "soon-row";
+
+  const icon = document.createElement("span");
+  icon.className = "soon-icon";
+  icon.textContent = SOON_ICON[item.kind];
+  icon.setAttribute("aria-hidden", "true");
+
+  const main = document.createElement("div");
+  main.className = "soon-main";
+  const title = document.createElement("div");
+  title.className = "soon-title";
+  title.textContent = item.label; // textContent: all three are user input
+  if (item.kind === "todo" && item.urgent) {
+    const tag = document.createElement("span");
+    tag.className = "todo-urgent-tag";
+    tag.textContent = " urgent";
+    title.append(tag);
+  }
+  main.append(title);
+
+  const bits = [];
+  if (item.time) bits.push(item.time.slice(0, 5));
+  if (item.note) bits.push(item.note);
+  if (item.kind === "recurring") bits.push(item.who);
+  if (item.kind === "event" && item.who) bits.push(`added by ${item.who}`);
+  if (bits.length) {
+    const meta = document.createElement("div");
+    meta.className = "soon-meta";
+    meta.textContent = bits.join(" · ");
+    main.append(meta);
+  }
+
+  row.append(icon, main);
+
+  if (item.kind === "recurring") {
+    const amount = document.createElement("span");
+    amount.className = "soon-amt";
+    amount.textContent = sgd.format(item.amount);
+    row.append(amount);
+  }
+  return row;
+}
+
+eventForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  eventStatus.hidden = true;
+  try {
+    await addEvent({
+      title: document.getElementById("event-title").value.trim(),
+      date: document.getElementById("event-date").value,
+      at_time: document.getElementById("event-time").value || null,
+      note: document.getElementById("event-note").value.trim() || null,
+      author: displayNameFor(currentUser) ?? "Shawn",
+    });
+    eventForm.reset();
+    await refreshSoon();
+  } catch (error) {
+    eventStatus.textContent = `Couldn't add it: ${error.message}`;
+    eventStatus.hidden = false;
+  }
+});
+
+// ── Someday: things we want to do (v1.15) ────────────────────────────
+// A third value on the todos list discriminator. A wish is not a task:
+// no date, never overdue, and checking it off means "we did it" rather
+// than "handled". It rides the to-do machinery because structurally it
+// is the same row — but it earns no tab, because you add to it monthly,
+// not daily.
+
+const wishList = document.getElementById("wish-list");
+const wishEmpty = document.getElementById("wish-empty");
+const wishDoneToggle = document.getElementById("wish-done-toggle");
+const wishDoneList = document.getElementById("wish-done-list");
+const wishForm = document.getElementById("wish-form");
+const wishStatus = document.getElementById("wish-status");
+
+wishForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  wishStatus.hidden = true;
+  const body = document.getElementById("wish-body").value.trim();
+  if (!body) return;
+  try {
+    await addTodo({ body, list: "wish", author: displayNameFor(currentUser) ?? "Shawn" });
+    wishForm.reset();
+    await refreshTodos();
+  } catch (error) {
+    wishStatus.textContent = `Couldn't add it: ${error.message}`;
+    wishStatus.hidden = false;
+  }
+});
+
+document.getElementById("wish-done-toggle").addEventListener("click", () => {
+  doneOpenWish = !doneOpenWish;
+  renderTodos(todosCacheRows);
 });
