@@ -276,3 +276,28 @@ export async function deactivateRecurring(id) {
     .eq("id", id);
   if (error) throw error;
 }
+
+// ── events: the shared half of the Coming-up view (v1.15) ────────────
+// Deliberately thin — a title, a day, an optional time. No recurrence,
+// no invites, no external sync: the moment this grows those, it has
+// become a worse copy of the calendar already on both phones.
+
+export async function fetchEvents() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title, date, at_time, note, author, created_by")
+    .order("date", { ascending: true })
+    .order("at_time", { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addEvent(fields) {
+  const { error } = await supabase.from("events").insert(fields);
+  if (error) throw error;
+}
+
+export async function deleteEvent(id) {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) throw error;
+}

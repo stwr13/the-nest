@@ -249,6 +249,42 @@
       </form>
     </dialog>
 
+    <div id="tab-soon" role="tabpanel" aria-label="Coming up" hidden>
+    <section class="card">
+      <div class="card-head">
+        <h2 class="card-title">Coming up</h2>
+        <span id="soon-window" class="muted"></span>
+      </div>
+      <p id="soon-charges" class="soon-charges" hidden></p>
+      <p id="soon-empty" class="muted" hidden>Nothing in the next 30 days.</p>
+      <p id="soon-status" class="form-error" role="alert" hidden></p>
+      <div id="soon-list"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Add an event</h2>
+      <form id="event-form">
+        <input id="event-title" name="title" type="text" maxlength="120" required
+               placeholder="Dinner at Claire's parents" aria-label="Event" autocomplete="off" />
+        <div class="form-grid">
+          <div>
+            <label for="event-date">Day</label>
+            <input id="event-date" name="date" type="date" required />
+          </div>
+          <div>
+            <label for="event-time">Time <span class="optional">(optional)</span></label>
+            <input id="event-time" name="at_time" type="time" />
+          </div>
+        </div>
+        <label for="event-note">Note <span class="optional">(optional)</span></label>
+        <input id="event-note" name="note" type="text" maxlength="200" autocomplete="off" />
+        <p class="hint">For things you both need to know about. Personal appointments belong in your own calendar — this is the household's shared view.</p>
+        <p id="event-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="event-submit" class="btn btn-primary">Add</button>
+      </form>
+    </section>
+    </div>
+
     <div id="tab-todos" role="tabpanel" aria-label="To-dos" hidden>
     <section class="card todo-card">
       <h2 class="card-title">To-dos</h2>
@@ -270,6 +306,22 @@
       <ul id="todo-list" class="ledger todo-list"></ul>
       <button type="button" id="todo-done-toggle" class="btn btn-ghost btn-small todo-done-toggle" hidden></button>
       <ul id="todo-done-list" class="ledger todo-list todo-done-list" hidden></ul>
+    </section>
+
+    <section class="card todo-card">
+      <h2 class="card-title">Someday — things we want to do</h2>
+      <p class="hint">No dates, never overdue. Restaurants, trips, places — the list you raid when you can't decide.</p>
+      <form id="wish-form">
+        <input id="wish-body" name="body" type="text" maxlength="200" required
+               placeholder="That ramen place in Bugis"
+               aria-label="Something we want to do" autocomplete="off" />
+        <p id="wish-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="wish-submit" class="btn btn-primary">Add</button>
+      </form>
+      <p id="wish-empty" class="muted" hidden>Nothing on the list yet.</p>
+      <ul id="wish-list" class="ledger todo-list"></ul>
+      <button type="button" id="wish-done-toggle" class="btn btn-ghost btn-small todo-done-toggle" hidden></button>
+      <ul id="wish-done-list" class="ledger todo-list todo-done-list" hidden></ul>
     </section>
     </div>
 
@@ -387,6 +439,10 @@
       <button type="button" id="tab-btn-money" class="tab-btn" role="tab"
               aria-controls="tab-money" aria-selected="true">
         <span class="tab-icon" aria-hidden="true">💰</span>Money
+      </button>
+      <button type="button" id="tab-btn-soon" class="tab-btn" role="tab"
+              aria-controls="tab-soon" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">📅</span>Coming up
       </button>
       <button type="button" id="tab-btn-todos" class="tab-btn" role="tab"
               aria-controls="tab-todos" aria-selected="false">
