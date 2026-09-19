@@ -49,6 +49,16 @@
       </div>
     </header>
     <div id="tab-money" role="tabpanel" aria-label="Money">
+    <section id="due-card" class="card due-card" hidden>
+      <div class="card-head">
+        <h2 class="card-title">Due now</h2>
+        <span id="due-count" class="count-pill"></span>
+      </div>
+      <div id="due-list" class="due-list"></div>
+      <p id="due-status" class="form-error" role="alert" hidden></p>
+      <p id="due-upcoming" class="hint" hidden></p>
+    </section>
+
     <section class="card form-card">
       <h2 id="form-title" class="card-title">Log an expense</h2>
       <form id="expense-form">
@@ -111,6 +121,7 @@
         <p id="form-status" class="form-error" role="alert" hidden></p>
         <p id="form-saved" class="form-saved" hidden>Saved ✓ —
           <button type="button" id="saved-jump" class="btn-link">check it in the ledger ↓</button>
+          <span id="saved-recurring" hidden><br /><button type="button" id="make-recurring" class="btn-link">Make this recurring →</button></span>
         </p>
         <button type="submit" id="exp-submit" class="btn btn-primary">Save</button>
         <button type="button" id="exp-cancel" class="btn btn-ghost btn-block" hidden>Cancel edit</button>
@@ -284,6 +295,90 @@
     </section>
     </div>
 
+    <div id="tab-rec" role="tabpanel" aria-label="Recurring" hidden>
+    <section class="card">
+      <div class="commit-head">
+        <p class="muted commit-label">Committed every month</p>
+        <p id="commit-total" class="commit-total">S$0.00</p>
+      </div>
+      <div class="commit-split">
+        <div class="split-box">
+          <div class="k">Spending</div>
+          <div id="commit-spend" class="v">S$0.00</div>
+        </div>
+        <div class="split-box">
+          <div class="k">Not counted</div>
+          <div id="commit-excluded" class="v">S$0.00</div>
+        </div>
+      </div>
+      <p class="hint">Yearly and quarterly items are shown here as their monthly equivalent. The ledger never sees that split — it records the real charge on its real date.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Add a commitment</h2>
+      <form id="rec-form">
+        <label for="rec-name">What</label>
+        <input id="rec-name" name="name" type="text" maxlength="60" required
+               placeholder="Spotify, insurance premium…" autocomplete="off" />
+        <div class="form-grid">
+          <div>
+            <label for="rec-amount">Amount (SGD)</label>
+            <input id="rec-amount" name="amount" type="text" inputmode="decimal" required />
+          </div>
+          <div>
+            <label for="rec-cadence">Every</label>
+            <select id="rec-cadence" name="cadence">
+              <option value="monthly">Month</option>
+              <option value="quarterly">Quarter</option>
+              <option value="yearly">Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label for="rec-category">Category</label>
+            <select id="rec-category" name="category_id" required></select>
+          </div>
+          <div>
+            <label for="rec-card">Paid with</label>
+            <select id="rec-card" name="card_id"></select>
+          </div>
+        </div>
+        <label for="rec-paidby">Paid by</label>
+        <div id="rec-paidby" class="segment" role="radiogroup" aria-label="Paid by">
+          <label><input type="radio" name="rec_paid_by" value="Shawn" checked /><span>Shawn</span></label>
+          <label><input type="radio" name="rec_paid_by" value="Claire" /><span>Claire</span></label>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label for="rec-next">Next due</label>
+            <input id="rec-next" name="next_due" type="date" required />
+          </div>
+          <div>
+            <label for="rec-end">Ends <span class="optional">(optional)</span></label>
+            <input id="rec-end" name="end_date" type="date" />
+          </div>
+        </div>
+        <p class="hint">An end date turns a subscription into a commitment — the registry can then say how many payments are left.</p>
+        <p id="rec-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="rec-submit" class="btn btn-primary">Add</button>
+        <button type="button" id="rec-cancel" class="btn btn-ghost btn-block" hidden>Cancel</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Running</h2>
+      <p id="rec-empty" class="muted" hidden>Nothing recurring yet.</p>
+      <div id="rec-list"></div>
+    </section>
+
+    <section id="rec-off-card" class="card" hidden>
+      <h2 class="card-title">Stopped</h2>
+      <div id="rec-off"></div>
+      <p class="hint">Stopped items are kept, never deleted — they still hold the history of what they charged.</p>
+    </section>
+    </div>
+
     <footer class="app-footer">
       <span id="app-version"></span>
     </footer>
@@ -300,6 +395,10 @@
       <button type="button" id="tab-btn-buy" class="tab-btn" role="tab"
               aria-controls="tab-buy" aria-selected="false">
         <span class="tab-icon" aria-hidden="true">🛒</span>To-buy
+      </button>
+      <button type="button" id="tab-btn-rec" class="tab-btn" role="tab"
+              aria-controls="tab-rec" aria-selected="false">
+        <span class="tab-icon" aria-hidden="true">🔁</span>Recurring
       </button>
     </nav>
   </main>
