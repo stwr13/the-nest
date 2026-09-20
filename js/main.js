@@ -1101,6 +1101,14 @@ function syncCardPicker() {
   // slide-strip hid most cards. Your most-used cards take the top-left
   // (per-person usage rank); never-used ones keep the manager's order.
   const rank = usageRank(expensesCache, currentUser?.id, todayISO(), (e) => e.card_id);
+  // v1.16: cap state rides the tile itself. "Have I maxed this out?"
+  // is asked while CHOOSING a card, and the answer used to be three
+  // scrolls away in the Cards area — far enough that the question
+  // mostly went unasked. Always the current month: the cap question is
+  // about now, even while editing an older entry.
+  const capState = new Map(
+    cardSummary(expensesCache, cardsCache, new Date()).map((c) => [c.id, c]),
+  );
   const ordered = [...options].sort((a, b) => {
     if (a.value === "") return -1; // "(unspecified)" stays first while editing
     if (b.value === "") return 1;
@@ -1117,11 +1125,45 @@ function syncCardPicker() {
       pick.className = "card-pick";
       pick.setAttribute("role", "option");
       pick.setAttribute("aria-selected", String(o.value === cardSelect.value));
-      pick.append(miniCardArt(card));
+      const art = miniCardArt(card);
+      pick.append(art);
       const name = document.createElement("span");
       name.className = "card-pick-name";
       name.textContent = card ? cardPickLabel(card.name) : o.textContent;
       pick.append(name);
+
+      // Uncapped cards (PayNow, and any card with no bonus ceiling)
+      // get no bar — there is no cap to be near, and a permanently
+      // empty gauge would read as "nothing spent".
+      const state = card ? capState.get(card.id) : null;
+      if (state?.capCents != null) {
+        const filled = Math.min(100, Math.round((state.spentCents / state.capCents) * 100));
+        const bar = document.createElement("span");
+        bar.className = "cap-bar";
+        const fill = document.createElement("span");
+        fill.className = "cap-bar-fill";
+        fill.style.width = `${filled}%`;
+        bar.append(fill);
+        pick.append(bar);
+
+        if (state.overCap) {
+          pick.classList.add("card-pick-full");
+          const flag = document.createElement("span");
+          flag.className = "cap-flag";
+          flag.textContent = "full";
+          pick.append(flag);
+        } else if (filled >= 80) {
+          pick.classList.add("card-pick-near");
+        }
+        // the exact headroom without spending tile space on it — and
+        // the only form a screen reader gets at all
+        pick.setAttribute(
+          "aria-label",
+          state.overCap
+            ? `${card.name} — bonus cap reached (${sgd.format(state.capCents / 100)})`
+            : `${card.name} — ${sgd.format(state.remainingCents / 100)} of cap left`,
+        );
+      }
       pick.addEventListener("click", () => {
         cardSelect.value = o.value;
         syncCardPicker();
@@ -1487,6 +1529,10 @@ ledgerMore.addEventListener("click", () => {
   ledgerExpanded = !ledgerExpanded;
   renderLedger(expensesCache);
   if (!ledgerExpanded) glideTo(document.querySelector(".ledger-card"));
+});
+
+document.getElementById("caps-jump").addEventListener("click", () => {
+  glideTo(document.querySelector(".cards-card"));
 });
 
 document.getElementById("saved-jump").addEventListener("click", () => {
