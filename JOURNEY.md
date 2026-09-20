@@ -1048,3 +1048,49 @@ affordances into one, then subtract the redundant signal. Each step
 removed something the previous one had added. The state still reaches a
 screen reader through the aria-label — words belong there once the
 visual carries the meaning. Version 1.16.2.
+
+## 2026-09-20 (v1.17.0) — the rule that expires
+
+Shawn, having just re-picked his UOB Lady's Solitaire bonus categories
+for Q4 (dining and family), asked three things at once: should the app
+preload those categories, should he simply keep them updated in the
+app, and should it store the earn details of every miles card.
+
+The first answer was already written down. v1.5's comment in
+cards-math.js says tags are the household's own vocabulary
+"deliberately not a fixed menu, so the model can't be wrong about how
+a specific card earns; the app only contributes ranking and cap math."
+That holds, and it is worth restating why: bank terms change without
+announcement, carry MCC exclusions and minimum spends, and a wrong
+rule costs real miles quietly for a whole quarter. A wrong rule
+entered by the bank's own customer is a mistake; a wrong rule asserted
+by the app is a betrayal of the one thing the Cards area is trusted
+for. So the app still refuses to know.
+
+But the question exposed a real defect, and it is not storage — it is
+**staleness**. A card whose categories are re-picked each quarter will
+go on being recommended under last quarter's rules with no error and
+no flag. The failure has no symptom, which is what makes it expensive.
+
+So: an optional "rules good until" date. Past it, the Cards area says
+the rule needs a check, and the card sinks below every card with a
+confirmed rule in both the generic recommendation and the per-tag
+chips. Flagged, never hidden — a stale rule is usually still roughly
+right, and hiding the card would replace a loud silence with a quiet
+one. The test that matters guards exactly the inversion: an expired
+card with MORE headroom must lose to a confirmed one.
+
+The flag deliberately does not appear on the picker tile. That tile
+answers "am I maxed out", and a second unrelated warning there is
+precisely the clutter subtracted in v1.16.2 the same day.
+
+Note widened 120 → 500 characters: "4mpd online only" fits in 120,
+"10 mpd on dining + family, min $800/month, excludes utilities" does
+not.
+
+Refused, and recorded so it isn't revisited: a per-period earn-rules
+table with valid_from / valid_to and per-category rates. That models
+the *history* of rules, and the history has exactly one reader — no
+one is ever going to ask which card was best last July. The rule in
+force is the only one with a consumer, and what it needed was an
+expiry, not a timeline. Version 1.17.0.
