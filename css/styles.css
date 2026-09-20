@@ -984,3 +984,55 @@ select:focus {
 /* charges past the month boundary are the second fact, not the headline */
 .charge-later { color: var(--ink-soft); }
 .charge-later .charge-amt { font-weight: 600; }
+
+/* ── v1.16: cap state on the card tile ── */
+/* The question "have I maxed this out?" is asked while choosing a
+   card, so the answer belongs on the card, not three scrolls down. */
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.caps-jump { font-size: 0.78rem; }
+
+.cap-bar {
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  height: 3px;
+  background: var(--green-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cap-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: 999px;
+}
+
+/* nearly there: the bar warns before the tile does */
+.card-pick-near .cap-bar-fill { background: var(--pink); }
+
+/* full — no bonus earn left this month. The art desaturates so a
+   capped card reads as "spent" at a glance even before the words. */
+.card-pick-full { border-color: var(--danger); }
+.card-pick-full .mini-card-img,
+.card-pick-full .mini-card { filter: grayscale(0.8) opacity(0.55); }
+.card-pick-full .cap-bar-fill { background: var(--danger); }
+.card-pick-full .card-pick-name { color: var(--danger); }
+
+.cap-flag {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+/* a selected card that is also full: selection still reads first */
+.card-pick-full[aria-selected="true"] {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}

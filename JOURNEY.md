@@ -974,3 +974,34 @@ actually counted. A derived figure earns its place only if the reader
 can get back to the rows behind it — that is the same rule the ledger
 already follows, arriving late to the dashboard. 60/60 tests. No
 migration. Version 1.15.1.
+
+## 2026-09-20 (v1.16.0) — the card tells you it's full
+
+Shawn, with a screenshot of the card picker: could the card be
+clickable, so checking whether he'd maxed one out didn't mean two or
+three scrolls down to the Cards area — "or an additional can be in the
+picture to be red hue once max has been hit?"
+
+Two ideas, and the second is the better one, because a jump still costs
+a trip. The question "have I maxed this out?" is asked *while choosing
+a card* — that is the only moment it matters — so the answer has to be
+on the card. The real cost of three scrolls was never the scrolling; it
+was that the question went unasked, and the spend landed on a card that
+had stopped earning.
+
+Each capped tile now carries a thin fill bar: green while there's room,
+pink past 80% so the bar warns before the tile does, and at the ceiling
+the whole tile turns — red border, greyed-out art, red name, FULL. The
+desaturation is what does the work: a spent card reads as spent before
+any word is processed. Uncapped cards get no bar, because a permanently
+empty gauge would say "nothing spent here" rather than "no ceiling".
+
+Exact headroom went into aria-label instead of onto the tile — four
+columns at phone width leave no room for a figure, and that label is
+the only form a screen reader would otherwise get. His clickable idea
+survives as a small "caps ↓" link by the Card label, for when the
+detail genuinely is what's wanted.
+
+Computed against the current month always, even while editing an entry
+from an older one: the cap question is about now, not about the month
+the entry belongs to. Version 1.16.0.
