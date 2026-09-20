@@ -1050,3 +1050,14 @@ select:focus {
   border-color: var(--danger);
   background: var(--danger-soft);
 }
+
+/* v1.17: a card whose earn rule has aged out. Said in the Cards area,
+   never on the picker tile — the tile answers "am I maxed out", and a
+   second unrelated warning there is exactly the clutter just removed. */
+.card-row-stale {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--danger);
+}

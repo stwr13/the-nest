@@ -1107,7 +1107,7 @@ function syncCardPicker() {
   // mostly went unasked. Always the current month: the cap question is
   // about now, even while editing an older entry.
   const capState = new Map(
-    cardSummary(expensesCache, cardsCache, new Date()).map((c) => [c.id, c]),
+    cardSummary(expensesCache, cardsCache, new Date(), todayISO()).map((c) => [c.id, c]),
   );
   const ordered = [...options].sort((a, b) => {
     if (a.value === "") return -1; // "(unspecified)" stays first while editing
@@ -1199,7 +1199,7 @@ function clearTempCardOption() {
 let activeTag = null; // the tapped "which card for…" chip
 
 function renderCards(expenses) {
-  const summary = cardSummary(expenses, cardsCache, dashDate);
+  const summary = cardSummary(expenses, cardsCache, dashDate, todayISO());
   cardsMonth.textContent = `· ${monthShortFmt.format(dashDate)}`;
   const capped = summary.filter((c) => c.capCents != null);
   cardsHint.hidden = capped.length > 0;
@@ -1273,6 +1273,16 @@ function renderCards(expenses) {
         note.textContent = c.note;
         left.append(note);
       }
+      // v1.17: the rule behind this card's advice has aged out. Said
+      // here rather than on the picker tile — the tile answers "am I
+      // maxed out", and a second unrelated warning there would be the
+      // clutter just removed from it.
+      if (c.stale) {
+        const flag = document.createElement("span");
+        flag.className = "card-row-stale";
+        flag.textContent = `rules need a check — set ${shortDateFmt.format(isoToDate(c.earn_review_date))}`;
+        left.append(flag);
+      }
 
       const right = document.createElement("span");
       right.className = "card-row-amount";
@@ -1319,6 +1329,7 @@ function openCardDialog(card) {
   cardForm.cap.value = card?.cap ?? "";
   cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
+  cardForm.earn_review_date.value = card?.earn_review_date ?? "";
   cardDeleteBtn.hidden = card === null;
   showCardStatus(null);
   cardDialog.showModal();
@@ -1343,7 +1354,8 @@ cardForm.addEventListener("submit", async (event) => {
     color: cardForm.color.value,
     image: cardForm.image.value.trim() || null,
     earn_types: normalizeTags(cardForm.tags.value),
-    note: cardForm.note.value.trim() || null,
+    note: cardForm.note.value.replace(/\s+/g, " ").trim() || null,
+    earn_review_date: cardForm.earn_review_date.value || null,
   };
   try {
     if (dialogCardId === null) {

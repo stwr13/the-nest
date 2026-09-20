@@ -28,7 +28,7 @@ export async function fetchExpenses() {
 export async function fetchCards() {
   const { data, error } = await supabase
     .from("cards")
-    .select("id, name, cap, note, earn_types, color, image, sort_order")
+    .select("id, name, cap, note, earn_types, color, image, sort_order, earn_review_date")
     .order("sort_order")
     .order("name");
   if (error) throw error;

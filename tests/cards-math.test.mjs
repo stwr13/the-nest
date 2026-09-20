@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "../js/cards-math.js";
+import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag, staleRule } from "../js/cards-math.js";
 
 const AUG = new Date(2026, 7, 1); // August 2026
 const cards = [
@@ -108,4 +108,43 @@ test("bestNextCard: most headroom among capped cards; uncapped never competes", 
     AUG,
   );
   assert.equal(bestNextCard(allCapped), null);
+});
+
+// ── v1.17: expired earn rules ───────────────────────────────────────
+test("staleRule only fires on a review date that has passed", () => {
+  assert.equal(staleRule({ earn_review_date: "2026-09-30" }, "2026-09-20"), false);
+  assert.equal(staleRule({ earn_review_date: "2026-09-20" }, "2026-09-20"), false, "the review day itself is still good");
+  assert.equal(staleRule({ earn_review_date: "2026-09-19" }, "2026-09-20"), true);
+  assert.equal(staleRule({ earn_review_date: null }, "2026-09-20"), false, "no date means the rule does not expire");
+  assert.equal(staleRule({ earn_review_date: "2026-09-19" }, null), false, "no clock, no judgement");
+});
+
+test("a stale card is flagged but still ranked", () => {
+  const cards = [
+    { id: 1, name: "Fresh", cap: 1000, earn_types: ["dining"], earn_review_date: "2026-12-31" },
+    { id: 2, name: "Expired", cap: 1000, earn_types: ["dining"], earn_review_date: "2026-09-30" },
+  ];
+  // the expired card has MORE headroom, so without the stale rule it
+  // would win outright — that is the bug being prevented
+  const expenses = [{ card_id: 1, date: "2026-10-05", amount: "400.00", card_charged: null }];
+  const summary = cardSummary(expenses, cards, new Date(2026, 9, 5), "2026-10-05");
+
+  assert.equal(summary.find((c) => c.id === 1).stale, false);
+  assert.equal(summary.find((c) => c.id === 2).stale, true);
+  assert.equal(bestNextCard(summary).name, "Fresh", "a confirmed rule beats more headroom on an expired one");
+
+  const forTag = cardsForTag(summary, "dining");
+  assert.equal(forTag.best.name, "Fresh");
+  assert.deepEqual(forTag.ranked.map((c) => c.name), ["Fresh", "Expired"], "still listed, just last");
+});
+
+test("a stale card still wins when it is the only option", () => {
+  const cards = [{ id: 1, name: "Only one", cap: 500, earn_types: ["dining"], earn_review_date: "2026-01-01" }];
+  const summary = cardSummary([], cards, new Date(2026, 9, 5), "2026-10-05");
+  assert.equal(bestNextCard(summary).name, "Only one", "a stale rule is usually still roughly right");
+});
+
+test("cardSummary without a clock reports nothing stale", () => {
+  const cards = [{ id: 1, name: "Old", cap: 500, earn_review_date: "2020-01-01" }];
+  assert.equal(cardSummary([], cards, new Date(2026, 9, 5))[0].stale, false);
 });
