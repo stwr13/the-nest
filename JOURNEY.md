@@ -1005,3 +1005,26 @@ detail genuinely is what's wanted.
 Computed against the current month always, even while editing an entry
 from an older one: the cap question is about now, not about the month
 the entry belongs to. Version 1.16.0.
+
+## 2026-09-20 (v1.16.1) — one affordance, not two
+
+Shawn on the v1.16.0 screenshot: "Why another link for the caps? Why
+not just click card and it brings me there too? But make 'card' more
+obvious that it's clickable."
+
+Right on both counts. The separate "caps ↓" link was a second control
+for a job the label was already sitting beside — and of the two, the
+label is the one the eye lands on. The label is now the button.
+
+What makes it non-trivial: it has to keep reading as a field label
+while being visibly tappable, inside a form where every other label is
+plain grey text. It keeps the label's exact metrics and spends the
+difference on colour and a stated destination — "Card" in green with a
+"see caps ↓" pill — so it is the only label in the form that looks like
+it leads somewhere. Making it obvious was the harder half of his
+request, not the merging.
+
+Consequence worth noting: the <label> element went with it, so the
+select carries its own aria-label now and keeps an accessible name in
+both states (picker showing, or the raw select when no cards exist).
+Version 1.16.1.
