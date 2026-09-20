@@ -4,7 +4,14 @@
 // even excluded-from-totals categories (Blessing spend still earns
 // miles; the exclusion flag is about household totals, not card caps).
 
-export function cardSummary(expenses, cards, monthDate) {
+// todayIso is optional: callers that don't care about rule staleness
+// (tests of pure cap math, older call sites) get stale:false rather
+// than a crash.
+export function staleRule(card, todayIso) {
+  return Boolean(card.earn_review_date && todayIso && card.earn_review_date < todayIso);
+}
+
+export function cardSummary(expenses, cards, monthDate, todayIso = null) {
   const mk = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
   const centsByCard = new Map();
   for (const e of expenses) {
@@ -23,6 +30,12 @@ export function cardSummary(expenses, cards, monthDate) {
       capCents,
       remainingCents: capCents == null ? null : Math.max(0, capCents - spentCents),
       overCap: capCents != null && spentCents >= capCents,
+      // v1.17: the rule this card's advice rests on has aged out. Only
+      // ever a flag — the app keeps ranking the card, because "it
+      // probably still earns here, but check" beats hiding a card the
+      // household may well want. Silence is the failure mode being
+      // fixed; replacing it with absence would just be a quieter one.
+      stale: staleRule(c, todayIso),
     };
   });
 }
@@ -30,11 +43,19 @@ export function cardSummary(expenses, cards, monthDate) {
 // The generic "which card should I use?" answer: the capped card with
 // the most headroom left. Uncapped cards don't compete (they have no
 // bonus ceiling to maximize). Null when no capped card has room.
+// v1.17: a card whose rule has expired sinks below every card with a
+// current one. It can still be the answer when nothing else is — a
+// stale rule is usually still roughly right — but it never beats a
+// card the household has actually confirmed.
 export function bestNextCard(summary) {
   return (
     summary
       .filter((c) => c.capCents != null && !c.overCap)
-      .sort((a, b) => b.remainingCents - a.remainingCents)[0] ?? null
+      .sort(
+        (a, b) =>
+          Number(Boolean(a.stale)) - Number(Boolean(b.stale)) ||
+          b.remainingCents - a.remainingCents,
+      )[0] ?? null
   );
 }
 
@@ -67,7 +88,11 @@ export function cardsForTag(summary, tag) {
   const matches = summary.filter((c) => (c.earn_types ?? []).includes(tag));
   const open = matches
     .filter((c) => !c.overCap && c.capCents != null)
-    .sort((a, b) => b.remainingCents - a.remainingCents);
+    .sort(
+      (a, b) =>
+        Number(Boolean(a.stale)) - Number(Boolean(b.stale)) ||
+        b.remainingCents - a.remainingCents,
+    );
   const uncapped = matches.filter((c) => c.capCents == null);
   const full = matches.filter((c) => c.overCap);
   return { ranked: [...open, ...uncapped, ...full], best: open[0] ?? uncapped[0] ?? null };

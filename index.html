@@ -231,7 +231,11 @@
         <label for="card-tags">Earns bonus on <span class="optional">(comma-separated, your words)</span></label>
         <input id="card-tags" name="tags" type="text" maxlength="120" autocomplete="off" placeholder="e.g. dining, contactless, online" />
         <label for="card-note">Earn rule note <span class="optional">(optional)</span></label>
-        <input id="card-note" name="note" type="text" maxlength="120" autocomplete="off" placeholder="e.g. 4mpd, min $500/month" />
+        <textarea id="card-note" name="note" maxlength="500" rows="2" autocomplete="off"
+                  placeholder="e.g. 10 mpd on dining + family, min $800/month, excludes utilities"></textarea>
+        <label for="card-review">Rules good until <span class="optional">(optional — for cards you re-pick each quarter)</span></label>
+        <input id="card-review" name="earn_review_date" type="date" />
+        <p class="hint">Past this date the card is flagged for a check and stops out-ranking cards whose rules you have confirmed. Leave empty if the earn structure never changes.</p>
         <p id="card-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="card-save" class="btn btn-primary">Save</button>
         <button type="button" id="card-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete</button>
