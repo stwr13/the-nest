@@ -1045,14 +1045,6 @@ select:focus {
 .card-pick-full .cap-bar-fill { background: var(--danger); }
 .card-pick-full .card-pick-name { color: var(--danger); }
 
-.cap-flag {
-  font-size: 0.55rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--danger);
-}
-
 /* a selected card that is also full: selection still reads first */
 .card-pick-full[aria-selected="true"] {
   border-color: var(--danger);

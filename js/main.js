@@ -1147,11 +1147,12 @@ function syncCardPicker() {
         pick.append(bar);
 
         if (state.overCap) {
+          // v1.16.2: no "FULL" word. The red border, the greyed art and
+          // the red name already say it, and at four columns a fourth
+          // signal was noise — Shawn: "too many words gets messy
+          // visually". The state still reaches a screen reader through
+          // the aria-label below, which is where the words belong.
           pick.classList.add("card-pick-full");
-          const flag = document.createElement("span");
-          flag.className = "cap-flag";
-          flag.textContent = "full";
-          pick.append(flag);
         } else if (filled >= 80) {
           pick.classList.add("card-pick-near");
         }

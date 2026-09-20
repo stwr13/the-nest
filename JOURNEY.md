@@ -1028,3 +1028,23 @@ Consequence worth noting: the <label> element went with it, so the
 select carries its own aria-label now and keeps an accessible name in
 both states (picker showing, or the raw select when no cards exist).
 Version 1.16.1.
+
+## 2026-09-20 (v1.16.2) — subtracting the word
+
+Shawn, on sight of v1.16.1: "let's remove the FULL, the current red
+border and grey out card is sufficient. Too many words gets messy
+visually."
+
+Four signals were carrying one state — red border, desaturated art, red
+name, and the word. The word was the weakest of them and the only one
+that cost a line of vertical space, so it went. A second benefit fell
+out that wasn't asked for: every tile is the same height again, which
+tightens the grid and pulls Save up the screen.
+
+The pattern across v1.16.0 → .1 → .2 is worth naming, because all three
+came from Shawn looking at a rendered screen rather than a description:
+first put the state where the question is asked, then merge two
+affordances into one, then subtract the redundant signal. Each step
+removed something the previous one had added. The state still reaches a
+screen reader through the aria-label — words belong there once the
+visual carries the meaning. Version 1.16.2.
