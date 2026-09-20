@@ -92,14 +92,13 @@
           </fieldset>
         </div>
 
-        <div class="label-row">
-          <label for="exp-card">Card</label>
-          <button type="button" id="caps-jump" class="btn-link caps-jump">caps ↓</button>
-        </div>
+        <button type="button" id="caps-jump" class="field-jump">
+          Card <span class="field-jump-hint">see caps</span>
+        </button>
         <!-- visual picker drives the (hidden) select; the select stays
              the single source of truth for the form value -->
         <div id="card-picker" class="card-picker" role="listbox" aria-label="Card" hidden></div>
-        <select id="exp-card" name="card_id"></select>
+        <select id="exp-card" name="card_id" aria-label="Card"></select>
 
         <label class="cat-flag">
           <input id="exp-split" name="split" type="checkbox" />

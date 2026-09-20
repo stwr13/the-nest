@@ -988,13 +988,35 @@ select:focus {
 /* ── v1.16: cap state on the card tile ── */
 /* The question "have I maxed this out?" is asked while choosing a
    card, so the answer belongs on the card, not three scrolls down. */
-.label-row {
+/* v1.16.1: the field label IS the jump — one affordance, not two.
+   It has to keep reading as a label while being visibly tappable, so
+   it borrows the label's metrics and spends the difference on colour,
+   an underline and a stated destination. */
+.field-jump {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0.2rem;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green);
+  background: none;
+  border: none;
+  cursor: pointer;
 }
-.caps-jump { font-size: 0.78rem; }
+.field-jump:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.field-jump-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+.field-jump-hint::after { content: " ↓"; }
 
 .cap-bar {
   display: block;
