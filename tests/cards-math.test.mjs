@@ -148,3 +148,33 @@ test("cardSummary without a clock reports nothing stale", () => {
   const cards = [{ id: 1, name: "Old", cap: 500, earn_review_date: "2020-01-01" }];
   assert.equal(cardSummary([], cards, new Date(2026, 9, 5))[0].stale, false);
 });
+
+// ── v1.18: retired cards ────────────────────────────────────────────
+test("a retired card never wins, whatever its headroom", () => {
+  const cards = [
+    { id: 1, name: "Live", cap: 1000, earn_types: ["dining"] },
+    { id: 2, name: "Retired", cap: 5000, earn_types: ["dining"], retired: true },
+  ];
+  const summary = cardSummary([], cards, new Date(2026, 9, 5), "2026-10-05");
+  assert.equal(bestNextCard(summary).name, "Live");
+  const forTag = cardsForTag(summary, "dining");
+  assert.equal(forTag.best.name, "Live");
+  assert.deepEqual(forTag.ranked.map((c) => c.name), ["Live"], "not even listed last");
+});
+
+test("a retired card adds no tag chips, but its spend still counts in history", () => {
+  const cards = [
+    { id: 1, name: "Live", cap: 1000, earn_types: ["dining"] },
+    { id: 2, name: "Retired", cap: null, earn_types: ["family"], retired: true },
+  ];
+  assert.deepEqual(allTags(cards), ["dining"]);
+  const summary = cardSummary([e("2026-08-05", 120, 2)], cards, AUG);
+  assert.equal(summary.find((c) => c.id === 2).spentCents, 12000, "old entries keep their card");
+});
+
+test("only retired cards left means no recommendation", () => {
+  const cards = [{ id: 1, name: "Gone", cap: 750, earn_types: ["dining"], retired: true }];
+  const summary = cardSummary([], cards, AUG);
+  assert.equal(bestNextCard(summary), null);
+  assert.equal(cardsForTag(summary, "dining").best, null);
+});
