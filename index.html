@@ -236,6 +236,10 @@
         <label for="card-review">Rules good until <span class="optional">(optional — for cards you re-pick each quarter)</span></label>
         <input id="card-review" name="earn_review_date" type="date" />
         <p class="hint">Past this date the card is flagged for a check and stops out-ranking cards whose rules you have confirmed. Leave empty if the earn structure never changes.</p>
+        <label class="cat-flag">
+          <input id="card-retired" name="retired" type="checkbox" />
+          <span>Retired — hide from the picker, keep its old entries</span>
+        </label>
         <p id="card-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="card-save" class="btn btn-primary">Save</button>
         <button type="button" id="card-delete" class="btn btn-ghost btn-block btn-danger-ghost">Delete</button>

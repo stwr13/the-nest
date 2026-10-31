@@ -1051,15 +1051,22 @@ function showCatDeleteStatus(message) {
 // bonus cap. Math in cards-math.js (pure, Node-tested); this renders
 // the viewed month (follows the dashboard's ‹ › navigation).
 
+// v1.18: retired cards never reach either select. An old entry that
+// points at one gets it back as a temporary option while it is being
+// edited (setCardSelectValue), the same way a pre-card entry does.
+function liveCards() {
+  return cardsCache.filter((c) => !c.retired);
+}
+
 function renderCardOptions() {
   const selected = cardSelect.value;
-  cardSelect.replaceChildren(...cardsCache.map((c) => new Option(c.name, c.id)));
+  cardSelect.replaceChildren(...liveCards().map((c) => new Option(c.name, c.id)));
   if ([...cardSelect.options].some((o) => o.value === selected)) {
     cardSelect.value = selected;
   }
 
   const recSelected = recCardSelect.value;
-  recCardSelect.replaceChildren(...cardsCache.map((c) => new Option(c.name, c.id)));
+  recCardSelect.replaceChildren(...liveCards().map((c) => new Option(c.name, c.id)));
   if ([...recCardSelect.options].some((o) => o.value === recSelected)) {
     recCardSelect.value = recSelected;
   }
@@ -1177,10 +1184,19 @@ function syncCardPicker() {
 // Editing a pre-v1.4 entry: card unknown. A temporary "(unspecified)"
 // option keeps the edit honest — saving without picking keeps null,
 // but the option vanishes once the edit ends so new entries must pick.
+// v1.18: same trick for an entry on a retired card — without it the
+// select would silently fall back and a save would move the entry.
 function setCardSelectValue(cardId) {
   clearTempCardOption();
   if (cardId != null) {
-    cardSelect.value = String(cardId);
+    const id = String(cardId);
+    if (![...cardSelect.options].some((o) => o.value === id)) {
+      const card = cardsCache.find((c) => String(c.id) === id);
+      const temp = new Option(card?.name ?? "(retired card)", id);
+      temp.dataset.temp = "1";
+      cardSelect.prepend(temp);
+    }
+    cardSelect.value = id;
     syncCardPicker();
     return;
   }
@@ -1225,9 +1241,13 @@ function renderCards(expenses) {
   );
 
   // busiest cards first for the viewed month (v1.5.1, Shawn's ask);
-  // ties fall back to the manager's sort order
+  // ties fall back to the manager's sort order. v1.18: retired cards
+  // sink below everything — kept here only so they can be edited back.
   let displayOrder = [...summary].sort(
-    (a, b) => b.spentCents - a.spentCents || (a.sort_order ?? 0) - (b.sort_order ?? 0),
+    (a, b) =>
+      Number(Boolean(a.retired)) - Number(Boolean(b.retired)) ||
+      b.spentCents - a.spentCents ||
+      (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
   let matchedIds = null;
   if (activeTag) {
@@ -1254,7 +1274,7 @@ function renderCards(expenses) {
   cardsList.replaceChildren(
     ...displayOrder.map((c) => {
       const li = document.createElement("li");
-      if (matchedIds && !matchedIds.has(c.id)) li.className = "card-dim";
+      if (c.retired || (matchedIds && !matchedIds.has(c.id))) li.className = "card-dim";
       const row = document.createElement("button");
       row.type = "button";
       row.className = "cat-manage-row card-row";
@@ -1277,7 +1297,12 @@ function renderCards(expenses) {
       // here rather than on the picker tile — the tile answers "am I
       // maxed out", and a second unrelated warning there would be the
       // clutter just removed from it.
-      if (c.stale) {
+      if (c.retired) {
+        const flag = document.createElement("span");
+        flag.className = "card-row-retired";
+        flag.textContent = "retired — not in the picker";
+        left.append(flag);
+      } else if (c.stale) {
         const flag = document.createElement("span");
         flag.className = "card-row-stale";
         flag.textContent = `rules need a check — set ${shortDateFmt.format(isoToDate(c.earn_review_date))}`;
@@ -1297,7 +1322,7 @@ function renderCards(expenses) {
       row.append(art, left, right);
       li.append(row);
 
-      if (c.capCents != null) {
+      if (c.capCents != null && !c.retired) {
         const bar = document.createElement("div");
         bar.className = "cat-bar";
         const fill = document.createElement("div");
@@ -1330,6 +1355,7 @@ function openCardDialog(card) {
   cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
   cardForm.earn_review_date.value = card?.earn_review_date ?? "";
+  cardForm.retired.checked = Boolean(card?.retired);
   cardDeleteBtn.hidden = card === null;
   showCardStatus(null);
   cardDialog.showModal();
@@ -1356,6 +1382,7 @@ cardForm.addEventListener("submit", async (event) => {
     earn_types: normalizeTags(cardForm.tags.value),
     note: cardForm.note.value.replace(/\s+/g, " ").trim() || null,
     earn_review_date: cardForm.earn_review_date.value || null,
+    retired: cardForm.retired.checked,
   };
   try {
     if (dialogCardId === null) {
@@ -1386,7 +1413,7 @@ cardDeleteBtn.addEventListener("click", async () => {
   } catch (error) {
     showCardStatus(
       error.message?.includes("foreign key") || error.code === "23503"
-        ? "This card has entries — it can't be deleted. Rename it instead."
+        ? "This card has entries — it can't be deleted. Tick Retired instead."
         : friendlyCardError(error),
     );
   }

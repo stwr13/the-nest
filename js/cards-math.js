@@ -47,10 +47,11 @@ export function cardSummary(expenses, cards, monthDate, todayIso = null) {
 // current one. It can still be the answer when nothing else is — a
 // stale rule is usually still roughly right — but it never beats a
 // card the household has actually confirmed.
+// v1.18: a retired card is never the answer, whatever its numbers say.
 export function bestNextCard(summary) {
   return (
     summary
-      .filter((c) => c.capCents != null && !c.overCap)
+      .filter((c) => !c.retired && c.capCents != null && !c.overCap)
       .sort(
         (a, b) =>
           Number(Boolean(a.stale)) - Number(Boolean(b.stale)) ||
@@ -76,7 +77,10 @@ export function normalizeTags(text) {
 
 export function allTags(cards) {
   const seen = new Set();
-  for (const c of cards) for (const t of c.earn_types ?? []) seen.add(t);
+  for (const c of cards) {
+    if (c.retired) continue; // v1.18: a retired card adds no chips
+    for (const t of c.earn_types ?? []) seen.add(t);
+  }
   return [...seen].sort();
 }
 
@@ -85,7 +89,7 @@ export function allTags(cards) {
 // protect), cap-hit matches last (flagged, not hidden: "it earns here
 // but it's full" is the warning that saves the wasted spend).
 export function cardsForTag(summary, tag) {
-  const matches = summary.filter((c) => (c.earn_types ?? []).includes(tag));
+  const matches = summary.filter((c) => !c.retired && (c.earn_types ?? []).includes(tag));
   const open = matches
     .filter((c) => !c.overCap && c.capCents != null)
     .sort(

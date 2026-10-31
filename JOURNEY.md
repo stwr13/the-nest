@@ -1094,3 +1094,37 @@ the *history* of rules, and the history has exactly one reader — no
 one is ever going to ask which card was best last July. The rule in
 force is the only one with a consumer, and what it needed was an
 expiry, not a timeline. Version 1.17.0.
+
+## 2026-10-31 (v1.18.0) — retiring a card without losing its history
+
+The Lady's Solitaire converted to the standard Lady's, which has one
+bonus category instead of two. The Dining bucket was renamed in place,
+so its entries stayed attached. The second bucket couldn't be deleted
+because past entries point at it, and the foreign key is
+on-delete-restrict on purpose: history keeps its card. The data-only
+fix was to strip its cap and tags. That took it out of every
+recommendation, but its face stayed in the logging picker, one wrong
+tap away from a new entry. Shawn saw it there in the live app and
+asked for it gone.
+
+So cards now have a **retired** flag, a checkbox in the card editor.
+A retired card is left out of the logging picker, the recurring form's
+card list, the tag chips, "Most headroom" and the per-tag ranking. It
+stays attached to its old entries and its spend still counts in past
+months. Editing one of those entries brings it back as a temporary
+option, the same mechanism a pre-card entry already used. Without
+that, the select would quietly fall back to another card and a save
+would move the entry. It also stays in the Cards area, last and
+dimmed, labelled "retired — not in the picker", because that list is
+also the card manager and a card that can't be reached can't be
+un-retired.
+
+The delete error now says "Tick Retired instead" rather than "Rename
+it instead". Renaming was the old workaround, and it is what left a
+"· retired" tile in the picker in the first place.
+
+Not built: hiding retired cards from the Cards area altogether, or a
+separate archive view. One retired card doesn't justify a second
+screen. Migration run against production and verified. 67/67 tests
+(3 new, including the case that matters: a retired card with more
+headroom never wins). Version 1.18.0.
