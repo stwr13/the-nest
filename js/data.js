@@ -85,6 +85,23 @@ export async function findPossibleDuplicates(amount, date, excludeId = null) {
   return data;
 }
 
+// Its own query, not the ledger cache: fetchExpenses holds only the newest
+// 1000 rows, which stops covering a 12-month look-back well inside the
+// first year. The server narrows it down; classifyEntry has the final say.
+export async function fetchOneOffCandidates(sinceIso, minAmount, lumpyCategoryIds) {
+  const candidates = [`amount.gte.${minAmount}`];
+  if (lumpyCategoryIds.length) candidates.push(`category_id.in.(${lumpyCategoryIds.join(",")})`);
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("id, amount, date, note, recurring_id, categories(name, icon, excluded_from_totals, kind)")
+    .gte("date", sinceIso)
+    .is("recurring_id", null)
+    .or(candidates.join(","))
+    .order("date", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 // PostgREST caps responses at 1000 rows; a backup that silently
 // truncates is worse than none, so page until done.
 export async function fetchAllExpensesForExport() {

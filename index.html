@@ -166,6 +166,7 @@
       <p id="dash-months" class="dash-months" hidden></p>
       <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
       <ul id="dash-cats" class="dash-cats"></ul>
+      <button type="button" id="dash-overview" class="link-row">See a typical month in Overview ›</button>
     </section>
 
     <section class="card cards-card">
@@ -381,28 +382,57 @@
     </section>
     </div>
 
-    <div id="tab-rec" role="tabpanel" aria-label="Recurring" hidden>
+    <div id="tab-rec" role="tabpanel" aria-label="Overview" hidden>
     <section class="card">
       <div class="commit-head">
-        <p class="muted commit-label">Committed every month</p>
-        <p id="commit-total" class="commit-total">S$0.00</p>
+        <p class="muted commit-label">A typical month</p>
+        <p id="ov-headline" class="commit-total"></p>
+        <p id="ov-source" class="ov-sub"></p>
       </div>
-      <div class="commit-split">
-        <div class="split-box">
-          <div class="k">Spending</div>
-          <div id="commit-spend" class="v">S$0.00</div>
-        </div>
-        <div class="split-box">
-          <div class="k">Not counted</div>
-          <div id="commit-excluded" class="v">S$0.00</div>
-        </div>
-      </div>
-      <p class="hint">Yearly and quarterly items are shown here as their monthly equivalent. The ledger never sees that split — it records the real charge on its real date.</p>
+      <div id="ov-stack" class="ov-stack" role="img"></div>
+      <div id="ov-layers"></div>
     </section>
 
     <section class="card">
-      <h2 class="card-title">Add a commitment</h2>
-      <form id="rec-form">
+      <h2 class="card-title">Year ahead</h2>
+      <p id="ya-sentence" class="ov-sub"></p>
+      <div class="ya-legend">
+        <span><i class="ya-key ya-regular"></i>Regular</span>
+        <span><i class="ya-key ya-lump"></i>Yearly, quarterly and one-time</span>
+      </div>
+      <div id="ya-bars" class="ya-bars" role="group" aria-label="The next 12 months"></div>
+      <div id="ya-panel" class="ya-panel"></div>
+    </section>
+
+    <section class="card">
+      <button type="button" id="oneoff-toggle" class="ov-toggle"
+              aria-expanded="false" aria-controls="oneoff-body">
+        <span class="ov-grow">
+          <span class="card-title ov-title">Big one-offs</span>
+          <span class="ov-sub">Last 12 months. Not part of a typical month.</span>
+        </span>
+        <span id="oneoff-total" class="lay-v"></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <div id="oneoff-body" class="ov-tucked" hidden>
+        <p id="oneoff-empty" class="muted" hidden>Nothing big in the last 12 months.</p>
+        <div id="oneoff-list"></div>
+        <p id="oneoff-hint" class="hint"></p>
+      </div>
+      <p id="oneoff-status" class="form-error" role="alert" hidden></p>
+    </section>
+
+    <section class="card">
+      <div class="running-head">
+        <button type="button" id="running-toggle" class="ov-toggle"
+                aria-expanded="false" aria-controls="running-body">
+          <span class="card-title ov-title ov-grow">Running <span id="running-count" class="optional"></span></span>
+          <span class="chev" aria-hidden="true">›</span>
+        </button>
+        <button type="button" id="rec-add-open" class="ov-add"
+                aria-expanded="false" aria-controls="rec-form">+ Add</button>
+      </div>
+      <form id="rec-form" class="rec-form" hidden>
         <label for="rec-name">What</label>
         <input id="rec-name" name="name" type="text" maxlength="60" required
                placeholder="Spotify, insurance premium…" autocomplete="off" />
@@ -450,20 +480,25 @@
         <p class="hint">An end date turns a subscription into a commitment — the registry can then say how many payments are left.</p>
         <p id="rec-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="rec-submit" class="btn btn-primary">Add</button>
-        <button type="button" id="rec-cancel" class="btn btn-ghost btn-block" hidden>Cancel</button>
+        <button type="button" id="rec-cancel" class="btn btn-ghost btn-block">Cancel</button>
       </form>
-    </section>
-
-    <section class="card">
-      <h2 class="card-title">Running</h2>
-      <p id="rec-empty" class="muted" hidden>Nothing recurring yet.</p>
-      <div id="rec-list"></div>
+      <p id="running-status" class="form-error" role="alert" hidden></p>
+      <div id="running-body" class="ov-tucked" hidden>
+        <p id="rec-empty" class="muted" hidden>Nothing recurring yet.</p>
+        <div id="rec-list"></div>
+      </div>
     </section>
 
     <section id="rec-off-card" class="card" hidden>
-      <h2 class="card-title">Stopped</h2>
-      <div id="rec-off"></div>
-      <p class="hint">Stopped items are kept, never deleted — they still hold the history of what they charged.</p>
+      <button type="button" id="stopped-toggle" class="ov-toggle"
+              aria-expanded="false" aria-controls="stopped-body">
+        <span class="card-title ov-title ov-grow">Stopped <span id="stopped-count" class="optional"></span></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <div id="stopped-body" class="ov-tucked" hidden>
+        <div id="rec-off"></div>
+        <p class="hint">Stopped items are kept, never deleted — they still hold the history of what they charged.</p>
+      </div>
     </section>
     </div>
 
@@ -490,7 +525,7 @@
       </button>
       <button type="button" id="tab-btn-rec" class="tab-btn" role="tab"
               aria-controls="tab-rec" aria-selected="false">
-        <span class="tab-icon" aria-hidden="true">🔁</span>Recurring
+        <span class="tab-icon" aria-hidden="true">📊</span>Overview
       </button>
     </nav>
   </main>

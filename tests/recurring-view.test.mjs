@@ -5,7 +5,6 @@ import {
   nextDue,
   dueItems,
   monthlyEquivalentCents,
-  commitmentTotals,
   remaining,
   daysLate,
   CADENCE_MONTHS,
@@ -60,23 +59,6 @@ test("monthlyEquivalentCents amortises for the registry view only", () => {
   assert.equal(monthlyEquivalentCents(item({ amount: "11.98" })), 1198);
   assert.equal(monthlyEquivalentCents(item({ amount: "186.40", cadence: "yearly" })), 1553);
   assert.equal(monthlyEquivalentCents(item({ amount: "285.00", cadence: "quarterly" })), 9500);
-});
-
-test("commitmentTotals splits spending from excluded categories", () => {
-  const registry = [
-    item({ amount: "11.98" }),
-    item({ amount: "285.00", cadence: "quarterly" }),
-    item({
-      amount: "2000.00",
-      categories: { excluded_from_totals: true },
-    }),
-    item({ amount: "999.00", active: false, next_due: null }),
-  ];
-  const t = commitmentTotals(registry);
-  assert.equal(t.spendingCents, 1198 + 9500);
-  assert.equal(t.excludedCents, 200000);
-  assert.equal(t.totalCents, 1198 + 9500 + 200000);
-  assert.ok(!String(t.totalCents).includes("."), "integer cents, no float drift");
 });
 
 test("remaining counts the finite tail of a commitment", () => {
@@ -140,11 +122,9 @@ test("the form only offers cadences the registry knows, each with a label", () =
   for (const cadence of offered) assert.ok(CADENCE_LABEL[cadence], `${cadence} has no label`);
 });
 
-test("a one-time charge has no monthly cost and stays out of the commitment totals", () => {
+test("a one-time charge has no monthly cost", () => {
   const once = item({ amount: "500.00", cadence: "once", next_due: "2027-03-01", end_date: "2027-03-01" });
   assert.equal(monthlyEquivalentCents(once), 0);
-  const totals = commitmentTotals([once, item({ amount: "11.98" })]);
-  assert.equal(totals.totalCents, 1198);
 });
 
 test("a half-yearly charge spreads over six months", () => {

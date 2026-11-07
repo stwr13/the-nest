@@ -5,13 +5,20 @@ import { ledgerView, dayTotal, recentDayTotals, capGroups } from "./ledger-view.
 import {
   nextDue,
   dueItems,
-  commitmentTotals,
   remaining,
   daysLate,
   monthlyEquivalentCents,
   CADENCE_LABEL,
 } from "./recurring-view.js";
-import { monthSplit, everydayComparison } from "./overview-math.js";
+import {
+  monthSplit,
+  everydayComparison,
+  typicalMonth,
+  yearAhead,
+  oneOffs,
+  oneOffsSince,
+  ONE_OFF_CENTS,
+} from "./overview-math.js";
 import { todosView } from "./todos-view.js";
 import { horizon, upcomingCharges, endOfMonth, dayList, isMonthlyCharge } from "./horizon-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
@@ -25,6 +32,7 @@ import {
   deleteExpense,
   findPossibleDuplicates,
   fetchAllExpensesForExport,
+  fetchOneOffCandidates,
   addCategory,
   updateCategory,
   countExpensesForCategory,
@@ -272,11 +280,13 @@ async function loadApp() {
   refreshTodos();
   refreshRecurring();
   refreshSoon();
+  refreshOneOffs();
 }
 
 async function refresh() {
   try {
     renderAll(await fetchExpenses());
+    refreshOneOffs(); // a save can add one; its errors show in its own card
   } catch (error) {
     showLedgerStatus(loadErrorMessage(error));
   }
@@ -287,6 +297,7 @@ function renderAll(expenses) {
   renderDashboard(expenses);
   renderCards(expenses);
   renderLedger(expenses);
+  renderOverview();
 }
 
 function loadErrorMessage(error) {
@@ -1982,9 +1993,10 @@ const recCategorySelect = document.getElementById("rec-category");
 const recCardSelect = document.getElementById("rec-card");
 const recCadence = document.getElementById("rec-cadence");
 const recEnd = document.getElementById("rec-end");
-const commitTotal = document.getElementById("commit-total");
-const commitSpend = document.getElementById("commit-spend");
-const commitExcluded = document.getElementById("commit-excluded");
+const recAddOpen = document.getElementById("rec-add-open");
+const runningCount = document.getElementById("running-count");
+const runningStatus = document.getElementById("running-status");
+const stoppedCount = document.getElementById("stopped-count");
 
 let recurringCache = [];
 const editingAmount = new Set(); // ids showing the amount box
@@ -2022,12 +2034,29 @@ function showDueStatus(message, { news = false } = {}) {
   if (message && news) {
     dueStatusTimer = setTimeout(() => {
       showDueStatus(null);
-      renderRecurring();
+      renderDue();
     }, 8000);
   }
 }
 
 function renderRecurring() {
+  renderDue();
+
+  const active = recurringCache.filter((r) => r.active);
+  recEmpty.hidden = active.length > 0;
+  runningCount.textContent = `(${active.length})`;
+  recList.replaceChildren(...active.map(registryRow));
+
+  const stopped = recurringCache.filter((r) => !r.active);
+  recOffCard.hidden = stopped.length === 0;
+  stoppedCount.textContent = `(${stopped.length})`;
+  recOff.replaceChildren(...stopped.map(registryRow));
+
+  renderOverview();
+  renderSoon(); // a confirmed charge moves on; the horizon follows
+}
+
+function renderDue() {
   const today = todayISO();
   const due = dueItems(recurringCache, today);
 
@@ -2045,26 +2074,11 @@ function renderRecurring() {
   );
   dueList.replaceChildren(...due.map((item) => dueRow(item, today)));
   renderConfirmAll(due);
-
-  const totals = commitmentTotals(recurringCache);
-  commitTotal.textContent = sgd.format(totals.totalCents / 100);
-  commitSpend.textContent = sgd.format(totals.spendingCents / 100);
-  commitExcluded.textContent = sgd.format(totals.excludedCents / 100);
-
-  const active = recurringCache.filter((r) => r.active);
-  recEmpty.hidden = active.length > 0;
-  recList.replaceChildren(...active.map(registryRow));
-
-  const stopped = recurringCache.filter((r) => !r.active);
-  recOffCard.hidden = stopped.length === 0;
-  recOff.replaceChildren(...stopped.map(registryRow));
-
-  renderSoon(); // a confirmed charge moves on; the horizon follows
 }
 
 dueToggle.addEventListener("click", () => {
   dueOpen = !dueOpen;
-  renderRecurring();
+  renderDue();
 });
 
 // One compact row: name, amount, how late, and the two ways to change it.
@@ -2124,7 +2138,7 @@ function dueLink(text, item, set) {
     editingAmount.delete(item.id);
     skipChoice.delete(item.id);
     if (opening) set.add(item.id);
-    renderRecurring();
+    renderDue();
   });
   return link;
 }
@@ -2274,12 +2288,17 @@ async function doConfirm(item, amount, { refreshAfter = true } = {}) {
   return guardDue(() => confirmRecurring(item.id, amount, item.next_due), { refreshAfter });
 }
 
+function showRunningStatus(message) {
+  runningStatus.textContent = message ?? "";
+  runningStatus.hidden = !message;
+}
+
 // One place to turn an RPC failure into something readable. The
 // serialization_failure the function raises means the other phone got
 // there first — that is not an error the user caused, so it reads as
 // news rather than a fault.
-async function guardDue(action, { refreshAfter = true } = {}) {
-  showDueStatus(null);
+async function guardDue(action, { refreshAfter = true, show = showDueStatus } = {}) {
+  show(null);
   try {
     await action();
     if (refreshAfter) await Promise.all([refreshRecurring(), refresh()]);
@@ -2287,12 +2306,12 @@ async function guardDue(action, { refreshAfter = true } = {}) {
   } catch (error) {
     const message = error?.message ?? String(error);
     if (/already confirmed|already moved on/i.test(message)) {
-      showDueStatus("Already done on the other phone — refreshed.", { news: true });
+      show("Already done on the other phone — refreshed.", { news: true });
       if (refreshAfter) await refreshRecurring();
       return "already";
     }
     // WebKit says "Load failed" where Chromium says "Failed to fetch"
-    showDueStatus(
+    show(
       /fetch|load failed/i.test(message)
         ? "No connection — that didn't go through."
         : `Couldn't do that: ${message}`,
@@ -2321,7 +2340,6 @@ function registryRow(item) {
   }
   bits.push(categoryLabel(item.categories));
   if (item.cards?.name) bits.push(item.cards.name);
-  bits.push(item.paid_by);
   bits.push(
     item.last_confirmed
       ? `last ${shortDateFmt.format(isoToDate(item.last_confirmed))}`
@@ -2359,7 +2377,7 @@ function registryRow(item) {
     right.append(
       smallButton("Stop", "btn-ghost btn-danger-ghost", async () => {
         if (!window.confirm(`Stop ${item.name}? It stays in the list with its history.`)) return;
-        await guardDue(() => deactivateRecurring(item.id));
+        await guardDue(() => deactivateRecurring(item.id), { show: showRunningStatus });
       }),
     );
   }
@@ -2367,6 +2385,26 @@ function registryRow(item) {
   row.append(main, right);
   return row;
 }
+
+// Tucked until asked for: this tab is for reading, and adding a commitment
+// is a monthly act at most.
+function showRecForm(open) {
+  recForm.hidden = !open;
+  recAddOpen.setAttribute("aria-expanded", String(open));
+}
+
+function closeRecForm() {
+  recForm.reset();
+  recCadence.value = "monthly";
+  syncRecEnd();
+  showRecForm(false);
+}
+
+recAddOpen.addEventListener("click", () => {
+  if (recForm.hidden) showRecForm(true);
+  else closeRecForm();
+});
+document.getElementById("rec-cancel").addEventListener("click", closeRecForm);
 
 // One time has no choice of end date, so the field steps aside.
 function syncRecEnd() {
@@ -2410,9 +2448,10 @@ recForm.addEventListener("submit", async (event) => {
       card_id: recCardSelect.value ? Number(recCardSelect.value) : null,
       paid_by: recForm.querySelector('input[name="rec_paid_by"]:checked').value,
     });
-    recForm.reset();
-    recCadence.value = "monthly";
-    syncRecEnd();
+    closeRecForm();
+    // show them the row they just added
+    overviewOpen.add("running");
+    syncRunning();
     await refreshRecurring();
   } catch (error) {
     recStatus.textContent = `Couldn't add it: ${error.message}`;
@@ -2429,6 +2468,7 @@ document.getElementById("make-recurring").addEventListener("click", () => {
   document.getElementById("rec-amount").value = Number(lastSavedFields.amount).toFixed(2);
   recCadence.value = "monthly";
   syncRecEnd();
+  showRecForm(true);
   recCategorySelect.value = String(lastSavedFields.category_id);
   if (lastSavedFields.card_id) recCardSelect.value = String(lastSavedFields.card_id);
   const paid = recForm.querySelector(`input[name="rec_paid_by"][value="${lastSavedFields.paid_by}"]`);
@@ -2439,6 +2479,338 @@ document.getElementById("make-recurring").addEventListener("click", () => {
   showTab("rec");
   glideTo(recForm);
 });
+
+// ── Overview (v1.20) ─────────────────────────────────────────────────
+// One picture of the household from data the app already holds: what a
+// normal month takes, what's inside each part, and when the big charges
+// land. All of it joint, so no names, pills or per-person totals here:
+// between the two of them money is shared and nobody tracks who spent
+// what. No budgets either. Visibility, not budgets.
+
+const YEAR_BAR_PX = 104; // the tallest bar; the rest of .ycol holds the label
+const ovHeadline = document.getElementById("ov-headline");
+const ovSource = document.getElementById("ov-source");
+const ovStack = document.getElementById("ov-stack");
+const ovLayers = document.getElementById("ov-layers");
+const yaSentence = document.getElementById("ya-sentence");
+const yaBars = document.getElementById("ya-bars");
+const yaPanel = document.getElementById("ya-panel");
+const oneOffTotal = document.getElementById("oneoff-total");
+const oneOffEmpty = document.getElementById("oneoff-empty");
+const oneOffList = document.getElementById("oneoff-list");
+const oneOffHint = document.getElementById("oneoff-hint");
+const oneOffStatus = document.getElementById("oneoff-status");
+
+// What's open survives a re-render: a confirm on the other tab, or a save,
+// rebuilds these rows, and that shouldn't fold what someone was reading.
+const overviewOpen = new Set();
+let yearPicked = null; // the month someone tapped; until then, the heaviest
+let oneOffRows = [];
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text; // names are user input
+  return node;
+}
+
+function wireDisclosure(toggle, body, key) {
+  const sync = () => {
+    const open = overviewOpen.has(key);
+    toggle.setAttribute("aria-expanded", String(open));
+    body.hidden = !open;
+  };
+  toggle.addEventListener("click", () => {
+    if (overviewOpen.has(key)) overviewOpen.delete(key);
+    else overviewOpen.add(key);
+    sync();
+  });
+  sync();
+  return sync;
+}
+
+wireDisclosure(
+  document.getElementById("oneoff-toggle"),
+  document.getElementById("oneoff-body"),
+  "oneoffs",
+);
+const syncRunning = wireDisclosure(
+  document.getElementById("running-toggle"),
+  document.getElementById("running-body"),
+  "running",
+);
+wireDisclosure(
+  document.getElementById("stopped-toggle"),
+  document.getElementById("stopped-body"),
+  "stopped",
+);
+
+function disclosure(key, wrapClass, toggleClass, headNodes, bodyNodes) {
+  const wrap = el("div", wrapClass);
+  const toggle = el("button", `ov-toggle ${toggleClass}`);
+  toggle.type = "button";
+  const chev = el("span", "chev", "›");
+  chev.setAttribute("aria-hidden", "true");
+  toggle.append(...headNodes, chev);
+  const body = el("div", "ov-body");
+  body.append(...bodyNodes);
+  wireDisclosure(toggle, body, key);
+  wrap.append(toggle, body);
+  return wrap;
+}
+
+function miniRow(name, meta, amount, charge) {
+  const row = el("div", "reg-row mini");
+  const main = el("div", "reg-main");
+  main.append(el("div", "reg-name", name));
+  if (meta) main.append(el("div", "reg-meta", meta));
+  const right = el("div", "reg-right");
+  right.append(el("div", "reg-amt", amount));
+  if (charge) right.append(el("div", "reg-cad", charge));
+  row.append(main, right);
+  return row;
+}
+
+// Spread over a month where it isn't monthly, with the real charge below:
+// the ledger only ever sees the real one.
+function monthlyRow(item, meta) {
+  const charge =
+    item.cadence === "monthly"
+      ? null
+      : `${sgd.format(Number(item.amount))} ${CADENCE_LABEL[item.cadence]}`;
+  return miniRow(item.name, meta, sgd.format(item.monthlyCents / 100), charge);
+}
+
+const nextDueText = (item) => `Next ${shortDateFmt.format(isoToDate(item.next_due))}`;
+const monthYearText = (iso) =>
+  `${monthShortFmt.format(isoToDate(iso))} ${isoToDate(iso).getFullYear()}`;
+const averageText = (months) => (months.length === 1 ? "Last full month" : `${months.length}-month average`);
+
+function layerRow(key, colour, name, sub, cents, bodyNodes) {
+  const label = el("span", "lay-n", name);
+  if (sub) label.append(el("span", "lay-sub", sub));
+  return disclosure(
+    `layer:${key}`,
+    "lay",
+    "lay-toggle",
+    [el("span", `dot ${colour}`), label, el("span", "lay-v", wholeDollars(cents))],
+    bodyNodes,
+  );
+}
+
+function billsBody(bills) {
+  return [
+    ...bills.groups.map((group) =>
+      disclosure(
+        `bills:${group.id}`,
+        "grp",
+        "grp-toggle",
+        [el("span", "ov-grow", group.label), el("span", null, wholeDollars(group.cents))],
+        group.items.map((item) => monthlyRow(item, nextDueText(item))),
+      ),
+    ),
+    el("p", "hint", "Items that aren't monthly show their monthly equivalent, with the real charge below."),
+  ];
+}
+
+function everydayBody(typical) {
+  const { everyday, months } = typical;
+  if (months.length === 0) return [el("p", "hint", "The ledger doesn't hold a full month to average yet.")];
+  const list = el("ul", "dash-cats ov-cats");
+  const biggest = everyday.groups[0]?.cents || 1;
+  list.append(
+    // a category that rounds to nothing has nothing to say here
+    ...everyday.groups.filter((group) => group.cents >= 50).map((group) => {
+      const li = el("li");
+      const row = el("div", "cat-row");
+      row.append(el("span", null, group.label), el("span", null, wholeDollars(group.cents)));
+      const bar = el("div", "cat-bar");
+      const fill = el("div", "cat-bar-fill");
+      fill.style.width = `${Math.max(2, Math.round((group.cents / biggest) * 100))}%`;
+      bar.append(fill);
+      li.append(row, bar);
+      return li;
+    }),
+  );
+  return [
+    list,
+    el(
+      "p",
+      "hint",
+      `${averageText(months)}. On a group bill only your share counts, not the full card charge. Only as complete as what gets logged.`,
+    ),
+  ];
+}
+
+function setAsideBody(setAside) {
+  const oneTime = recurringCache.filter(
+    (item) => item.active && item.cadence === "once" && item.categories?.kind === "invest",
+  );
+  const notes = oneTime.map(
+    (item) =>
+      ` The ${wholeDollars(Math.round(Number(item.amount) * 100))} ${item.name} in ${monthYearText(item.next_due)} shows in Year ahead, not here.`,
+  );
+  return [
+    ...setAside.items.map((item) =>
+      monthlyRow(
+        item,
+        item.end_date
+          ? `${nextDueText(item)} · Ends ${monthYearText(item.end_date)}`
+          : nextDueText(item),
+      ),
+    ),
+    el("p", "hint", `Still yours, so not counted as spending.${notes.join("")}`),
+  ];
+}
+
+// One line per category, never per person: the tithes read as "Tithes".
+function givingBody(giving, months) {
+  const rows = giving.groups.map((group) =>
+    miniRow(group.name, "Monthly", sgd.format(group.cents / 100)),
+  );
+  if (giving.otherCents > 0) {
+    rows.push(miniRow("Other giving", averageText(months), sgd.format(giving.otherCents / 100)));
+  }
+  return rows;
+}
+
+function renderOverview() {
+  const typical = typicalMonth(recurringCache, expensesCache, new Date());
+  ovHeadline.textContent = `About ${sgdWhole.format(typical.headlineDollars)}`;
+  const count = typical.months.length;
+  ovSource.textContent =
+    count === 0
+      ? "From Recurring. The ledger doesn't hold a full month yet."
+      : `From Recurring and the last ${count === 1 ? "month" : `${count} months`} of the ledger`;
+
+  const layers = [
+    { colour: "l1", name: "Bills & insurance", cents: typical.bills.cents },
+    { colour: "l2", name: "Everyday", cents: typical.everyday.cents },
+    { colour: "l3", name: "Set aside", cents: typical.setAside.cents },
+    { colour: "l4", name: "Giving", cents: typical.giving.cents },
+  ];
+  ovStack.hidden = typical.totalCents === 0;
+  ovStack.setAttribute(
+    "aria-label",
+    `Split of a typical month: ${layers.map((l) => `${l.name} ${wholeDollars(l.cents)}`).join(", ")}`,
+  );
+  ovStack.replaceChildren(
+    ...layers
+      .filter((layer) => layer.cents > 0)
+      .map((layer) => {
+        const segment = el("span", `ov-seg ${layer.colour}`);
+        segment.style.flex = `${layer.cents} 1 0`;
+        return segment;
+      }),
+  );
+
+  ovLayers.replaceChildren(
+    layerRow("bills", "l1", "Bills & insurance", null, typical.bills.cents, billsBody(typical.bills)),
+    layerRow("everyday", "l2", "Everyday", null, typical.everyday.cents, everydayBody(typical)),
+    layerRow("set-aside", "l3", "Set aside", "Not spending", typical.setAside.cents, setAsideBody(typical.setAside)),
+    layerRow("giving", "l4", "Giving", "Not spending", typical.giving.cents, givingBody(typical.giving, typical.months)),
+  );
+
+  renderYearAhead();
+}
+
+function renderYearAhead() {
+  const { months, heaviest } = yearAhead(recurringCache, new Date());
+  const selected = months.find((month) => month.key === yearPicked) ?? heaviest;
+
+  yaSentence.textContent =
+    heaviest.lumpCents > 0
+      ? `${monthShortFmt.format(heaviest.date)} is the heaviest month: ${wholeDollars(heaviest.lumpCents)} on top of the usual ${wholeDollars(heaviest.regularCents)}. Everyday spending isn't included.`
+      : `Nothing big lands in the next 12 months. The usual is ${wholeDollars(heaviest.regularCents)} a month, with everyday spending on top.`;
+
+  // The bars share one scale. Heights in pixels, not percentages: a percent
+  // height inside nested flex boxes is the kind of thing that renders
+  // differently on the phone than in a desktop preview.
+  const tallest = heaviest.totalCents || 1;
+  const height = (cents) => `${Math.max(2, Math.round((cents / tallest) * YEAR_BAR_PX))}px`;
+  yaBars.replaceChildren(
+    ...months.map((month) => {
+      const column = el("button", "ycol");
+      column.type = "button";
+      column.setAttribute("aria-pressed", String(month === selected));
+      column.setAttribute(
+        "aria-label",
+        `${monthShortFmt.format(month.date)} ${month.date.getFullYear()}: ${wholeDollars(month.totalCents)}`,
+      );
+      const bar = el("span", "ybar");
+      if (month.lumpCents > 0) {
+        const lump = el("span", "ylump");
+        lump.style.height = height(month.lumpCents);
+        bar.append(lump);
+      }
+      if (month.regularCents > 0) {
+        const regular = el("span", "yreg");
+        regular.style.height = height(month.regularCents);
+        bar.append(regular);
+      }
+      column.append(bar, el("span", "ylab", monthShortFmt.format(month.date)));
+      column.addEventListener("click", () => {
+        yearPicked = month.key;
+        renderYearAhead();
+      });
+      return column;
+    }),
+  );
+
+  const head = el("div", "ya-head");
+  head.append(
+    el("span", null, `${monthShortFmt.format(selected.date)} ${selected.date.getFullYear()}`),
+    el("span", null, wholeDollars(selected.totalCents)),
+  );
+  const line = (className, name, cents) => {
+    const row = el("div", className);
+    row.append(el("span", null, name), el("span", null, wholeDollars(cents)));
+    return row;
+  };
+  yaPanel.replaceChildren(
+    head,
+    line("ya-line", `Regular monthly items (${selected.regularCount})`, selected.regularCents),
+    ...selected.lumps.map((lump) => line("ya-line ya-line-lump", lump.name, lump.cents)),
+  );
+}
+
+// Every figure here is one tap from its rows. It has its own query because
+// the ledger cache holds only the newest 1000 entries.
+async function refreshOneOffs() {
+  try {
+    const lumpy = categoriesCache.filter((c) => c.kind === "lumpy").map((c) => c.id);
+    oneOffRows = await fetchOneOffCandidates(oneOffsSince(todayISO()), ONE_OFF_CENTS / 100, lumpy);
+    oneOffStatus.hidden = true;
+    renderOneOffs();
+  } catch (error) {
+    oneOffStatus.textContent = /fetch|load failed/i.test(error.message ?? "")
+      ? "No connection — couldn't load the one-offs."
+      : `Couldn't load the one-offs: ${error.message}`;
+    oneOffStatus.hidden = false;
+  }
+}
+
+function renderOneOffs() {
+  const { items, totalCents } = oneOffs(oneOffRows);
+  oneOffTotal.textContent = wholeDollars(totalCents);
+  oneOffEmpty.hidden = items.length > 0;
+  oneOffList.replaceChildren(
+    ...items.map((expense) =>
+      miniRow(
+        expense.note || categoryLabel(expense.categories),
+        shortDateFmt.format(isoToDate(expense.date)),
+        sgd.format(Number(expense.amount)),
+      ),
+    ),
+  );
+  const lumpyNames = categoriesCache.filter((c) => c.kind === "lumpy").map((c) => c.name);
+  const threshold = sgdWhole.format(ONE_OFF_CENTS / 100);
+  oneOffHint.textContent =
+    `${lumpyNames.length ? `${lumpyNames.join(" or ")}, or anything` : "Anything"} ${threshold} and over that isn't a commitment. ` +
+    "Group bills use your share, so a big dinner where your part was small stays in Everyday.";
+}
+
+document.getElementById("dash-overview").addEventListener("click", () => showTab("rec"));
 
 // ── Coming up: the household horizon (v1.15) ─────────────────────────
 // Not a calendar. The things the household jointly needs to see — a

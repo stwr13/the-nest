@@ -1224,3 +1224,69 @@ default to everyday, and there are four non-everyday ones in the whole
 ledger. 88/88 tests. Migration run against production and verified.
 Version 1.19.0. Snapshot, sample data:
 `docs/snapshots/2026-11-07-v1.19.0-due-now-fold-sample-data.png`.
+
+## 2026-11-07 (v1.20.0) — Overview: the picture, without the report
+
+It began as a one-time spending audit, done outside the app and saved
+privately. Shawn then asked for that picture to live inside The Nest,
+not in the report's shape. So the goal became three questions the app
+can answer from data it already holds: what does a normal month take,
+what's inside each part, and when do the big charges land. He reviewed
+two rounds of phone mockups before any of it was built.
+
+**Overview replaces the Recurring tab.** There is no sixth tab, because
+six is past what a phone carries (v1.15 found that). The list and the add
+form are still there, tucked at the bottom, and "Make this recurring"
+still lands on the open form.
+
+**A typical month is one figure rounded to the nearest hundred, reading
+"About".** Two of its four layers are promises (the registry) and two are
+habits (the ledger), so a figure to the cent would claim a precision it
+doesn't have. Under it sit one stacked bar and four rows that open:
+Bills & insurance down to each item, Everyday by category, and Set aside
+and Giving, both labelled "Not spending" because they are the household
+choosing to do something with money rather than spending it. The bar's
+blue and gold are there because four green-and-pink sets failed a
+colour-blind check. They appear on this bar and nowhere else.
+
+**No names, anywhere on the tab.** Shawn: "between claire and myself, we
+dont track and scrutinize who spends what. so we can leave out the
+separate pills." Opened Giving shows one line per category, never one per
+person, and a test fails if this screen starts reading `paid_by`. That
+column stays only because Confirm needs it for the ledger. One seam,
+left on purpose at his call: two rows are named after people, and the
+tucked Running list shows row names.
+
+**Year ahead** is twelve months of what's already promised, with
+everyday spending left out, and one sentence naming the heaviest month.
+Tapping a month lists what's in it. A monthly item counts in full for
+the current month even once it has been charged, and so does a rarer
+item confirmed this month, or this month's bar would shrink with every
+confirm and stop meaning anything. The bars are set in pixels rather
+than the mockup's percentages, because a percent height inside nested
+flex boxes is exactly what can differ between a desktop preview and the
+phone.
+
+**Big one-offs get a list and a total, never a monthly average.** Shawn:
+"there are some one off items. we rarely travel that much, just that in
+the past few months we've paid for travel items." Averaging them would
+turn a few trips into a standing cost that isn't there. They have their
+own query, because the ledger cache holds only the newest 1000 rows and
+would stop covering a 12-month look-back within the first year.
+
+A one-time charge (the last payment of a short plan) lands once, on its
+date, in Year ahead. It stays out of a typical month for the same
+reason.
+
+Left out on purpose: budgets and income, as ever ("visibility, not
+budgets"). A hint the mockup carried, that one recurring charge may
+change around its renewal, because no data sits behind it and hard-coding
+it would print a personal fact in a public repo. Setting a category's kind
+in the manager.
+
+Checked the same way as v1.19: the real code run on a mirror of the
+ledger kept outside the repo, against the private table of expected
+numbers, which reconciled to the cent. 106/106 tests. Version 1.20.0.
+Snapshot, sample data:
+`docs/snapshots/2026-11-07-v1.20.0-overview-sample-data.png`.
+
