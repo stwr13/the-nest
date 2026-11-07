@@ -76,6 +76,35 @@ export function remaining(item) {
   return { payments: count, cents };
 }
 
+// What an edit actually changes (v1.21), or why it can't be saved. Only
+// changed fields go back. The other phone may confirm this item while the
+// editor is open: resending an untouched due date would move it back and
+// log the charge twice. An untouched date also keeps its anchor, so a
+// 31st item showing 28 Feb doesn't get pinned to the 28th by a name edit.
+export function recurringEdit(item, { name, amount, categoryId, nextDueDate }) {
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "Give it a name." };
+  if (amount === null || amount <= 0 || amount > 99999999) {
+    return { error: "Enter an amount greater than zero." };
+  }
+  if (!nextDueDate) return { error: "Pick the next due date." };
+
+  const fields = {};
+  if (trimmed !== item.name) fields.name = trimmed;
+  if (Math.round(amount * 100) !== Math.round(Number(item.amount) * 100)) fields.amount = amount;
+  if (categoryId !== item.category_id) fields.category_id = categoryId;
+  if (nextDueDate !== item.next_due) {
+    if (item.cadence === "once") {
+      fields.end_date = nextDueDate; // the database insists: it must stop after one confirm
+    } else if (item.end_date && nextDueDate > item.end_date) {
+      return { error: "The next due date can't be after it ends." };
+    }
+    fields.next_due = nextDueDate;
+    fields.anchor_day = Number(nextDueDate.slice(8, 10));
+  }
+  return { fields };
+}
+
 // How late something is, in whole days — the strip's badge.
 export function daysLate(dueIso, todayIso) {
   const due = new Date(dueIso + "T00:00:00");

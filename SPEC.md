@@ -129,3 +129,5 @@ Not in scope: setting a category's kind in the manager (new categories default t
 
 **v1.20.3, outflow (Shawn, 2026-11-07):** Money's headline stays spending. A line under it shows total outflow, including what isn't counted, whenever the two differ.
 
+**v1.21, editing the registry (Shawn, 2026-11-07):** a Recurring item's name, amount, category and next due date can be edited from Overview or the Running list. Edits apply from the next charge and never change logged entries. How often an item repeats and which card pays it aren't editable yet.
+

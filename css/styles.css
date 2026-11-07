@@ -1181,6 +1181,22 @@ select:focus {
 .reg-row.mini { padding: 0.5rem 0.1rem; }
 .reg-row.mini .reg-name { font-size: 0.88rem; font-weight: 600; overflow-wrap: anywhere; }
 .reg-row.mini .reg-amt { font-size: 0.88rem; }
+/* v1.21: a row that opens its editor */
+.reg-tap {
+  width: 100%;
+  align-items: center;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: var(--green-soft);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.reg-tap:active { background: var(--green-soft); }
+.reg-tap:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
 
 .ov-cats { margin-top: 0.2rem; }
 

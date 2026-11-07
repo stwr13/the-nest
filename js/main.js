@@ -9,6 +9,7 @@ import {
   daysLate,
   monthlyEquivalentCents,
   CADENCE_LABEL,
+  recurringEdit,
 } from "./recurring-view.js";
 import {
   monthSplit,
@@ -51,6 +52,7 @@ import {
   fetchCardImageUrls,
   fetchRecurring,
   addRecurring,
+  updateRecurring,
   confirmRecurring,
   skipRecurring,
   deactivateRecurring,
@@ -910,6 +912,10 @@ function renderCategoryOptions() {
     ledgerCategory = "all"; // the filtered category was deleted
     renderLedger(expensesCache);
   }
+
+  recEditCategory.replaceChildren(
+    ...categoriesCache.map((c) => new Option(categoryLabel(c), c.id)),
+  );
 
   const recSelected = recCategorySelect.value;
   recCategorySelect.replaceChildren(
@@ -1999,6 +2005,11 @@ const recCardSelect = document.getElementById("rec-card");
 const recCadence = document.getElementById("rec-cadence");
 const recEnd = document.getElementById("rec-end");
 const recAddOpen = document.getElementById("rec-add-open");
+const recDialog = document.getElementById("rec-dialog");
+const recEditForm = document.getElementById("rec-edit-form");
+const recEditCategory = document.getElementById("rec-edit-category");
+const recEditStatus = document.getElementById("rec-edit-status");
+const recEditSave = document.getElementById("rec-edit-save");
 const runningCount = document.getElementById("running-count");
 const runningStatus = document.getElementById("running-status");
 const stoppedCount = document.getElementById("stopped-count");
@@ -2380,6 +2391,7 @@ function registryRow(item) {
   }
   if (item.active) {
     right.append(
+      smallButton("Edit", "btn-ghost", () => openRecDialog(item)),
       smallButton("Stop", "btn-ghost btn-danger-ghost", async () => {
         if (!window.confirm(`Stop ${item.name}? It stays in the list with its history.`)) return;
         await guardDue(() => deactivateRecurring(item.id), { show: showRunningStatus });
@@ -2390,6 +2402,63 @@ function registryRow(item) {
   row.append(main, right);
   return row;
 }
+
+// v1.21: the registry's first editor. Before it, a wrong amount or name
+// could only be fixed through the SQL editor, or at Confirm for the amount.
+// The registry predicts and the ledger records, so an edit changes what
+// comes next and never rewrites an entry already logged.
+let recDialogItem = null;
+
+function openRecDialog(item) {
+  recDialogItem = item;
+  recEditForm.name.value = item.name;
+  recEditForm.amount.value = Number(item.amount).toFixed(2);
+  recEditForm.category_id.value = String(item.category_id);
+  recEditForm.next_due.value = item.next_due;
+  showRecEditStatus(null);
+  recDialog.showModal();
+}
+
+function showRecEditStatus(message) {
+  recEditStatus.textContent = message ?? "";
+  recEditStatus.hidden = !message;
+}
+
+recEditForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const { error, fields } = recurringEdit(recDialogItem, {
+    name: recEditForm.name.value,
+    amount: evaluateAmount(recEditForm.amount.value),
+    categoryId: Number(recEditForm.category_id.value),
+    nextDueDate: recEditForm.next_due.value,
+  });
+  if (error) {
+    showRecEditStatus(error);
+    return;
+  }
+  if (Object.keys(fields).length === 0) {
+    recDialog.close();
+    return;
+  }
+  recEditSave.disabled = true;
+  recEditSave.textContent = "Saving…";
+  try {
+    await updateRecurring(recDialogItem.id, fields);
+    recDialog.close();
+    await refreshRecurring();
+  } catch (failure) {
+    showRecEditStatus(
+      /fetch|load failed/i.test(failure.message ?? "")
+        ? "No connection — not saved."
+        : `Couldn't save: ${failure.message}`,
+    );
+  } finally {
+    recEditSave.disabled = false;
+    recEditSave.textContent = "Save";
+  }
+});
+
+document.getElementById("rec-edit-cancel").addEventListener("click", () => recDialog.close());
 
 // Tucked until asked for: this tab is for reading, and adding a commitment
 // is a monthly act at most.
@@ -2564,8 +2633,14 @@ function disclosure(key, wrapClass, toggleClass, headNodes, bodyNodes) {
   return wrap;
 }
 
-function miniRow(name, meta, amount, charge) {
-  const row = el("div", "reg-row mini");
+// With onTap the whole row is the button: tap an item, change the item.
+function miniRow(name, meta, amount, charge, onTap) {
+  const row = el(onTap ? "button" : "div", onTap ? "reg-row mini reg-tap" : "reg-row mini");
+  if (onTap) {
+    row.type = "button";
+    row.setAttribute("aria-label", `Edit ${name}`);
+    row.addEventListener("click", onTap);
+  }
   const main = el("div", "reg-main");
   main.append(el("div", "reg-name", name));
   if (meta) main.append(el("div", "reg-meta", meta));
@@ -2573,6 +2648,11 @@ function miniRow(name, meta, amount, charge) {
   right.append(el("div", "reg-amt", amount));
   if (charge) right.append(el("div", "reg-cad", charge));
   row.append(main, right);
+  if (onTap) {
+    const chev = el("span", "chev", "›");
+    chev.setAttribute("aria-hidden", "true");
+    row.append(chev);
+  }
   return row;
 }
 
@@ -2583,7 +2663,7 @@ function monthlyRow(item, meta) {
     item.cadence === "monthly"
       ? null
       : `${sgd.format(Number(item.amount))} ${CADENCE_LABEL[item.cadence]}`;
-  return miniRow(item.name, meta, sgd.format(item.monthlyCents / 100), charge);
+  return miniRow(item.name, meta, sgd.format(item.monthlyCents / 100), charge, () => openRecDialog(item));
 }
 
 const nextDueText = (item) => `Next ${shortDateFmt.format(isoToDate(item.next_due))}`;

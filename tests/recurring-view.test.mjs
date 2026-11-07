@@ -9,6 +9,7 @@ import {
   daysLate,
   CADENCE_MONTHS,
   CADENCE_LABEL,
+  recurringEdit,
 } from "../js/recurring-view.js";
 
 const item = (over = {}) => ({
@@ -135,3 +136,48 @@ test("remaining counts a one-time charge as one payment", () => {
   const once = item({ amount: "500.00", cadence: "once", next_due: "2027-03-01", end_date: "2027-03-01" });
   assert.deepEqual(remaining(once), { payments: 1, cents: 50000 });
 });
+
+const edit = (over = {}) => ({
+  name: "Spotify",
+  amount: 11.98,
+  categoryId: 5,
+  nextDueDate: "2026-09-01",
+  ...over,
+});
+const editable = (over = {}) => item({ category_id: 5, ...over });
+
+test("an edit sends only what changed", () => {
+  assert.deepEqual(recurringEdit(editable(), edit()), { fields: {} });
+  assert.deepEqual(recurringEdit(editable(), edit({ name: "  Music  " })), { fields: { name: "Music" } });
+  assert.deepEqual(recurringEdit(editable(), edit({ amount: 12.5 })), { fields: { amount: 12.5 } });
+  assert.deepEqual(recurringEdit(editable(), edit({ categoryId: 9 })), { fields: { category_id: 9 } });
+});
+
+// An untouched date must stay out of the write: resending it could undo the
+// other phone's confirm, and it would pin a 31st item to a short month.
+test("a new date moves the anchor, an untouched one leaves both alone", () => {
+  const anchored = editable({ anchor_day: 31, next_due: "2027-02-28" });
+  const unchanged = recurringEdit(anchored, edit({ name: "Renamed", nextDueDate: "2027-02-28" }));
+  assert.deepEqual(unchanged, { fields: { name: "Renamed" } });
+  assert.deepEqual(recurringEdit(editable(), edit({ nextDueDate: "2026-09-15" })), {
+    fields: { next_due: "2026-09-15", anchor_day: 15 },
+  });
+});
+
+test("a one-time item's end date follows its due date", () => {
+  const once = editable({ cadence: "once", next_due: "2027-03-01", end_date: "2027-03-01" });
+  assert.deepEqual(recurringEdit(once, edit({ nextDueDate: "2027-04-09" })), {
+    fields: { end_date: "2027-04-09", next_due: "2027-04-09", anchor_day: 9 },
+  });
+});
+
+test("an edit that can't be saved says why", () => {
+  assert.ok(recurringEdit(editable(), edit({ name: "   " })).error);
+  assert.ok(recurringEdit(editable(), edit({ amount: null })).error);
+  assert.ok(recurringEdit(editable(), edit({ amount: 0 })).error);
+  assert.ok(recurringEdit(editable(), edit({ nextDueDate: "" })).error);
+  const ending = editable({ end_date: "2026-12-31" });
+  assert.ok(recurringEdit(ending, edit({ nextDueDate: "2027-01-01" })).error);
+  assert.deepEqual(recurringEdit(ending, edit({ nextDueDate: "2026-12-31" })).fields.next_due, "2026-12-31");
+});
+

@@ -270,6 +270,24 @@
       </form>
     </dialog>
 
+    <dialog id="rec-dialog" class="cat-dialog">
+      <form id="rec-edit-form" novalidate>
+        <h2 class="card-title">Edit recurring item</h2>
+        <label for="rec-edit-name">Name</label>
+        <input id="rec-edit-name" name="name" type="text" maxlength="60" required autocomplete="off" />
+        <label for="rec-edit-amount">Amount (SGD)</label>
+        <input id="rec-edit-amount" name="amount" type="text" inputmode="decimal" required autocomplete="off" />
+        <label for="rec-edit-category">Category</label>
+        <select id="rec-edit-category" name="category_id" required></select>
+        <label for="rec-edit-next">Next due</label>
+        <input id="rec-edit-next" name="next_due" type="date" required />
+        <p class="hint">Changes apply from the next charge. Entries already in the ledger stay as they are.</p>
+        <p id="rec-edit-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="rec-edit-save" class="btn btn-primary">Save</button>
+        <button type="button" id="rec-edit-cancel" class="btn btn-ghost btn-block">Cancel</button>
+      </form>
+    </dialog>
+
     <dialog id="cat-delete-dialog" class="cat-dialog">
       <form id="cat-delete-form" novalidate>
         <h2 class="card-title">Delete category</h2>
