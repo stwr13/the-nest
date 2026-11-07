@@ -67,3 +67,26 @@ test("summarize returns the previous month's per-category totals", () => {
   assert.equal(prevByCategory.get("Groceries"), 1500);
   assert.equal(prevByCategory.get("Nope"), undefined);
 });
+
+test("outflow is everything that left: counted, not counted, and at our share", () => {
+  const expenses = [
+    { amount: "40.00", date: "2026-07-20", categories: cat("Groceries") },
+    { amount: "500.00", date: "2026-07-15", categories: cat("Savings plan", null, true) },
+    { amount: "25.00", date: "2026-07-18", card_charged: "100.00", categories: cat("Eating out") },
+    { amount: "900.00", date: "2026-06-15", categories: cat("Savings plan", null, true) },
+  ];
+  const { thisCents, notCountedCents, outflowCents } = summarize(expenses, now);
+  assert.equal(thisCents, 6500);
+  assert.equal(notCountedCents, 50000);
+  assert.equal(outflowCents, 56500);
+});
+
+test("with nothing excluded, outflow is the total", () => {
+  const { thisCents, notCountedCents, outflowCents } = summarize(
+    [{ amount: "40.00", date: "2026-07-20", categories: cat("Groceries") }],
+    now,
+  );
+  assert.equal(notCountedCents, 0);
+  assert.equal(outflowCents, thisCents);
+});
+

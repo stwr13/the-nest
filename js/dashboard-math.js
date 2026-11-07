@@ -38,7 +38,18 @@ export function summarize(expenses, now) {
     }
   }
 
-  return { thisCents, byCategory, prevByCategory, excluded };
+  // v1.20.3: everything that left, counted or not. The headline answers
+  // "what did we spend"; Shawn also wants "what went out", and the two
+  // differ by whatever is excluded from totals.
+  const notCountedCents = [...excluded.values()].reduce((sum, cents) => sum + cents, 0);
+  return {
+    thisCents,
+    byCategory,
+    prevByCategory,
+    excluded,
+    notCountedCents,
+    outflowCents: thisCents + notCountedCents,
+  };
 }
 
 export function monthKey(date) {
