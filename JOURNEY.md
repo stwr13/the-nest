@@ -1373,3 +1373,7 @@ The CSV was confirmed on disk before the snapshot and the move were sent,
 the rule the v1.20.1 near miss left behind. Numbers predicted and matched.
 No migration. 106/106 tests. Version 1.20.2.
 
+Later the same evening, with no app release: both loans moved from Home
+and Transport into Bills & Commitments, Shawn's call ("cleaner that way").
+No past entries were linked to them, so only the two registry rows changed.
+
