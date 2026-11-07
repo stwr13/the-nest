@@ -12,7 +12,7 @@ session instead).
 
 ## Open decisions — board as of 2026-11-07 (resume here)
 
-Live app is **v1.20.1**: the daily screens protected (v1.19), Overview in
+Live app is **v1.20.2**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), and ten categories instead of eighteen.
 Scope and rules are in SPEC.md.
 
@@ -34,7 +34,9 @@ Shawn's to answer, none of them blocking:
 
 Decided, so it isn't asked again: the two tithe rows stay named after
 people, so they can be told apart and tracked, even though they show by
-name when Essentials opens on Overview (Shawn, 2026-11-07).
+name when Bills & Commitments opens on Overview (Shawn, 2026-11-07). All
+insurance premiums sit in Investment & Insurance and don't count as
+spending, advice against it heard (Shawn, 2026-11-07).
 
 Known and accepted: a follow-up to a big one-off that comes in under $300
 stays in Everyday.
