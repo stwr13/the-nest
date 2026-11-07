@@ -58,23 +58,6 @@ export function monthlyEquivalentCents(item) {
   return Math.round(cents / CADENCE_MONTHS[item.cadence]);
 }
 
-// Split by the category's excluded_from_totals flag, the same flag the
-// dashboard already honours. A $2,000 investment premium is money that
-// left the account — it belongs in the ledger — but it is not spending,
-// and letting it sit in the same total as groceries would swamp the
-// household number and teach both of them to distrust it.
-export function commitmentTotals(registry) {
-  let spending = 0;
-  let excluded = 0;
-  for (const item of registry) {
-    if (!item.active || item.cadence === "once") continue;
-    const cents = monthlyEquivalentCents(item);
-    if (item.categories?.excluded_from_totals) excluded += cents;
-    else spending += cents;
-  }
-  return { spendingCents: spending, excludedCents: excluded, totalCents: spending + excluded };
-}
-
 // For a commitment with an end date: how many payments are left and
 // what they add up to. This is the "$X until age Y" note turned into a
 // number the app can derive instead of a fact someone has to remember.

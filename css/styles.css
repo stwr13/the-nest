@@ -1103,3 +1103,181 @@ select:focus {
   font-weight: 700;
   color: var(--danger);
 }
+
+/* ── v1.20: Overview ── */
+/* These four passed a colour-blind check with their direct labels and the
+   gaps between segments; green-and-pink-only sets failed it. So the blue
+   and gold stay, on this one bar. */
+:root {
+  --l1: #2e8b5e;
+  --l2: #d9668a;
+  --l3: #3b82c4;
+  --l4: #c28a18;
+  --y-regular: #b5d6c3;
+  --y-lump: #29583f;
+}
+.l1 { background: var(--l1); }
+.l2 { background: var(--l2); }
+.l3 { background: var(--l3); }
+.l4 { background: var(--l4); }
+
+.ov-sub { display: block; margin: 0.25rem 0 0; font-size: 0.8rem; font-weight: 400; line-height: 1.35; color: var(--ink-soft); }
+.ov-title { display: block; margin: 0; font-weight: 700; }
+.ov-grow { flex: 1 1 auto; min-width: 0; }
+.ov-tucked { margin-top: 0.4rem; }
+
+.ov-stack { display: flex; gap: 2px; height: 16px; margin: 0.9rem 0 0.35rem; }
+.ov-seg { min-width: 3px; }
+.ov-seg:first-child { border-radius: 8px 0 0 8px; }
+.ov-seg:last-child { border-radius: 0 8px 8px 0; }
+
+/* every row that opens */
+.ov-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ov-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.lay { border-bottom: 1px solid var(--green-soft); }
+.lay:last-child { border-bottom: none; }
+.lay-toggle { padding: 0.5rem 0; }
+.dot { flex: none; width: 12px; height: 12px; border-radius: 4px; }
+.lay-n { flex: 1 1 auto; min-width: 0; font-size: 0.95rem; font-weight: 700; }
+.lay-sub { display: block; font-size: 0.76rem; font-weight: 400; color: var(--ink-soft); }
+.lay-v {
+  font-weight: 800;
+  color: var(--green-deep);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+.ov-body { padding-bottom: 0.7rem; }
+
+.grp { margin-top: 0.5rem; }
+.grp .ov-body { padding-bottom: 0.2rem; }
+.grp-toggle {
+  min-height: 40px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 8px;
+}
+
+.reg-row.mini { padding: 0.5rem 0.1rem; }
+.reg-row.mini .reg-name { font-size: 0.88rem; font-weight: 600; overflow-wrap: anywhere; }
+.reg-row.mini .reg-amt { font-size: 0.88rem; }
+
+.ov-cats { margin-top: 0.2rem; }
+
+/* year ahead */
+.ya-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin: 0.5rem 0 0.3rem; font-size: 0.76rem; color: var(--ink-soft); }
+.ya-key { display: inline-block; width: 10px; height: 10px; margin-right: 0.3rem; border-radius: 3px; vertical-align: -1px; }
+.ya-regular { background: var(--y-regular); }
+.ya-lump { background: var(--y-lump); }
+
+.ya-bars {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 0.3rem;
+}
+.ycol {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 128px;
+  padding: 0 1px;
+  font-family: inherit;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ycol[aria-pressed="true"] { background: var(--pink-soft); outline: 2px solid var(--pink); }
+.ycol:focus-visible { outline: 2px solid var(--green); }
+.ybar { display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+.ylump, .yreg { display: block; width: 100%; max-width: 24px; margin: 0 auto; }
+.ylump { background: var(--y-lump); }
+.yreg { background: var(--y-regular); }
+.ybar > :first-child { border-radius: 4px 4px 0 0; }
+.ylab {
+  margin-top: 0.2rem;
+  padding-bottom: 0.1rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.ycol[aria-pressed="true"] .ylab { color: var(--green-deep); }
+
+.ya-panel { margin-top: 0.6rem; }
+.ya-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  background: var(--green-soft);
+  border-radius: 8px;
+}
+.ya-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.ya-line-lump { font-weight: 600; color: var(--ink); }
+.ya-line > span:last-child { flex: none; }
+
+/* running, with its add button beside the toggle */
+.running-head { display: flex; align-items: center; gap: 0.75rem; }
+.ov-add {
+  flex: none;
+  min-height: 44px;
+  padding: 0 0.1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--green);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.rec-form { margin: 0.2rem 0 0.8rem; }
+
+/* the way across from Money */
+.link-row {
+  display: block;
+  margin-top: 0.7rem;
+  padding: 0.4rem 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--green);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
