@@ -12,8 +12,8 @@ session instead).
 
 ## Open decisions — board as of 2026-11-07 (resume here)
 
-Live app is **v1.19.0** (the daily screens protected); **v1.20** replaces
-the Recurring tab with Overview. Scope and rules are in SPEC.md.
+Live app is **v1.20.0**: the daily screens protected (v1.19) and Overview
+in place of the Recurring tab. Scope and rules are in SPEC.md.
 
 Shawn's to answer, none of them blocking:
 
@@ -32,7 +32,13 @@ Shawn's to answer, none of them blocking:
    dates taken from past entries.
 5. **The second household tax item,** added by Claire through the app
    during the v1.19 build: it isn't in Tax yet and one past entry isn't
-   linked, so its September entry counts as Everyday.
+   linked, so its September entry counts as Everyday. Shawn said to treat
+   it like his own, but an automated guard refused the production update
+   on those rows, so it waits on his choice of route.
+
+Decided, so it isn't asked again: the two tithe rows stay named after
+people, even though the tucked Running list shows row names (Shawn,
+2026-11-07, "leave").
 
 Known and accepted: a follow-up to a big one-off that comes in under $300
 stays in Everyday.
