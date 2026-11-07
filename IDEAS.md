@@ -10,9 +10,36 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-09-19 (resume here)
+## Open decisions — board as of 2026-11-07 (resume here)
 
-Live app is **v1.15.0**. Two versions shipped in two days, and the
+Live app is **v1.19.0** (the daily screens protected); **v1.20** replaces
+the Recurring tab with Overview. Scope and rules are in SPEC.md.
+
+Shawn's to answer, none of them blocking:
+
+1. **Picker tiles.** Two payment-only cards now sit in the logging picker,
+   one wrong tap from a new entry, for the same reason he asked for a
+   retired card to leave it. The Retired tick hides them but labels them
+   "retired". With 15 tiles in four rows, Save is still below the first
+   screen even with Due now folded; losing a row takes getting down to 12.
+2. **Group meals logged at full value with no split.** A handful from
+   August to October. If any were paid in advance for others, entering
+   the share lowers Everyday.
+3. **A placeholder card** sits behind the Apple-billed items, probably
+   Apple Pay's device number for a real card. Switch when known.
+4. **Unconfirmed details in the registry:** a charge with no card set, a
+   payment route assumed, three premiums assumed annual, and two tithe
+   dates taken from past entries.
+5. **The second household tax item,** added by Claire through the app
+   during the v1.19 build: it isn't in Tax yet and one past entry isn't
+   linked, so its September entry counts as Everyday.
+
+Known and accepted: a follow-up to a big one-off that comes in under $300
+stays in Everyday.
+
+## Earlier board — 2026-09-19
+
+Live app was **v1.15.0**. Two versions shipped in two days, and the
 feature backlog raised by real use is now **empty** — everything
 Claire or Shawn has asked for since launch is built. What remains is
 new ground, not catch-up.
@@ -61,8 +88,8 @@ Cheap and ready when wanted:
 
 Passive:
 
-6. **Claire's two stragglers** — the tithe + a book purchase still in
-   Other, inflating July's counted total.
+6. **Claire's two stragglers** — the tithe left Other for its own Tithes
+   category in v1.19; that build left the book purchase alone.
 7. **The idea box is dead as a channel** (confirmed 2026-09-18: neither
    uses it). Every raise now arrives in session. A harvest remains
    worth one cheap run, but this file's opening paragraph no longer

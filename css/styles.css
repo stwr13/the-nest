@@ -169,15 +169,9 @@ input[type="date"]::-webkit-date-and-time-value {
   color: var(--green-deep);
 }
 
-.dash-compare {
-  margin: 0.2rem 0 0;
-  font-size: 0.875rem;
-  color: var(--ink-soft);
-  text-align: right;
-  white-space: nowrap;
-}
+.dash-compare { margin: 0.55rem 0 0; font-size: 0.82rem; line-height: 1.35; color: var(--ink-soft); }
 
-.dash-months { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+.dash-months { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
 
 .dash-cats { margin: 1rem 0 0; padding: 0; list-style: none; }
 .dash-cats li + li { margin-top: 0.6rem; }
@@ -362,7 +356,6 @@ select:focus {
 /* the ‹ tucks toward the card edge so month nav costs no extra width
    and the comparison line can't get pushed off the card */
 .dash-label-row { display: flex; align-items: center; gap: 0.1rem; margin: 0 0 0 -0.5rem; }
-.dash-head .dash-compare { white-space: normal; }
 .dash-nav {
   min-width: 30px;
   min-height: 30px;
@@ -744,7 +737,7 @@ select:focus {
 /* ── v1.14: recurring commitments ── */
 /* The due strip sits above the form: it is the first thing to deal
    with on opening, and it removes itself when nothing is owed. */
-.due-card { border-top: 4px solid var(--pink); }
+.due-card { border-top: 4px solid var(--pink); padding-top: 0.7rem; padding-bottom: 0.7rem; }
 
 .count-pill {
   padding: 0.15rem 0.6rem;
@@ -755,22 +748,68 @@ select:focus {
   border-radius: 999px;
 }
 
-.due-list { display: flex; flex-direction: column; gap: 0.55rem; }
+/* v1.19: one line when folded, so it never takes the log form off the
+   first screen; the rows inside are compact for the same reason. */
+.due-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.due-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.due-toggle .card-title { margin: 0; font-weight: 700; }
+.due-sum { display: inline-flex; align-items: center; gap: 0.5rem; flex: 1 1 auto; min-width: 0; }
+.due-total {
+  font-weight: 800;
+  color: var(--green-deep);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chev { color: var(--ink-soft); font-size: 1.2rem; line-height: 1; transition: transform 0.15s; }
+[aria-expanded="true"] > .chev { transform: rotate(90deg); }
+
+.due-body { margin-top: 0.5rem; }
+.due-confirm-all { margin-top: 0.55rem; }
+
+.due-list { display: flex; flex-direction: column; gap: 0.4rem; }
 
 .due-row {
-  padding: 0.7rem 0.75rem;
+  padding: 0.5rem 0.6rem;
   background: var(--bg);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .due-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
+.due-left { min-width: 0; }
+.due-right { flex: none; text-align: right; white-space: nowrap; }
 
-.due-name { font-weight: 700; font-size: 0.98rem; }
+.due-name { font-weight: 700; font-size: 0.95rem; overflow-wrap: anywhere; }
+
+.due-links { font-size: 0.76rem; font-weight: 600; color: var(--ink-soft); }
+.due-link {
+  padding: 0.15rem 0;
+  font: inherit;
+  color: var(--green);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.due-link[aria-expanded="true"] { color: var(--green-deep); text-decoration: underline; }
 
 .due-amt {
   font-weight: 800;
@@ -778,18 +817,6 @@ select:focus {
   color: var(--green-deep);
   font-variant-numeric: tabular-nums;
 }
-
-.due-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 0.45rem;
-  margin-top: 0.2rem;
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-}
-/* separators are drawn, not typed: no stray dots when a field is absent */
-.due-meta > span + span:not(.badge)::before { content: "· "; }
 
 .badge {
   padding: 0.1rem 0.5rem;
@@ -824,6 +851,11 @@ select:focus {
   line-height: 1.4;
   color: var(--ink-soft);
 }
+
+/* ── v1.19: what the Money total is made of ── */
+.dash-split { margin-top: 0.7rem; }
+.dash-split .split-box { padding: 0.45rem 0.3rem; }
+.dash-split .v { font-size: 0.98rem; }
 
 /* ── the commitments headline ── */
 .commit-head { text-align: center; }
@@ -896,6 +928,9 @@ select:focus {
   grid-template-columns: 1fr 1fr;
   gap: 0 0.6rem;
 }
+/* min-width: a date input's intrinsic width would otherwise push the
+   right-hand column past the card edge */
+.form-grid > div { min-width: 0; }
 @media (max-width: 22rem) { .form-grid { grid-template-columns: 1fr; } }
 
 /* ── v1.15: Coming up ── */

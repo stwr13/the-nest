@@ -5,14 +5,15 @@ import { ledgerView, dayTotal, recentDayTotals, capGroups } from "./ledger-view.
 import {
   nextDue,
   dueItems,
-  upcomingItems,
   commitmentTotals,
   remaining,
   daysLate,
   monthlyEquivalentCents,
+  CADENCE_LABEL,
 } from "./recurring-view.js";
+import { monthSplit, everydayComparison } from "./overview-math.js";
 import { todosView } from "./todos-view.js";
-import { horizon, upcomingCharges, endOfMonth } from "./horizon-view.js";
+import { horizon, upcomingCharges, endOfMonth, dayList, isMonthlyCharge } from "./horizon-view.js";
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
@@ -68,6 +69,10 @@ const ledgerStatus = document.getElementById("ledger-status");
 const dashLabel = document.getElementById("dash-label");
 const dashTotal = document.getElementById("dash-total");
 const dashCompare = document.getElementById("dash-compare");
+const dashSplit = document.getElementById("dash-split");
+const dashEveryday = document.getElementById("dash-everyday");
+const dashCommitments = document.getElementById("dash-commitments");
+const dashOneOffs = document.getElementById("dash-oneoffs");
 // Ledger cap (v1.13.0): 25 is the middle of Shawn's 20–30, and covers
 // roughly the last fortnight at the household's real logging rate.
 const LEDGER_CAP = 25;
@@ -439,7 +444,7 @@ function renderEntry(expense) {
 // month's breakdown used to vanish — exactly when you want to review it
 // (Claire, idea box 2026-08-01).
 function renderDashboard(expenses) {
-  const { thisCents, byCategory, prevByCategory, past, excluded } = summarize(expenses, dashDate);
+  const { thisCents, byCategory, prevByCategory, excluded } = summarize(expenses, dashDate);
   const viewingNow = monthKey(dashDate) === monthKey(new Date());
 
   dashLabel.textContent = viewingNow
@@ -454,30 +459,19 @@ function renderDashboard(expenses) {
   dashPrev.disabled = monthKey(shiftMonth(dashDate, -1)) < earliestKey;
   dashNext.disabled = viewingNow;
 
-  // months in the comparison row are tappable — Claire reached for this
-  // before it existed, so it's the affordance the app owed her
-  dashMonths.hidden = past.length === 0;
-  dashMonths.replaceChildren(
-    ...past.flatMap((m, i) => {
-      const jump = document.createElement("button");
-      jump.type = "button";
-      jump.className = "dash-month-link";
-      jump.textContent = `${monthShortFmt.format(m.date)} ${sgdWhole.format(Math.round(m.cents / 100))}`;
-      jump.addEventListener("click", () => showMonth(m.date));
-      return i === 0 ? [jump] : [document.createTextNode(" · "), jump];
-    }),
-  );
-
-  if (past.length >= 2) {
-    const avgCents = past.reduce((sum, m) => sum + m.cents, 0) / past.length;
-    dashCompare.textContent = `${past.length}-mo avg: ${sgdWhole.format(Math.round(avgCents / 100))}`;
-  } else if (past.length === 1) {
-    dashCompare.textContent = `${monthShortFmt.format(past[0].date)}: ${sgd.format(past[0].cents / 100)}`;
-  } else {
-    dashCompare.textContent = "first month";
-  }
+  renderEverydayComparison(everydayComparison(expenses, dashDate));
 
   const rows = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+
+  // v1.19: the total keeps its meaning; these say what it's made of.
+  // They add up to it, so a month's total can be read at a glance as
+  // "the usual, the bills, and the unusual".
+  const split = monthSplit(expenses, monthKey(dashDate));
+  dashSplit.hidden = rows.length === 0;
+  dashEveryday.textContent = wholeDollars(split.everydayCents);
+  dashCommitments.textContent = wholeDollars(split.commitmentCents);
+  dashOneOffs.textContent = wholeDollars(split.oneOffCents);
+
   dashEmpty.hidden = rows.length > 0 || excluded.size > 0;
   dashEmpty.textContent = viewingNow
     ? "Nothing logged this month yet."
@@ -491,6 +485,36 @@ function renderDashboard(expenses) {
     ),
     ...excludedRows.map(([label, cents]) => excludedCategoryRow(label, cents)),
   );
+}
+
+function wholeDollars(cents) {
+  return sgdWhole.format(Math.round(cents / 100));
+}
+
+// v1.19: Everyday against Everyday. Comparing totals stopped being fair
+// once bills started being confirmed: the months before them hold almost
+// no commitments, so every month from here on would look like a jump.
+// The months stay listed and tappable (Claire reached for that before it
+// existed), and they are what the average can be checked against.
+function renderEverydayComparison({ months, averageCents }) {
+  dashMonths.hidden = months.length === 0;
+  dashMonths.replaceChildren(
+    ...months.flatMap((month, i) => {
+      const jump = document.createElement("button");
+      jump.type = "button";
+      jump.className = "dash-month-link";
+      jump.textContent = `${monthShortFmt.format(month.date)} ${wholeDollars(month.cents)}`;
+      jump.addEventListener("click", () => showMonth(month.date));
+      return i === 0 ? [jump] : [document.createTextNode(" · "), jump];
+    }),
+  );
+  if (months.length >= 2) {
+    dashCompare.textContent = `Everyday compared with the months before: ${wholeDollars(averageCents)} average`;
+  } else if (months.length === 1) {
+    dashCompare.textContent = `Everyday compared with ${monthFmt.format(months[0].date)}: ${wholeDollars(averageCents)}`;
+  } else {
+    dashCompare.textContent = "No full month before this one to compare Everyday with.";
+  }
 }
 
 function startOfMonth(date) {
@@ -1944,7 +1968,10 @@ const dueCard = document.getElementById("due-card");
 const dueList = document.getElementById("due-list");
 const dueCount = document.getElementById("due-count");
 const dueStatus = document.getElementById("due-status");
-const dueUpcoming = document.getElementById("due-upcoming");
+const dueToggle = document.getElementById("due-toggle");
+const dueBody = document.getElementById("due-body");
+const dueTotal = document.getElementById("due-total");
+const dueConfirmAll = document.getElementById("due-confirm-all");
 const recList = document.getElementById("rec-list");
 const recEmpty = document.getElementById("rec-empty");
 const recOffCard = document.getElementById("rec-off-card");
@@ -1953,6 +1980,8 @@ const recForm = document.getElementById("rec-form");
 const recStatus = document.getElementById("rec-status");
 const recCategorySelect = document.getElementById("rec-category");
 const recCardSelect = document.getElementById("rec-card");
+const recCadence = document.getElementById("rec-cadence");
+const recEnd = document.getElementById("rec-end");
 const commitTotal = document.getElementById("commit-total");
 const commitSpend = document.getElementById("commit-spend");
 const commitExcluded = document.getElementById("commit-excluded");
@@ -1960,6 +1989,11 @@ const commitExcluded = document.getElementById("commit-excluded");
 let recurringCache = [];
 const editingAmount = new Set(); // ids showing the amount box
 const skipChoice = new Set(); // ids showing the skip/cancel fork
+// v1.19: folded on every launch. At one line it costs the log form about
+// a row of height; open, each item costs a compact row. The old full rows
+// pushed the form off the first screen once the registry grew.
+let dueOpen = false;
+let confirmingAll = false;
 
 async function refreshRecurring() {
   try {
@@ -1974,9 +2008,23 @@ async function refreshRecurring() {
   }
 }
 
-function showDueStatus(message) {
+// The message sits outside the fold, and shows the card if it has to: the
+// card is hidden while nothing is due, and a failure to load is exactly
+// when nothing appears due. News rather than a fault clears itself, or an
+// empty card would sit there saying it until the next launch.
+let dueStatusTimer = null;
+
+function showDueStatus(message, { news = false } = {}) {
+  clearTimeout(dueStatusTimer);
   dueStatus.textContent = message ?? "";
   dueStatus.hidden = !message;
+  if (message) dueCard.hidden = false;
+  if (message && news) {
+    dueStatusTimer = setTimeout(() => {
+      showDueStatus(null);
+      renderRecurring();
+    }, 8000);
+  }
 }
 
 function renderRecurring() {
@@ -1984,17 +2032,19 @@ function renderRecurring() {
   const due = dueItems(recurringCache, today);
 
   // the strip exists only when something is owed — an empty "Due now"
-  // card would be permanent furniture saying nothing
-  dueCard.hidden = due.length === 0;
+  // card would be permanent furniture saying nothing. A message about
+  // what just happened stays up even when the list has emptied.
+  dueCard.hidden = due.length === 0 && dueStatus.hidden;
+  if (due.length === 0) dueOpen = false;
+  dueToggle.hidden = due.length === 0;
+  dueToggle.setAttribute("aria-expanded", String(dueOpen));
+  dueBody.hidden = !dueOpen;
   dueCount.textContent = String(due.length);
+  dueTotal.textContent = sgd.format(
+    due.reduce((sum, item) => sum + Math.round(Number(item.amount) * 100), 0) / 100,
+  );
   dueList.replaceChildren(...due.map((item) => dueRow(item, today)));
-
-  const soon = upcomingItems(recurringCache, today);
-  dueUpcoming.hidden = soon.length === 0 || due.length === 0;
-  dueUpcoming.textContent = soon.length
-    ? "Coming up: " +
-      soon.map((r) => `${r.name} ${shortDateFmt.format(isoToDate(r.next_due))}`).join(" · ")
-    : "";
+  renderConfirmAll(due);
 
   const totals = commitmentTotals(recurringCache);
   commitTotal.textContent = sgd.format(totals.totalCents / 100);
@@ -2012,71 +2062,132 @@ function renderRecurring() {
   renderSoon(); // a confirmed charge moves on; the horizon follows
 }
 
+dueToggle.addEventListener("click", () => {
+  dueOpen = !dueOpen;
+  renderRecurring();
+});
+
+// One compact row: name, amount, how late, and the two ways to change it.
 function dueRow(item, today) {
   const row = document.createElement("div");
   row.className = "due-row";
 
   const top = document.createElement("div");
   top.className = "due-top";
-  const name = document.createElement("span");
+
+  const left = document.createElement("div");
+  left.className = "due-left";
+  const name = document.createElement("div");
   name.className = "due-name";
   name.textContent = item.name; // textContent: names are user input
-  const amount = document.createElement("span");
-  amount.className = "due-amt";
-  amount.textContent = sgd.format(Number(item.amount));
-  top.append(name, amount);
-
-  const meta = document.createElement("div");
-  meta.className = "due-meta";
   const late = daysLate(item.next_due, today);
   const badge = document.createElement("span");
   badge.className = late === 0 ? "badge badge-today" : "badge badge-late";
   badge.textContent = late === 0 ? "due today" : `${late} day${late === 1 ? "" : "s"} late`;
-  meta.append(badge, metaText(shortDateFmt.format(isoToDate(item.next_due))));
-  meta.append(metaText(categoryLabel(item.categories)));
-  if (item.cards?.name) meta.append(metaText(item.cards.name));
-  meta.append(metaText(item.paid_by));
-  if (item.categories?.excluded_from_totals) {
-    const flag = document.createElement("span");
-    flag.className = "badge badge-quiet";
-    flag.textContent = "not counted as spending";
-    meta.append(flag);
-  }
+  left.append(name, badge);
 
-  row.append(top, meta);
+  const right = document.createElement("div");
+  right.className = "due-right";
+  const amount = document.createElement("div");
+  amount.className = "due-amt";
+  amount.textContent = sgd.format(Number(item.amount));
+  const links = document.createElement("div");
+  links.className = "due-links";
+  links.append(
+    dueLink("Edit", item, editingAmount),
+    document.createTextNode(" · "),
+    dueLink("Skip", item, skipChoice),
+  );
+  right.append(amount, links);
+
+  top.append(left, right);
+  row.append(top);
 
   if (editingAmount.has(item.id)) {
     row.append(amountEditor(item));
   } else if (skipChoice.has(item.id)) {
     row.append(skipFork(item));
-  } else {
-    row.append(dueActions(item));
   }
   return row;
 }
 
-function metaText(text) {
-  const span = document.createElement("span");
-  span.textContent = text;
-  return span;
+// Tapping again closes it, and opening one closes the other: a row holds
+// one question at a time.
+function dueLink(text, item, set) {
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "due-link";
+  link.textContent = text;
+  link.setAttribute("aria-expanded", String(set.has(item.id)));
+  link.addEventListener("click", () => {
+    const opening = !set.has(item.id);
+    editingAmount.delete(item.id);
+    skipChoice.delete(item.id);
+    if (opening) set.add(item.id);
+    renderRecurring();
+  });
+  return link;
 }
 
-function dueActions(item) {
-  const actions = document.createElement("div");
-  actions.className = "due-actions";
-  actions.append(
-    smallButton("Confirm", "btn-primary", () => doConfirm(item, Number(item.amount))),
-    smallButton("Edit", "btn-ghost", () => {
-      editingAmount.add(item.id);
-      renderRecurring();
-    }),
-    smallButton("Skip", "btn-ghost", () => {
-      skipChoice.add(item.id);
-      renderRecurring();
-    }),
-  );
-  return actions;
+// Only inside the opened view, so the amounts have been seen before they
+// are confirmed. Hidden while a row is mid-edit: its typed amount isn't
+// the item's amount yet, and this button would quietly confirm the old one.
+function renderConfirmAll(due) {
+  if (confirmingAll) return; // the run in progress owns the label
+  const busy = due.some((item) => editingAmount.has(item.id) || skipChoice.has(item.id));
+  dueConfirmAll.hidden = due.length === 0 || busy;
+  dueConfirmAll.disabled = false;
+  dueConfirmAll.textContent = due.length === 1 ? "Confirm" : `Confirm all ${due.length}`;
 }
+
+// Runs the same doConfirm a single row uses, one item at a time, so every
+// item gets its duplicate check and its due-date pin. A possible duplicate
+// is the one thing that should interrupt: the dialog asks, and answering
+// no stops the run with the rest still listed.
+async function confirmAllDue() {
+  if (confirmingAll) return;
+  const items = dueItems(recurringCache, todayISO());
+  if (items.length === 0) return;
+  confirmingAll = true;
+  dueConfirmAll.disabled = true;
+  showDueStatus(null);
+
+  let stopped = null;
+  let confirmed = 0;
+  let alreadyDone = 0;
+  for (const [i, item] of items.entries()) {
+    dueConfirmAll.textContent = `Confirming ${i + 1} of ${items.length}…`;
+    const outcome = await doConfirm(item, Number(item.amount), { refreshAfter: false });
+    if (outcome === "declined") {
+      stopped = `Stopped at ${item.name}, which looks like a duplicate. ${confirmed} confirmed, the rest are still here.`;
+      break;
+    }
+    if (outcome === "failed") {
+      // doConfirm has already said why; this adds where it got to
+      stopped =
+        confirmed > 0
+          ? `${dueStatus.textContent} ${confirmed} confirmed before that, the rest are still here.`
+          : dueStatus.textContent;
+      break;
+    }
+    if (outcome === "already") alreadyDone += 1;
+    else confirmed += 1;
+  }
+
+  confirmingAll = false;
+  if (stopped) {
+    showDueStatus(stopped);
+  } else if (alreadyDone > 0) {
+    // the other phone got there first on some: nothing went wrong, and the
+    // pinned due dates mean nothing was logged twice
+    showDueStatus(`${alreadyDone} already done on the other phone — refreshed.`, { news: true });
+  } else {
+    showDueStatus(null);
+  }
+  await Promise.all([refreshRecurring(), refresh()]);
+}
+
+dueConfirmAll.addEventListener("click", confirmAllDue);
 
 // Confirm-with-edit updates the registry amount too: last month's
 // actual is next month's best prediction, so an FX swing or a price
@@ -2143,7 +2254,8 @@ function smallButton(text, variant, onClick) {
 // The confirm runs through the same duplicate check as a manual save:
 // the RPC writes server-side, so without this the "already logged it by
 // hand" case would double up silently — the one real trap in the shape.
-async function doConfirm(item, amount) {
+// Says how it went, because Confirm all needs to know whether to carry on.
+async function doConfirm(item, amount, { refreshAfter = true } = {}) {
   showDueStatus(null);
   try {
     const dupes = await findPossibleDuplicates(amount, item.next_due);
@@ -2154,30 +2266,39 @@ async function doConfirm(item, amount) {
           `(${dupes[0].categories.name}, ${when}, paid by ${dupes[0].paid_by}).\n\n` +
           `Confirm ${item.name} anyway?`,
       );
-      if (!proceed) return;
+      if (!proceed) return "declined";
     }
   } catch {
     // the duplicate check is a courtesy; never let it block a confirm
   }
-  await guardDue(() => confirmRecurring(item.id, amount, item.next_due));
+  return guardDue(() => confirmRecurring(item.id, amount, item.next_due), { refreshAfter });
 }
 
 // One place to turn an RPC failure into something readable. The
 // serialization_failure the function raises means the other phone got
 // there first — that is not an error the user caused, so it reads as
 // news rather than a fault.
-async function guardDue(action) {
+async function guardDue(action, { refreshAfter = true } = {}) {
+  showDueStatus(null);
   try {
     await action();
-    await Promise.all([refreshRecurring(), refresh()]);
+    if (refreshAfter) await Promise.all([refreshRecurring(), refresh()]);
+    return "done";
   } catch (error) {
     const message = error?.message ?? String(error);
+    if (/already confirmed|already moved on/i.test(message)) {
+      showDueStatus("Already done on the other phone — refreshed.", { news: true });
+      if (refreshAfter) await refreshRecurring();
+      return "already";
+    }
+    // WebKit says "Load failed" where Chromium says "Failed to fetch"
     showDueStatus(
-      /already confirmed|already moved on/i.test(message)
-        ? "Already done on the other phone — refreshed."
+      /fetch|load failed/i.test(message)
+        ? "No connection — that didn't go through."
         : `Couldn't do that: ${message}`,
     );
-    await refreshRecurring();
+    if (refreshAfter) await refreshRecurring();
+    return "failed";
   }
 }
 
@@ -2211,7 +2332,7 @@ function registryRow(item) {
 
   // "$X every month until age Y" as a live number instead of a fact
   // somebody has to remember
-  const left = remaining(item);
+  const left = item.cadence === "once" ? null : remaining(item);
   if (left) {
     const runway = document.createElement("div");
     runway.className = "runway";
@@ -2226,9 +2347,9 @@ function registryRow(item) {
   amount.textContent = sgd.format(Number(item.amount));
   const cadence = document.createElement("div");
   cadence.className = "reg-cad";
-  cadence.textContent = item.cadence;
+  cadence.textContent = CADENCE_LABEL[item.cadence] ?? item.cadence;
   right.append(amount, cadence);
-  if (item.cadence !== "monthly") {
+  if (item.cadence !== "monthly" && item.cadence !== "once") {
     const equiv = document.createElement("div");
     equiv.className = "reg-cad";
     equiv.textContent = `${sgd.format(monthlyEquivalentCents(item) / 100)}/mo`;
@@ -2247,6 +2368,15 @@ function registryRow(item) {
   return row;
 }
 
+// One time has no choice of end date, so the field steps aside.
+function syncRecEnd() {
+  const once = recCadence.value === "once";
+  recEnd.disabled = once;
+  if (once) recEnd.value = "";
+}
+
+recCadence.addEventListener("change", syncRecEnd);
+
 recForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   recStatus.hidden = true;
@@ -2257,28 +2387,32 @@ recForm.addEventListener("submit", async (event) => {
     return;
   }
   const nextDueValue = document.getElementById("rec-next").value;
-  const endValue = document.getElementById("rec-end").value;
+  const endValue = recEnd.value;
   if (endValue && endValue < nextDueValue) {
     recStatus.textContent = "The end date can't be before the next due date.";
     recStatus.hidden = false;
     return;
   }
+  const cadenceValue = recCadence.value;
   try {
     await addRecurring({
       name: document.getElementById("rec-name").value.trim(),
       amount,
-      cadence: document.getElementById("rec-cadence").value,
+      cadence: cadenceValue,
       // the anchor comes from the first due date: it is what re-anchors
       // a 31st item after a short month instead of drifting
       anchor_day: Number(nextDueValue.slice(8, 10)),
       next_due: nextDueValue,
-      end_date: endValue || null,
+      // a one-time charge ends on its own due date: that is what makes
+      // confirm_recurring stop it after one confirm (the database insists)
+      end_date: cadenceValue === "once" ? nextDueValue : endValue || null,
       category_id: Number(recCategorySelect.value),
       card_id: recCardSelect.value ? Number(recCardSelect.value) : null,
       paid_by: recForm.querySelector('input[name="rec_paid_by"]:checked').value,
     });
     recForm.reset();
-    document.getElementById("rec-cadence").value = "monthly";
+    recCadence.value = "monthly";
+    syncRecEnd();
     await refreshRecurring();
   } catch (error) {
     recStatus.textContent = `Couldn't add it: ${error.message}`;
@@ -2293,7 +2427,8 @@ document.getElementById("make-recurring").addEventListener("click", () => {
   if (!lastSavedFields) return;
   document.getElementById("rec-name").value = lastSavedFields.note || "";
   document.getElementById("rec-amount").value = Number(lastSavedFields.amount).toFixed(2);
-  document.getElementById("rec-cadence").value = "monthly";
+  recCadence.value = "monthly";
+  syncRecEnd();
   recCategorySelect.value = String(lastSavedFields.category_id);
   if (lastSavedFields.card_id) recCardSelect.value = String(lastSavedFields.card_id);
   const paid = recForm.querySelector(`input[name="rec_paid_by"][value="${lastSavedFields.paid_by}"]`);
@@ -2314,6 +2449,7 @@ document.getElementById("make-recurring").addEventListener("click", () => {
 
 const soonList = document.getElementById("soon-list");
 const soonEmpty = document.getElementById("soon-empty");
+const soonHint = document.getElementById("soon-hint");
 const soonStatus = document.getElementById("soon-status");
 const soonWindow = document.getElementById("soon-window");
 const soonCharges = document.getElementById("soon-charges");
@@ -2347,11 +2483,23 @@ function renderSoon() {
     today,
   );
   soonWindow.textContent = "next 30 days";
+  // "nothing coming" must look at everything, not just the day list: with
+  // only monthly charges ahead the list is empty and the line above isn't
   soonEmpty.hidden = groups.length > 0;
 
-  renderCharges(upcomingCharges(groups, today), today);
+  const charges = upcomingCharges(groups, today);
+  renderCharges(charges, today);
 
-  soonList.replaceChildren(...groups.flatMap((group) => [soonDay(group), ...group.items.map(soonItem)]));
+  soonList.replaceChildren(
+    ...dayList(groups).flatMap((group) => [soonDay(group), ...group.items.map(soonItem)]),
+  );
+
+  const monthly = charges.items.filter(isMonthlyCharge).length;
+  soonHint.hidden = monthly === 0;
+  soonHint.textContent =
+    monthly === 1
+      ? "1 routine monthly charge stays inside the line above."
+      : `${monthly} routine monthly charges stay inside the line above.`;
 }
 
 // The headline is the REST OF THIS MONTH, not the whole rolling

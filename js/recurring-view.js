@@ -7,7 +7,19 @@
 // because the due strip is shared and two phones must not be able to
 // log the same charge twice.
 
-const CADENCE_MONTHS = { monthly: 1, quarterly: 3, yearly: 12 };
+// Mirrors the steps in public.recurring_next_due; a test compares them,
+// because an unknown cadence breaks confirm_recurring. 'once' steps 12
+// only to land past its own end date, which is what stops it.
+export const CADENCE_MONTHS = { monthly: 1, quarterly: 3, "half-yearly": 6, yearly: 12, once: 12 };
+
+// How a charge's repeat reads beside its amount.
+export const CADENCE_LABEL = {
+  monthly: "a month",
+  quarterly: "a quarter",
+  "half-yearly": "every 6 months",
+  yearly: "a year",
+  once: "one time",
+};
 
 const iso = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -35,19 +47,13 @@ export function dueItems(registry, todayIso) {
     .sort((a, b) => a.next_due.localeCompare(b.next_due));
 }
 
-// The next few not yet owed — a quiet heads-up under the strip.
-export function upcomingItems(registry, todayIso, limit = 2) {
-  return registry
-    .filter((r) => r.active && r.next_due && r.next_due > todayIso)
-    .sort((a, b) => a.next_due.localeCompare(b.next_due))
-    .slice(0, limit);
-}
-
 // Amortisation lives HERE and nowhere else: a yearly premium shows as a
 // monthly figure in the registry so "what are we committed to" is one
 // honest number. The ledger never sees this — it records the single
-// real charge on its real date.
+// real charge on its real date. A one-time charge has no monthly cost:
+// spreading it would invent a commitment that isn't there.
 export function monthlyEquivalentCents(item) {
+  if (item.cadence === "once") return 0;
   const cents = Math.round(Number(item.amount) * 100);
   return Math.round(cents / CADENCE_MONTHS[item.cadence]);
 }
@@ -61,7 +67,7 @@ export function commitmentTotals(registry) {
   let spending = 0;
   let excluded = 0;
   for (const item of registry) {
-    if (!item.active) continue;
+    if (!item.active || item.cadence === "once") continue;
     const cents = monthlyEquivalentCents(item);
     if (item.categories?.excluded_from_totals) excluded += cents;
     else spending += cents;

@@ -9,8 +9,8 @@ export function categoryLabel(cat) {
 
 // expenses arrive newest-first (ledger order). Categories flagged
 // excluded_from_totals (e.g. Blessing) are logged but never counted —
-// not in the headline, not in the bars, not in past-month sums; they
-// surface separately in `excluded` for this month.
+// not in the headline, not in the bars; they surface separately in
+// `excluded` for this month.
 export function summarize(expenses, now) {
   const thisKey = monthKey(now);
   // the month before the one on screen — its per-category totals are
@@ -20,7 +20,6 @@ export function summarize(expenses, now) {
   let thisCents = 0;
   const byCategory = new Map();
   const prevByCategory = new Map();
-  const byMonth = new Map();
   const excluded = new Map();
 
   for (const expense of expenses) {
@@ -34,29 +33,12 @@ export function summarize(expenses, now) {
     if (key === thisKey) {
       thisCents += cents;
       byCategory.set(label, (byCategory.get(label) ?? 0) + cents);
-    } else {
-      byMonth.set(key, (byMonth.get(key) ?? 0) + cents);
-      if (key === prevKey) {
-        prevByCategory.set(label, (prevByCategory.get(label) ?? 0) + cents);
-      }
+    } else if (key === prevKey) {
+      prevByCategory.set(label, (prevByCategory.get(label) ?? 0) + cents);
     }
   }
 
-  // Past three calendar months, oldest first — but only from the month
-  // history began; a wall of S$0 rows would be noise in the first weeks.
-  const earliestKey = expenses.length
-    ? expenses[expenses.length - 1].date.slice(0, 7)
-    : null;
-  const past = [];
-  for (let i = 3; i >= 1; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = monthKey(d);
-    if (earliestKey !== null && key >= earliestKey) {
-      past.push({ date: d, cents: byMonth.get(key) ?? 0 });
-    }
-  }
-
-  return { thisCents, byCategory, prevByCategory, past, excluded };
+  return { thisCents, byCategory, prevByCategory, excluded };
 }
 
 export function monthKey(date) {

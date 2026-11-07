@@ -51,6 +51,7 @@ export function horizon(sources, todayIso, days = 30) {
       label: r.name,
       amount: Number(r.amount),
       who: r.paid_by,
+      cadence: r.cadence,
     });
   }
 
@@ -83,6 +84,24 @@ export function horizon(sources, todayIso, days = 30) {
     else groups.push({ date: item.date, items: [item] });
   }
   return groups;
+}
+
+// What the day list shows (v1.19). Monthly charges stay inside the
+// summary line, which still opens to all of them: with most of the
+// registry monthly, they buried the events and to-dos this view is for,
+// and it read as a bills list. Anything rarer still earns its date,
+// because those are the charges worth a heads-up.
+export function dayList(groups) {
+  return groups
+    .map((group) => ({
+      date: group.date,
+      items: group.items.filter((item) => !isMonthlyCharge(item)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+export function isMonthlyCharge(item) {
+  return item.kind === "recurring" && item.cadence === "monthly";
 }
 
 // The charges inside the view, split at the month boundary.

@@ -8,7 +8,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 
 1. **Log an expense** — amount (SGD), category, date (default today), who paid, optional note. Under 10 seconds on a phone.
 2. **Shared ledger** — reverse-chronological list, both users see everything; edit/delete your own entries.
-3. **Monthly dashboard** — this month's total, split by category, and a recent-months comparison: the past three months listed plus their average (amended 2026-07-16 — a single-month anchor confounds trend with variance; an average dilutes one-off big-ticket months). Z-pattern layout: headline number top-left.
+3. **Monthly dashboard** — this month's total, split by category, and a recent-months comparison: the past three months listed plus their average (amended 2026-07-16 — a single-month anchor confounds trend with variance; an average dilutes one-off big-ticket months; amended 2026-11-07 — the comparison is now Everyday against Everyday, see v1.19). Z-pattern layout: headline number top-left.
 4. **Duplicate warning** — same amount within ±1 day prompts "possible duplicate — save anyway?" Warns, never blocks.
 5. **Two-account auth** — email + password via Supabase; signups closed after both accounts exist.
 6. **CSV export** — one button, full ledger download. This is the backup story.
@@ -98,3 +98,30 @@ Not in v1.1, with reasons:
 - **Multi-currency** — no live raises (no trips in the window); stopgap stands.
 - **Recurring payments / commitments registry** — parked by its own author ("may not be the immediate next fix") until re-raised.
 - **Per-person emoji on "paid by"** — folded into the category-icons work only if free; not a scope item.
+
+## v1.19 + v1.20 — "One picture of the household" (LOCKED by Shawn 2026-11-07, from a reviewed mockup)
+
+Turn a one-time spending audit into a living part of the app, without moving the report into it. It answers three questions from data the app already holds: what does a normal month take, what's inside each part, and when do the big charges land. Built in two ships, because the registry's growth had already hurt the daily screens.
+
+**The rules, which hold on every screen:**
+
+- **Spending is the share.** Always `expenses.amount`, never `card_charged`. Only `js/cards-math.js` reads the card charge, for miles caps, because the bank's cap counts the whole bill.
+- **Every entry classes one way, in this order:** category kind `give` is giving; kind `invest` is set aside; a `recurring_id` makes it a commitment; kind `lumpy`, or $300 or more, makes it a one-off; everything else is everyday. Code never matches on category names or note text, because categories can be renamed.
+- **No per-person view on Overview.** Between the two of them money is joint and they don't track who spends what. `recurring.paid_by` stays only because Confirm needs it for the ledger.
+- **One-offs get no monthly average,** and one-time charges never count in a typical month.
+- **No budgets and no income tracking.** Visibility, not budgets.
+
+**Ship 1, v1.19: protect the daily screens.**
+
+1. **Due now folds** to one line, hidden when nothing is due. Opened: compact rows and Confirm all, which runs the existing per-item confirm and its duplicate check, and stops if a possible duplicate is declined.
+2. **Coming up's day list drops monthly charges.** They stay inside the expandable summary line. Quarterly, half-yearly, yearly and one-time charges still show by date.
+3. **Money splits its total** into Everyday, Commitments and One-offs for the viewed month. The total keeps its meaning. Everyday compares with the Everyday average of up to 3 earlier full months, skipping a part-month at the start of history.
+
+**Ship 2, v1.20: Overview replaces the Recurring tab.** The tab is relabelled, and there is no sixth tab. In order: a typical month as one rounded figure with a stacked bar and four rows that open (Bills & insurance, Everyday, Set aside, Giving); Year ahead, twelve months of regular and lump charges with Everyday left out; Big one-offs over the last 12 months, listed with a total; the Running list and add form, tucked away; Stopped.
+
+**A typical month has four layers:** Bills & insurance is active Recurring items of kind everyday or lumpy, at their monthly equivalent. Everyday is the average of the last 3 full calendar months of entries classed as everyday. Set aside is active Recurring items of kind invest. Giving is recurring giving plus a 3-month average of unlinked giving entries.
+
+Data model additions (`db/migrations/2026-11-07-overview-v1_19.sql`, additive): `categories.kind`; cadences `half-yearly` and `once`, the latter required to end on its own due date so it stops after one confirm. Household data changes (new categories, past entries moved and linked) ran through the SQL editor and are not in this repo. They had the SPEC's undo: a CSV export plus an in-Supabase snapshot. Rows moved to the new cadences only after both phones had the new code, because older clients don't know them.
+
+Not in scope: setting a category's kind in the manager (new categories default to everyday; a rare enough act to stay in the SQL editor until it's raised), budgets, income, and any per-person split.
+

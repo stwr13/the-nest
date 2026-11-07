@@ -17,18 +17,16 @@ test("excluded categories stay out of every sum but remain visible", () => {
     { amount: "70.00", date: "2026-06-15", categories: cat("Blessing", "🙏", true) },
     { amount: "30.00", date: "2026-06-10", categories: cat("Fun", "🎉") },
   ];
-  const { thisCents, byCategory, past, excluded } = summarize(expenses, now);
+  const { thisCents, byCategory, excluded } = summarize(expenses, now);
   assert.equal(thisCents, 9410); // 84.20 + 9.90 in cents — no drift, no Blessing
   assert.deepEqual([...byCategory.entries()], [["🛒 Groceries", 9410]]);
   assert.deepEqual([...excluded.entries()], [["🙏 Blessing", 5000]]);
-  // June: Fun only — the June Blessing never lands in past-month sums
-  assert.equal(past.at(-1).cents, 3000);
 });
 
 // The month-review gap: on 1 Aug, July's breakdown vanished from the
 // dashboard (Claire, idea box 2026-08-01). summarize must answer for any
 // target month, not just today's.
-test("a past month keeps its own breakdown and its own comparison months", () => {
+test("a past month keeps its own breakdown", () => {
   const expenses = [
     { amount: "20.00", date: "2026-08-01", categories: cat("Groceries", "🛒") },
     { amount: "84.20", date: "2026-07-18", categories: cat("Groceries", "🛒") },
@@ -37,7 +35,7 @@ test("a past month keeps its own breakdown and its own comparison months", () =>
     { amount: "30.00", date: "2026-06-10", categories: cat("Fun", "🎉") },
   ];
   const july = new Date(2026, 6, 1);
-  const { thisCents, byCategory, past, excluded } = summarize(expenses, july);
+  const { thisCents, byCategory, excluded } = summarize(expenses, july);
   assert.equal(thisCents, 10000); // 84.20 + 15.80 — August's 20.00 excluded
   assert.deepEqual(
     [...byCategory.entries()],
@@ -47,7 +45,6 @@ test("a past month keeps its own breakdown and its own comparison months", () =>
     ],
   );
   assert.deepEqual([...excluded.entries()], [["🙏 Blessing", 5000]]);
-  assert.equal(past.at(-1).cents, 3000); // June, the month before July
 });
 
 test("labels combine icon and name; icon optional", () => {
