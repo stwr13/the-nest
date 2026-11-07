@@ -1290,3 +1290,52 @@ numbers, which reconciled to the cent. 106/106 tests. Version 1.20.0.
 Snapshot, sample data:
 `docs/snapshots/2026-11-07-v1.20.0-overview-sample-data.png`.
 
+## 2026-11-07 (v1.20.1) — eighteen categories down to ten
+
+Hours after Overview shipped, Shawn looked at the category list and said
+it plainly: "There are just too many, and we're going too granular. It
+defeats the purpose." A list that long costs a decision on every entry,
+and the one question it was meant to answer gets harder to read.
+
+Now ten: Groceries, Eating out, Transport, Home, Health & Wellness,
+Shopping, Essentials, Travel, Investments and Gifts/Blessings. Three
+small ones with a handful of entries between them went into Shopping.
+Insurance, Tax, Subscriptions and Tithes went into Essentials. Gifts and
+Blessing became one. Two health entries filed under Insurance moved to
+Health & Wellness on the way.
+
+Two of those were real decisions, and both reverse something. **Tithes
+now count as spending,** in Essentials. That undoes a choice made earlier
+the same day, when Tithes got a category of its own to stay out of the
+total. **Gifts/Blessings count too,** which replaces the convention
+written down on 2026-08-02 that a present counts and money given doesn't.
+A category is either counted or it isn't, so merging them forced one rule
+for both. Claude recommended the other way on each and laid out what it
+would cost; Shawn weighed it and chose. The taxonomy has always been
+retroactive by design, so past months' totals rose and two large gifts
+now sit in Big one-offs. The typical month barely moved: the same money
+on fewer shelves.
+
+So nothing is left in the Giving layer, and Overview's rows now hide
+themselves when empty rather than showing a zero. The first row is now
+"Bills, insurance & commitments", because that is what it holds. The two
+tithe rows keep their people's names, Shawn's call: "i need to know the
+difference. just because entry is by diff people and also to track." That
+is a deliberate exception to the no-names rule, and they now show when
+Essentials opens. The kind `give` stays in the schema with
+nothing using it, which costs nothing.
+
+A near miss worth recording. The fresh CSV backup silently failed, because
+Chrome blocks a second automatic download from the same page, and the
+merge had already been sent before the file was checked. The only reason
+it didn't run ahead of its backup was the SQL editor's own warning on
+destructive queries, which paused it. It was cancelled, the CSV was taken
+through the app's Export button and verified, and the merge ran after
+that. The rule to keep: confirm the backup exists before sending the step
+that needs it, never alongside.
+
+Run through the SQL editor with a fresh CSV and snapshot first, and
+verified against numbers predicted beforehand. A planned tidy-up came
+free with it: the second household tax item sits in Essentials now, and
+its past entry is linked. 106/106 tests. Version 1.20.1.
+
