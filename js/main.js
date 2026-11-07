@@ -2663,7 +2663,7 @@ function setAsideBody(setAside) {
   ];
 }
 
-// One line per category, never per person: the tithes read as "Tithes".
+// One line per category, never per person.
 function givingBody(giving, months) {
   const rows = giving.groups.map((group) =>
     miniRow(group.name, "Monthly", sgd.format(group.cents / 100)),
@@ -2683,32 +2683,31 @@ function renderOverview() {
       ? "From Recurring. The ledger doesn't hold a full month yet."
       : `From Recurring and the last ${count === 1 ? "month" : `${count} months`} of the ledger`;
 
+  // A layer with nothing in it says nothing: since v1.20.1 all giving counts
+  // as spending, so Giving shows only if a category is ever set up that way.
   const layers = [
-    { colour: "l1", name: "Bills & insurance", cents: typical.bills.cents },
-    { colour: "l2", name: "Everyday", cents: typical.everyday.cents },
-    { colour: "l3", name: "Set aside", cents: typical.setAside.cents },
-    { colour: "l4", name: "Giving", cents: typical.giving.cents },
-  ];
+    { key: "bills", colour: "l1", name: "Bills, insurance & commitments", cents: typical.bills.cents, body: () => billsBody(typical.bills) },
+    { key: "everyday", colour: "l2", name: "Everyday", cents: typical.everyday.cents, body: () => everydayBody(typical) },
+    { key: "set-aside", colour: "l3", name: "Set aside", sub: "Not spending", cents: typical.setAside.cents, body: () => setAsideBody(typical.setAside) },
+    { key: "giving", colour: "l4", name: "Giving", sub: "Not spending", cents: typical.giving.cents, body: () => givingBody(typical.giving, typical.months) },
+  ].filter((layer) => layer.cents > 0);
   ovStack.hidden = typical.totalCents === 0;
   ovStack.setAttribute(
     "aria-label",
     `Split of a typical month: ${layers.map((l) => `${l.name} ${wholeDollars(l.cents)}`).join(", ")}`,
   );
   ovStack.replaceChildren(
-    ...layers
-      .filter((layer) => layer.cents > 0)
-      .map((layer) => {
-        const segment = el("span", `ov-seg ${layer.colour}`);
-        segment.style.flex = `${layer.cents} 1 0`;
-        return segment;
-      }),
+    ...layers.map((layer) => {
+      const segment = el("span", `ov-seg ${layer.colour}`);
+      segment.style.flex = `${layer.cents} 1 0`;
+      return segment;
+    }),
   );
 
   ovLayers.replaceChildren(
-    layerRow("bills", "l1", "Bills & insurance", null, typical.bills.cents, billsBody(typical.bills)),
-    layerRow("everyday", "l2", "Everyday", null, typical.everyday.cents, everydayBody(typical)),
-    layerRow("set-aside", "l3", "Set aside", "Not spending", typical.setAside.cents, setAsideBody(typical.setAside)),
-    layerRow("giving", "l4", "Giving", "Not spending", typical.giving.cents, givingBody(typical.giving, typical.months)),
+    ...layers.map((layer) =>
+      layerRow(layer.key, layer.colour, layer.name, layer.sub, layer.cents, layer.body()),
+    ),
   );
 
   renderYearAhead();
