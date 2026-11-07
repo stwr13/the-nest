@@ -50,13 +50,20 @@
     </header>
     <div id="tab-money" role="tabpanel" aria-label="Money">
     <section id="due-card" class="card due-card" hidden>
-      <div class="card-head">
-        <h2 class="card-title">Due now</h2>
-        <span id="due-count" class="count-pill"></span>
+      <button type="button" id="due-toggle" class="due-toggle" hidden
+              aria-expanded="false" aria-controls="due-body">
+        <span class="due-sum">
+          <span class="card-title">Due now</span>
+          <span id="due-count" class="count-pill"></span>
+        </span>
+        <span id="due-total" class="due-total"></span>
+        <span class="chev" aria-hidden="true">›</span>
+      </button>
+      <div id="due-body" class="due-body" hidden>
+        <div id="due-list" class="due-list"></div>
+        <button type="button" id="due-confirm-all" class="btn btn-primary due-confirm-all"></button>
       </div>
-      <div id="due-list" class="due-list"></div>
       <p id="due-status" class="form-error" role="alert" hidden></p>
-      <p id="due-upcoming" class="hint" hidden></p>
     </section>
 
     <section class="card form-card">
@@ -140,8 +147,22 @@
           </p>
           <p id="dash-total" class="dash-total">S$0.00</p>
         </div>
-        <p id="dash-compare" class="dash-compare"></p>
       </div>
+      <div id="dash-split" class="commit-split dash-split" hidden>
+        <div class="split-box">
+          <div class="k">Everyday</div>
+          <div id="dash-everyday" class="v"></div>
+        </div>
+        <div class="split-box">
+          <div class="k">Commitments</div>
+          <div id="dash-commitments" class="v"></div>
+        </div>
+        <div class="split-box">
+          <div class="k">One-offs</div>
+          <div id="dash-oneoffs" class="v"></div>
+        </div>
+      </div>
+      <p id="dash-compare" class="dash-compare"></p>
       <p id="dash-months" class="dash-months" hidden></p>
       <p id="dash-empty" class="muted" hidden>Nothing logged this month yet.</p>
       <ul id="dash-cats" class="dash-cats"></ul>
@@ -271,6 +292,7 @@
       <p id="soon-empty" class="muted" hidden>Nothing in the next 30 days.</p>
       <p id="soon-status" class="form-error" role="alert" hidden></p>
       <div id="soon-list"></div>
+      <p id="soon-hint" class="hint" hidden></p>
     </section>
 
     <section class="card">
@@ -394,7 +416,9 @@
             <select id="rec-cadence" name="cadence">
               <option value="monthly">Month</option>
               <option value="quarterly">Quarter</option>
+              <option value="half-yearly">6 months</option>
               <option value="yearly">Year</option>
+              <option value="once">One time</option>
             </select>
           </div>
         </div>

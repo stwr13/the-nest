@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { horizon, addDays, endOfMonth, upcomingCharges } from "../js/horizon-view.js";
+import { horizon, addDays, endOfMonth, upcomingCharges, dayList, isMonthlyCharge } from "../js/horizon-view.js";
 
 const TODAY = "2026-09-19";
 
@@ -117,4 +117,60 @@ test("upcomingCharges on an empty horizon", () => {
 
 test("an empty household produces no groups, not an error", () => {
   assert.deepEqual(horizon({}, TODAY), []);
+});
+
+const charge = (id, cadence, next_due, amount = "50.00") => ({
+  id,
+  name: `Charge ${id}`,
+  amount,
+  cadence,
+  next_due,
+  active: true,
+  paid_by: "Shawn",
+});
+
+test("the day list drops monthly charges and keeps everything rarer", () => {
+  const groups = horizon(
+    {
+      todos: [{ id: 1, list: "todo", body: "Chore", due_date: "2026-09-22", urgent: false, done_at: null }],
+      events: [{ id: 1, title: "Dinner", date: "2026-09-23", at_time: null, note: null, author: "Claire" }],
+      recurring: [
+        charge(1, "monthly", "2026-09-22"),
+        charge(2, "quarterly", "2026-09-24"),
+        charge(3, "half-yearly", "2026-09-25"),
+        charge(4, "yearly", "2026-09-26"),
+        charge(5, "once", "2026-09-27"),
+        charge(6, "monthly", "2026-09-28"),
+      ],
+    },
+    TODAY,
+  );
+  const days = dayList(groups);
+  assert.deepEqual(
+    days.map((d) => d.date),
+    ["2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25", "2026-09-26", "2026-09-27"],
+    "a day holding only a monthly charge disappears",
+  );
+  assert.deepEqual(days[0].items.map((i) => i.kind), ["todo"], "a chore stays on a monthly charge's day");
+  const labels = days.flatMap((d) => d.items).filter((i) => i.kind === "recurring").map((i) => i.label);
+  assert.deepEqual(labels, ["Charge 2", "Charge 3", "Charge 4", "Charge 5"]);
+});
+
+// The summary line's figure must stay checkable against its own rows
+// (v1.15.1), so the day list change must not touch it.
+test("the summary line still counts and lists every charge", () => {
+  const groups = horizon(
+    { recurring: [charge(1, "monthly", "2026-09-22"), charge(2, "yearly", "2026-09-24")] },
+    TODAY,
+  );
+  const charges = upcomingCharges(groups, TODAY);
+  assert.equal(charges.items.length, 2);
+  assert.equal(charges.monthCents, 10000);
+  assert.equal(charges.items.filter(isMonthlyCharge).length, 1);
+});
+
+test("only monthly charges in the window: the day list is empty but the view is not", () => {
+  const groups = horizon({ recurring: [charge(1, "monthly", "2026-09-22")] }, TODAY);
+  assert.equal(groups.length, 1, "so the empty message stays hidden");
+  assert.deepEqual(dayList(groups), []);
 });

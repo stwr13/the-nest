@@ -6,7 +6,7 @@ export async function fetchCategories() {
     // sort_order must be selected: the manager computes "end of list"
     // from it (2026-07-29 bug: omitting it sent new categories to the
     // top — Shawn caught it on the phone within minutes)
-    .select("id, name, icon, excluded_from_totals, sort_order")
+    .select("id, name, icon, excluded_from_totals, sort_order, kind")
     .order("sort_order")
     .order("name");
   if (error) throw error;
@@ -16,7 +16,7 @@ export async function fetchCategories() {
 export async function fetchExpenses() {
   const { data, error } = await supabase
     .from("expenses")
-    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, card_charged, categories(name, icon, excluded_from_totals)")
+    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, card_charged, recurring_id, categories(name, icon, excluded_from_totals, kind)")
     .order("date", { ascending: false })
     .order("id", { ascending: false });
   if (error) throw error;
@@ -227,7 +227,7 @@ export async function fetchRecurring() {
   const { data, error } = await supabase
     .from("recurring")
     .select(
-      "id, name, amount, cadence, anchor_day, next_due, end_date, category_id, card_id, paid_by, active, last_confirmed, categories(name, icon, excluded_from_totals), cards(name)",
+      "id, name, amount, cadence, anchor_day, next_due, end_date, category_id, card_id, paid_by, active, last_confirmed, categories(name, icon, excluded_from_totals, kind), cards(name)",
     )
     .order("next_due", { ascending: true, nullsFirst: false })
     .order("name");

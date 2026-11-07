@@ -1,13 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   nextDue,
   dueItems,
-  upcomingItems,
   monthlyEquivalentCents,
   commitmentTotals,
   remaining,
   daysLate,
+  CADENCE_MONTHS,
+  CADENCE_LABEL,
 } from "../js/recurring-view.js";
 
 const item = (over = {}) => ({
@@ -52,16 +54,6 @@ test("dueItems returns the backlog oldest first, inactive excluded", () => {
   assert.deepEqual(due.map((r) => r.id), [2, 1], "oldest first; future and stopped left out");
   // due today counts as due
   assert.equal(dueItems([item({ next_due: "2026-09-18" })], "2026-09-18").length, 1);
-});
-
-test("upcomingItems looks forward only", () => {
-  const registry = [
-    item({ id: 1, next_due: "2026-09-01" }),
-    item({ id: 2, next_due: "2026-09-20" }),
-    item({ id: 3, next_due: "2026-10-05" }),
-    item({ id: 4, next_due: "2026-11-05" }),
-  ];
-  assert.deepEqual(upcomingItems(registry, "2026-09-18").map((r) => r.id), [2, 3]);
 });
 
 test("monthlyEquivalentCents amortises for the registry view only", () => {
@@ -110,4 +102,56 @@ test("remaining counts the finite tail of a commitment", () => {
 test("daysLate", () => {
   assert.equal(daysLate("2026-09-01", "2026-09-18"), 17);
   assert.equal(daysLate("2026-09-18", "2026-09-18"), 0);
+});
+
+test("nextDue steps half-yearly and once", () => {
+  assert.equal(nextDue("2026-11-12", "half-yearly", 12), "2027-05-12");
+  // re-anchors like every other cadence: the 31st, six months on, in February
+  assert.equal(nextDue("2027-08-31", "half-yearly", 31), "2028-02-29");
+  assert.equal(nextDue("2027-08-03", "once", 3), "2028-08-03");
+});
+
+// A row whose cadence has no step gets a null next_due inside
+// confirm_recurring, which then breaks active_has_due. The database and
+// this file must agree on every cadence, so the test reads the real SQL.
+test("every cadence the database allows has the same step here", () => {
+  const dir = new URL("../db/migrations/", import.meta.url);
+  const newest = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .filter((f) => readFileSync(new URL(f, dir), "utf8").includes("recurring_next_due("))
+    .at(-1);
+  const sql = readFileSync(new URL(newest, dir), "utf8");
+  const steps = {};
+  for (const [, cadence, months] of sql.matchAll(/when '([a-z-]+)'\s+then interval '(\d+) months?'/g)) {
+    steps[cadence] = Number(months);
+  }
+  assert.deepEqual(steps, CADENCE_MONTHS);
+
+  const allowed = sql.match(/check \(cadence in \(([^)]+)\)\)/)[1].match(/[a-z-]+/g);
+  assert.deepEqual([...allowed].sort(), Object.keys(CADENCE_MONTHS).sort());
+});
+
+test("the form only offers cadences the registry knows, each with a label", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const select = html.match(/<select id="rec-cadence"[\s\S]*?<\/select>/)[0];
+  const offered = [...select.matchAll(/value="([a-z-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...offered].sort(), Object.keys(CADENCE_MONTHS).sort());
+  for (const cadence of offered) assert.ok(CADENCE_LABEL[cadence], `${cadence} has no label`);
+});
+
+test("a one-time charge has no monthly cost and stays out of the commitment totals", () => {
+  const once = item({ amount: "500.00", cadence: "once", next_due: "2027-03-01", end_date: "2027-03-01" });
+  assert.equal(monthlyEquivalentCents(once), 0);
+  const totals = commitmentTotals([once, item({ amount: "11.98" })]);
+  assert.equal(totals.totalCents, 1198);
+});
+
+test("a half-yearly charge spreads over six months", () => {
+  assert.equal(monthlyEquivalentCents(item({ amount: "120.00", cadence: "half-yearly" })), 2000);
+});
+
+test("remaining counts a one-time charge as one payment", () => {
+  const once = item({ amount: "500.00", cadence: "once", next_due: "2027-03-01", end_date: "2027-03-01" });
+  assert.deepEqual(remaining(once), { payments: 1, cents: 50000 });
 });
