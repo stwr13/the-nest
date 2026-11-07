@@ -1339,3 +1339,11 @@ verified against numbers predicted beforehand. A planned tidy-up came
 free with it: the second household tax item sits in Essentials now, and
 its past entry is linked. 106/106 tests. Version 1.20.1.
 
+Same evening, with both phones confirmed on v1.20.1, the last three
+registry rows moved to the new cadences: one half-yearly charge replaced
+two yearly rows, and the final payment of a short plan became a one-time
+item, so Year ahead now names the right heaviest month. The Overview
+build is complete: every figure in the private table of expected numbers
+reconciles, with the only differences traced to the household's own later
+changes (Claire's new item, a refund, the category decisions above).
+
