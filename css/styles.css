@@ -853,6 +853,7 @@ select:focus {
 }
 
 /* ── v1.19: what the Money total is made of ── */
+.dash-outflow { margin: 0.3rem 0 0; font-size: 0.85rem; font-weight: 600; line-height: 1.35; color: var(--green-deep); }
 .dash-split { margin-top: 0.7rem; }
 .dash-split .split-box { padding: 0.45rem 0.3rem; }
 .dash-split .v { font-size: 0.98rem; }

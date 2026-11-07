@@ -12,7 +12,7 @@ session instead).
 
 ## Open decisions — board as of 2026-11-07 (resume here)
 
-Live app is **v1.20.2**: the daily screens protected (v1.19), Overview in
+Live app is **v1.20.3**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), and ten categories instead of eighteen.
 Scope and rules are in SPEC.md.
 

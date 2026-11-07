@@ -1377,3 +1377,15 @@ Later the same evening, with no app release: both loans moved from Home
 and Transport into Bills & Commitments, Shawn's call ("cleaner that way").
 No past entries were linked to them, so only the two registry rows changed.
 
+## 2026-11-07 (v1.20.3) — what we spent, and what went out
+
+Once insurance joined investments outside the Money total, Shawn asked the
+question that had been sitting under it: "I still want to track what my
+outflow is regardless." Overview and Year ahead already counted everything.
+Only Money's headline didn't. Offered the choice of counting everything or
+showing two numbers, he chose two: the headline stays spending, and a line
+under it gives total outflow and how much of that isn't counted. The line
+hides when the two agree, because the same number twice says nothing. It
+reads each entry's amount like every other sum here, so a group bill still
+counts at our share. 108/108 tests. No migration. Version 1.20.3.
+

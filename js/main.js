@@ -77,6 +77,7 @@ const ledgerStatus = document.getElementById("ledger-status");
 const dashLabel = document.getElementById("dash-label");
 const dashTotal = document.getElementById("dash-total");
 const dashCompare = document.getElementById("dash-compare");
+const dashOutflow = document.getElementById("dash-outflow");
 const dashSplit = document.getElementById("dash-split");
 const dashEveryday = document.getElementById("dash-everyday");
 const dashCommitments = document.getElementById("dash-commitments");
@@ -455,13 +456,17 @@ function renderEntry(expense) {
 // month's breakdown used to vanish — exactly when you want to review it
 // (Claire, idea box 2026-08-01).
 function renderDashboard(expenses) {
-  const { thisCents, byCategory, prevByCategory, excluded } = summarize(expenses, dashDate);
+  const { thisCents, byCategory, prevByCategory, excluded, notCountedCents, outflowCents } =
+    summarize(expenses, dashDate);
   const viewingNow = monthKey(dashDate) === monthKey(new Date());
 
   dashLabel.textContent = viewingNow
     ? `This month · ${monthFmt.format(dashDate)}`
     : `${monthFmt.format(dashDate)} ${dashDate.getFullYear()}`;
   dashTotal.textContent = sgd.format(thisCents / 100);
+  // only when it differs: the same number twice would say nothing
+  dashOutflow.hidden = notCountedCents === 0;
+  dashOutflow.textContent = `Total outflow ${sgd.format(outflowCents / 100)}, including ${sgd.format(notCountedCents / 100)} not counted below`;
 
   // don't walk back past the start of history, or forward past today
   const earliestKey = expenses.length

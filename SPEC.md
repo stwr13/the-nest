@@ -126,3 +126,6 @@ Data model additions (`db/migrations/2026-11-07-overview-v1_19.sql`, additive): 
 Not in scope: setting a category's kind in the manager (new categories default to everyday; a rare enough act to stay in the SQL editor until it's raised), budgets, income, and any per-person split.
 
 **v1.20.1, categories (Shawn, 2026-11-07): ten, not eighteen.** Groceries, Eating out, Transport, Home, Health & Wellness, Shopping, Bills & Commitments (including loans, tax, subscriptions and tithes), Travel, Investment & Insurance, Gifts/Blessings. Only Investment & Insurance stays out of totals (v1.20.2, Shawn: "in a way its investment"), so tithes and gifts count as spending, insurance premiums don't, and nothing currently has kind `give`. Run through the SQL editor with a fresh CSV and in-Supabase snapshot.
+
+**v1.20.3, outflow (Shawn, 2026-11-07):** Money's headline stays spending. A line under it shows total outflow, including what isn't counted, whenever the two differ.
+
