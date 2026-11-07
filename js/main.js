@@ -2659,7 +2659,11 @@ function setAsideBody(setAside) {
           : nextDueText(item),
       ),
     ),
-    el("p", "hint", `Still yours, so not counted as spending.${notes.join("")}`),
+    el(
+      "p",
+      "hint",
+      `Not counted as spending. Items that aren't monthly show their monthly equivalent, with the real charge below.${notes.join("")}`,
+    ),
   ];
 }
 
@@ -2686,9 +2690,9 @@ function renderOverview() {
   // A layer with nothing in it says nothing: since v1.20.1 all giving counts
   // as spending, so Giving shows only if a category is ever set up that way.
   const layers = [
-    { key: "bills", colour: "l1", name: "Bills, insurance & commitments", cents: typical.bills.cents, body: () => billsBody(typical.bills) },
+    { key: "bills", colour: "l1", name: "Regular commitments", cents: typical.bills.cents, body: () => billsBody(typical.bills) },
     { key: "everyday", colour: "l2", name: "Everyday", cents: typical.everyday.cents, body: () => everydayBody(typical) },
-    { key: "set-aside", colour: "l3", name: "Set aside", sub: "Not spending", cents: typical.setAside.cents, body: () => setAsideBody(typical.setAside) },
+    { key: "set-aside", colour: "l3", name: "Investment & insurance", sub: "Not counted as spending", cents: typical.setAside.cents, body: () => setAsideBody(typical.setAside) },
     { key: "giving", colour: "l4", name: "Giving", sub: "Not spending", cents: typical.giving.cents, body: () => givingBody(typical.giving, typical.months) },
   ].filter((layer) => layer.cents > 0);
   ovStack.hidden = typical.totalCents === 0;
