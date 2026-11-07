@@ -1352,11 +1352,9 @@ changes (Claire's new item, a refund, the category decisions above).
 Shawn, looking at the shorter list: "Should insurance combine with
 investments? in a way its investment." Claude's advice was to move only
 the policies that pay something back, because Investments isn't counted
-as spending and pure cover is a cost. Shawn weighed that and chose to keep
-it simple: every premium goes in one category, renamed Investment &
-Insurance. It is one list he can read, and the app shouldn't argue with
-how the household thinks about its own money. The cost is stated here so
-it isn't lost: premiums no longer reach the Money total or a typical
+as spending and pure cover is a cost. Shawn heard that and chose otherwise:
+every premium goes in one category, renamed Investment & Insurance. The
+cost is stated here so it isn't lost: premiums no longer reach the Money total or a typical
 month's spending. They still count in Year ahead, and they still show
 under Money as "not counted", so nothing disappears from view.
 
@@ -1369,8 +1367,7 @@ which was true of an investment and isn't of a motor premium, so the
 words changed with the data.
 
 He also asked for the home loan to sit under Home and the car loan under
-Transport. Both already did. Worth checking before moving anything, since
-a second move would have been a no-op dressed up as a change.
+Transport. Both already did, so nothing moved.
 
 The CSV was confirmed on disk before the snapshot and the move were sent,
 the rule the v1.20.1 near miss left behind. Numbers predicted and matched.
