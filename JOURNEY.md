@@ -1389,3 +1389,25 @@ hides when the two agree, because the same number twice says nothing. It
 reads each entry's amount like every other sum here, so a group bill still
 counts at our share. 108/108 tests. No migration. Version 1.20.3.
 
+## 2026-11-07 (v1.21.0) — the registry gets an editor
+
+Shawn, reading Overview: could tapping an item take him to the recurring
+entry, "so I can edit as necessary: the amount, how it is being categorized,
+the naming convention, or the date." Until now the registry had no editor
+at all. An amount could change only at Confirm, and everything else only
+through the SQL editor.
+
+Tapping an item under Regular commitments or Investment & insurance opens
+its name, amount, category and next due date, and the Running list gets an
+Edit button that also reaches one-time items. Everyday's categories aren't
+tappable because they are averages, and Big one-offs are ledger entries that
+already edit from the Ledger.
+
+The founding rule holds: the registry predicts and the ledger records, so
+an edit changes what comes next and never rewrites a logged entry. Only
+changed fields go back. Resending an untouched due date could undo a
+confirm made on the other phone while the editor was open, and would pin a
+31st item to a short month's 28th, so a test holds both. A one-time item's
+end date follows its due date, because the database requires it. 112/112
+tests. No migration. Version 1.21.0.
+
