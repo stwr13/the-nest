@@ -1128,3 +1128,99 @@ separate archive view. One retired card doesn't justify a second
 screen. Migration run against production and verified. 67/67 tests
 (3 new, including the case that matters: a retired card with more
 headroom never wins). Version 1.18.0.
+
+## 2026-11-07 (v1.19.0) — the registry outgrew the daily screens
+
+Recurring went from 7 active items to 26 in one sitting through the SQL
+editor, and two screens that had been fine quietly stopped being fine.
+The due strip sat above the log form on both phones at about 169px a
+row, so a normal week's backlog would have undone the one-screen form
+from v1.9. Coming up listed every charge in its window and read as a
+bills list, burying the events and to-dos it exists for. Nothing was
+broken, which is why it needed saying: the registry worked exactly as
+built, and that was the problem.
+
+**Due now folds to one line**, about 70px, hidden when nothing is owed.
+Opened, each item is a compact row with its amount and how late it is,
+and Edit and Skip behind the same amount editor and skip fork as before.
+**Confirm all** only exists in the opened view, so the amounts have been
+seen first, and it is not a new write path: it runs the same doConfirm
+per item, so every item keeps its duplicate check and its pin to the due
+date the phone saw. A possible duplicate is the one thing that
+interrupts it. Answer no and the run stops with the rest still listed.
+If the other phone got there first, nothing was logged twice, so that
+reads as news and the run carries on. It hides while a row is mid-edit,
+because otherwise it would confirm the old amount over the one being
+typed.
+
+**Coming up's day list drops monthly charges.** They stay inside the
+summary line, which still opens to every charge, because the v1.15.1
+rule holds: the headline has to be checkable against its own rows.
+Anything rarer than monthly keeps its date, since those are the charges
+worth a heads-up. The empty message now looks at everything rather than
+the list, so it can't claim nothing is coming while charges sit in the
+line above.
+
+**Money gets three boxes under the total**: Everyday, Commitments and
+One-offs. The total keeps its meaning and the boxes add up to it, a test
+holds that. The comparison changed underneath them. It used to set a
+month's total against the average of earlier totals, and months before
+the bills were being confirmed hold almost no commitments, so every
+month from here on would have looked like a jump. Everyday now compares
+with the Everyday of up to three earlier full months, listed and still
+tappable (Claire reached for that before it existed). A part-month at
+the start of history doesn't count as one of them.
+
+**The rule under all of it, from Shawn: spending is the share.** "Make
+sure that the total amount spent on card is not the reference for
+spending. There are dinners that we pay in advance but our actual
+spending attributed to us is separate." So every sum reads the entry's
+amount, and only cards-math.js reads the card charge, because a bank's
+cap counts the whole bill. A group dinner counts at our part, in
+Everyday, and is not a one-off just because the card took a big number.
+A test holds both sides of that, and another fails if any other pure
+module starts reading the charge.
+
+Classification lives in one pure function and its order is the point:
+giving, then set aside, then anything linked to a commitment, then
+one-offs, then everyday. A confirmed tithe has a recurring link and must
+stay giving. It reads a new `categories.kind` and never a category's
+name or a note's text, because either of them can rename a category at
+any time. Tithes, Tax and Subscriptions became categories, and past
+entries were linked to their commitments so they stop counting as
+Everyday. The cadences half-yearly and one-time arrived too, in the
+database and in `CADENCE_MONTHS`, with a test that reads the migration
+and compares them. A cadence with no step would break confirm_recurring,
+so a new check also insists a running one-time row ends on its own due
+date. Without that it would quietly come back a year later.
+
+Before anything moved: a CSV export and a snapshot of expenses,
+categories and recurring in a private schema the API can't reach, the
+SPEC's undo rule. Real figures stayed out of this repo at every step,
+including the tests, which meant not copying the example from the build
+brief because it was a real ledger entry. The preview ran the real code
+on an in-memory stand-in for Supabase kept outside the repo, so the
+brief's numbers could be checked to the cent, and every flow tapped,
+before production changed.
+
+Worth recording: **Claire was using the app during the build.** Between
+the snapshot and the data steps she added her own recurring item,
+confirmed two months of it, logged the month before by hand, logged a
+meal and recategorised an entry. None of it collided, because every step
+named its rows by id, but the counts came back different from the brief
+and it was worth stopping to find out why rather than assuming. Diffing
+live tables against the snapshot by id explained every difference. An
+expected-numbers table describes the data on the day it was written, and
+this data has two people in it.
+
+Also: production writes in this session were refused by an automated
+guard until Shawn gave his own go-ahead in the conversation, even though
+the brief already authorised them. A session started from another
+session should bring that question to the first preview rather than
+discover it halfway.
+
+Not built: a way to set a category's kind in the manager. New categories
+default to everyday, and there are four non-everyday ones in the whole
+ledger. 88/88 tests. Migration run against production and verified.
+Version 1.19.0. Snapshot, sample data:
+`docs/snapshots/2026-11-07-v1.19.0-due-now-fold-sample-data.png`.
