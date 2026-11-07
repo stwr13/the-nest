@@ -1347,3 +1347,32 @@ build is complete: every figure in the private table of expected numbers
 reconciles, with the only differences traced to the household's own later
 changes (Claire's new item, a refund, the category decisions above).
 
+## 2026-11-07 (v1.20.2) — insurance sits with investments
+
+Shawn, looking at the shorter list: "Should insurance combine with
+investments? in a way its investment." Claude's advice was to move only
+the policies that pay something back, because Investments isn't counted
+as spending and pure cover is a cost. Shawn weighed that and chose to keep
+it simple: every premium goes in one category, renamed Investment &
+Insurance. It is one list he can read, and the app shouldn't argue with
+how the household thinks about its own money. The cost is stated here so
+it isn't lost: premiums no longer reach the Money total or a typical
+month's spending. They still count in Year ahead, and they still show
+under Money as "not counted", so nothing disappears from view.
+
+Essentials became Bills & Commitments, which says what it now holds. That
+left Overview's first row promising insurance it no longer contained, and
+reading almost the same as the category inside it, so the row became
+Regular commitments. The layer that was Set aside became Investment &
+insurance, "not counted as spending". Its old hint said "Still yours",
+which was true of an investment and isn't of a motor premium, so the
+words changed with the data.
+
+He also asked for the home loan to sit under Home and the car loan under
+Transport. Both already did. Worth checking before moving anything, since
+a second move would have been a no-op dressed up as a change.
+
+The CSV was confirmed on disk before the snapshot and the move were sent,
+the rule the v1.20.1 near miss left behind. Numbers predicted and matched.
+No migration. 106/106 tests. Version 1.20.2.
+
