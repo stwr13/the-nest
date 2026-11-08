@@ -1474,3 +1474,34 @@ mockup, then from a preview. No migration. 118/118 tests. Version 1.23.0.
 
 He also raised inflow (income, dividends). SPEC rules out income tracking,
 so it waits for its own decision rather than riding on this release.
+
+## 2026-11-08 (v1.24.0) — money in
+
+Shawn knew what went out but only roughly that income was higher, so the
+app couldn't say what the household keeps each month. With that number he
+can project, and rein spending in when needed. "It doesn't have to be a
+full-blown feature." Locked from a mockup the same day.
+
+What shipped: "+ Money in" on Money logs each inflow as it lands (amount,
+date, whose, Salary or Other, optional note). Under the outflow line,
+three boxes for the viewed month: In · Out · Savings, where Out is total
+outflow, counted or not. Tap In for the month's list with Salary and Other
+subtotals; tap a row you logged to edit or delete it. Names show only as
+tags in that list, never as per-person totals, and a test holds that line.
+A month with nothing logged as coming in shows Savings as "—" rather than
+minus the outflow, which would read as a real answer.
+
+Two changes from the mockup, both Shawn's at the preview: "Left over"
+became **Savings** ("it doesn't seem right"), and Investment & Insurance
+stays plain Out. The mockup's hint called it "saving too"; he disagreed:
+it isn't realised savings until it matures, and then the payout is logged
+as money in. Tagging those rows for reconciliation is parked on the board.
+
+SPEC amended: income tracking is in scope; still no budgets. New table
+`inflows` with RLS like expenses (household reads, each person adds, edits
+and deletes their own), run in production after his go and checked by
+SELECT: RLS on, four policies, signed-in users hold exactly select, insert,
+update and delete, logged-out users nothing. The preview ran the real code
+against an in-memory stand-in for Supabase with sample figures, kept
+outside the repo. 127/127 tests. Version 1.24.0. Snapshot, sample data:
+`docs/snapshots/2026-11-08-v1.24.0-money-in-sample-data.png`.
