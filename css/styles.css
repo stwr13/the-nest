@@ -795,7 +795,11 @@ select:focus {
   justify-content: space-between;
   gap: 0.6rem;
 }
-.due-left { min-width: 0; }
+.due-left { flex: 1 1 auto; min-width: 0; }
+/* v1.23: which items the Confirm button takes */
+.due-tick { flex: none; display: flex; align-items: center; }
+.due-tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--green); }
+.due-link-danger { color: var(--danger); }
 .due-right { flex: none; text-align: right; white-space: nowrap; }
 
 .due-name { font-weight: 700; font-size: 0.95rem; overflow-wrap: anywhere; }
@@ -911,6 +915,18 @@ select:focus {
 .reg-amt { font-weight: 700; font-variant-numeric: tabular-nums; }
 .reg-cad { font-size: 0.72rem; color: var(--ink-soft); }
 .reg-off { opacity: 0.55; }
+
+/* v1.23: three tight lines, amount column on the right */
+.reg-row.reg-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.6rem;
+  row-gap: 0.1rem;
+  align-items: baseline;
+}
+.reg-grid > :nth-child(even) { text-align: right; white-space: nowrap; }
+.reg-grid .reg-meta { margin-top: 0; }
+.reg-grid .runway { grid-column: 1 / -1; justify-self: start; margin-top: 0.2rem; }
 
 .runway {
   display: inline-block;
