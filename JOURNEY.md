@@ -1460,3 +1460,17 @@ five paths that had none, so a test now fails if a raw error message skips
 the check. And fixing Overview's empty-list fault left the same fault on
 Coming up: a fix for a kind of bug needs a search for that kind. 118/118
 tests. Version 1.22.0.
+
+## 2026-11-08 (v1.23.0) — confirm some, not all
+
+Two items were due and Shawn wanted to confirm one. The only way was Edit,
+then Confirm, because the button took everything. Each item now gets a tick
+box when two or more are due, all ticked when Due now opens so confirming
+everything stays one tap; the button confirms only the ticked ones and says
+how many and how much. He also found the Running list cluttered: stacked
+pill buttons left white space under each item and crowded the right side.
+Each item is now three lines, with Edit · Stop as links. Approved from a
+mockup, then from a preview. No migration. 118/118 tests. Version 1.23.0.
+
+He also raised inflow (income, dividends). SPEC rules out income tracking,
+so it waits for its own decision rather than riding on this release.

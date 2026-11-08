@@ -12,24 +12,11 @@ session instead).
 
 ## Open decisions — board as of 2026-11-08 (resume here)
 
-Live app is **v1.22.0**: the daily screens protected (v1.19), Overview in
+Live app is **v1.23.0**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), ten categories instead of eighteen,
-Recurring items editable from Overview (v1.21), and the repairs from a full
-review (v1.22).
+Recurring items editable from Overview (v1.21), the repairs from a full
+review (v1.22), and tick boxes in Due now with tighter Running rows (v1.23).
 Scope and rules are in SPEC.md.
-
-**Next ship, v1.23: design approved by Shawn 2026-11-08 from a mockup, not built.**
-
-1. **Due now: tick boxes.** He had two due and wanted to confirm one; the
-   only way was Edit, then Confirm. Each row gets a tick box, all ticked
-   when Due now opens so confirming everything stays one tap. The button
-   says what it will do ("Confirm 1 of 2 · $amount") and runs the same
-   per-item confirm and duplicate check as Confirm all. Edit · Skip stay.
-2. **Running rows: three tight lines.** Line 1 name and amount; line 2
-   next date, category, and cadence ("a month", "every 6 months ·
-   $x/mo"); line 3 card and status, with Edit · Stop as text links on the
-   right (Stop in red) instead of the stacked pink pill buttons, which
-   left white space under each item and crowded the right side.
 
 **Raised 2026-11-08, not scoped: inflow** (income, dividends). SPEC rules
 out income tracking ("Visibility, not budgets"), so this is a scope
