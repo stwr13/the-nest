@@ -30,6 +30,21 @@ Parked, Shawn's own (2026-11-08): **tagging Investment & Insurance for
 reconciliation**, so what went in can later be matched to what comes back
 at maturity, "for record purposes". Not built; wait for him to raise it.
 
+**Next ship, v1.25: a $ shortcut for money in — working scope, not
+locked (raised by Shawn 2026-11-08, right after v1.24 went live).** Why:
+seeing and logging money in takes a couple of scrolls down Money. His ask:
+replace the 💡 header icon with a dollar sign "where I can input the
+money". Proposed shape:
+
+1. The 💡 header button becomes 💵. The idea box stays at the bottom of
+   Money, one scroll away (it has had no use as a channel since
+   September).
+2. Tapping 💵 opens one sheet for the month on screen: In · Out · Savings
+   at the top, then the month's inflows with Salary and Other subtotals,
+   then "+ Money in". The figures and the log in one tap. This is the v1.24
+   In list with the three boxes added.
+3. Nothing else moves. The boxes stay on Money; no sixth tab.
+
 Shawn's to answer, none of them blocking:
 
 1. **Picker tile.** A payment-only account now sits in the logging picker,
