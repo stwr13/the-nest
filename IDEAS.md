@@ -10,26 +10,25 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-11-07 (resume here)
+## Open decisions — board as of 2026-11-08 (resume here)
 
-Live app is **v1.21.0**: the daily screens protected (v1.19), Overview in
-place of the Recurring tab (v1.20), ten categories instead of eighteen, and
-Recurring items editable from Overview (v1.21).
+Live app is **v1.22.0**: the daily screens protected (v1.19), Overview in
+place of the Recurring tab (v1.20), ten categories instead of eighteen,
+Recurring items editable from Overview (v1.21), and the repairs from a full
+review (v1.22).
 Scope and rules are in SPEC.md.
 
 Shawn's to answer, none of them blocking:
 
-1. **Picker tiles.** Two payment-only cards now sit in the logging picker,
+1. **Picker tile.** A payment-only account now sits in the logging picker,
    one wrong tap from a new entry, for the same reason he asked for a
-   retired card to leave it. The Retired tick hides them but labels them
-   "retired". With 15 tiles in four rows, Save is still below the first
+   retired card to leave it. The Retired tick hides it but labels it
+   "retired". With 14 tiles in four rows, Save is still below the first
    screen even with Due now folded; losing a row takes getting down to 12.
 2. **Group meals logged at full value with no split.** A handful from
    August to October. If any were paid in advance for others, entering
    the share lowers Everyday.
-3. **A placeholder card** sits behind the Apple-billed items, probably
-   Apple Pay's device number for a real card. Switch when known.
-4. **Unconfirmed details in the registry:** a charge with no card set, a
+3. **Unconfirmed details in the registry:** a charge with no card set, a
    payment route assumed, three premiums assumed annual, and two tithe
    dates taken from past entries.
 
@@ -37,7 +36,9 @@ Decided, so it isn't asked again: the two tithe rows stay named after
 people, so they can be told apart and tracked, even though they show by
 name when Bills & Commitments opens on Overview (Shawn, 2026-11-07). All
 insurance premiums sit in Investment & Insurance and don't count as
-spending, advice against it heard (Shawn, 2026-11-07).
+spending, advice against it heard (Shawn, 2026-11-07). The Apple-billed
+items are on DBS WWMC, and the placeholder card is gone (Shawn,
+2026-11-08).
 
 Known and accepted: a follow-up to a big one-off that comes in under $300
 stays in Everyday.

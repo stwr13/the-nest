@@ -1411,3 +1411,52 @@ confirm made on the other phone while the editor was open, and would pin a
 end date follows its due date, because the database requires it. 112/112
 tests. No migration. Version 1.21.0.
 
+
+## 2026-11-08 (v1.22.0) — a review, and the repairs it asked for
+
+With Overview live, Shawn asked for a pass over everything: "Check what you
+need to, and review in case any area needs to rework." The review changed
+nothing. Live data was sound, and row security kept outsiders out, but the
+code since v1.18 had ten problems, none of which had touched data. The
+worst: when Recurring failed to load, Overview built its figures from an
+empty list and showed them with no warning, "Nothing big lands" included.
+He chose to fix all ten, and to take back four table rights the app never
+uses.
+
+What shipped. Overview shows no figures until Recurring and the ledger have
+both loaded, and says what failed. Confirm all hands its button back and
+keeps where it got to when the refresh after it fails. A category rename or
+delete reaches Overview at once. Due now keeps a typed amount through a
+re-render, a declined duplicate or a failed confirm. Every message checks
+for "no connection" through one helper, which knows the iPhone's wording.
+The Giving layer went, since nothing had used it since v1.20.1, and the
+set-aside row now takes its category's name.
+
+Migration `2026-11-08-category-delete-v1_22.sql`: deleting a category moves
+its Recurring items too. Until now that failed on any category holding one,
+which after the merge is four of the ten. It also revokes TRUNCATE, TRIGGER,
+REFERENCES and MAINTAIN from logged-out and signed-in users, now and for
+future tables. Row security never covered TRUNCATE.
+
+Before releasing, Shawn asked for a final check: "Do a final check and
+scrutinize. If anything you spot that needs changes, highlight to me and
+share what you plan to do before executing." It found six more, and all six
+went in. The revoke had missed MAINTAIN, a right new in Postgres 17. The
+card fix below would have failed outright if iCloud were confirmed first,
+because the database refuses to delete a card still in use. Five messages
+had never had the no-connection check at all. A failed single confirm lost
+both its reason and the typed amount. Coming up had Overview's fault,
+showing no charges when Recurring hadn't loaded. And two wordings were
+wrong.
+
+Same release, no app change: Shawn said the placeholder Apple card is
+actually DBS WWMC. Its four Recurring items moved to DBS WWMC and the
+placeholder was deleted. No entries were on it, so no CSV was needed; an
+in-Supabase snapshot holds the card and the links.
+
+**Lessons.** "No connection now reads the same everywhere" was said before
+it was checked. The first pass fixed the checks that existed and missed the
+five paths that had none, so a test now fails if a raw error message skips
+the check. And fixing Overview's empty-list fault left the same fault on
+Coming up: a fix for a kind of bug needs a search for that kind. 118/118
+tests. Version 1.22.0.
