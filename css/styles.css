@@ -1313,3 +1313,87 @@ select:focus {
   cursor: pointer;
 }
 
+
+/* ── v1.24: money in ── */
+.flow-split { margin-top: 0.7rem; }
+.flow-split .split-box { display: flex; flex-direction: column; padding: 0.45rem 0.3rem; }
+.flow-split .v { font-size: 0.98rem; }
+.flow-in-box {
+  font-family: inherit;
+  border: 1px solid var(--green-soft);
+  cursor: pointer;
+}
+.flow-in-box:active { background: var(--green-soft); }
+.flow-left-kept { background: var(--green-soft); }
+.flow-left-kept .v { color: var(--green-deep); }
+.flow-left-short { background: var(--danger-soft); }
+.flow-left-short .v { color: var(--danger); }
+.flow-hint:empty { display: none; }
+
+.flow-add {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.6rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--green);
+  background: none;
+  border: 1.5px dashed var(--green);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.flow-add:active { background: var(--green-soft); }
+
+.inflow-subtotals {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 0.2rem;
+  padding-bottom: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--green-soft);
+}
+.inflow-list { list-style: none; margin: 0; padding: 0; }
+.inflow-list li + li { border-top: 1px solid var(--green-soft); }
+.inflow-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+}
+button.inflow-row { cursor: pointer; }
+.inflow-text { flex: 1; min-width: 0; }
+.inflow-title { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.inflow-tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: 0.1em;
+  border-radius: 999px;
+  color: var(--green-deep);
+  background: var(--green-soft);
+}
+.inflow-tag-both { color: #7a3b4c; background: var(--pink-soft); }
+.inflow-meta { display: block; font-size: 0.8rem; color: var(--ink-soft); }
+.inflow-amount { font-weight: 800; color: var(--green-deep); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.inflow-pair { display: flex; gap: 0.5rem; }
+.inflow-pair > div { flex: 1; min-width: 0; }
+.inflow-field { margin: 0.6rem 0 0; padding: 0; border: none; }
+.inflow-field legend {
+  padding: 0;
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}

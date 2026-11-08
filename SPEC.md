@@ -109,7 +109,7 @@ Turn a one-time spending audit into a living part of the app, without moving the
 - **Every entry classes one way, in this order:** kind `invest` is set aside; a `recurring_id` makes it a commitment; kind `lumpy`, or $300 or more, makes it a one-off; everything else is everyday. Kind `give` meant giving until v1.22; nothing used it after v1.20.1, and it now reads as everyday. Code never matches on category names or note text, because categories can be renamed.
 - **No per-person view on Overview.** Between the two of them money is joint and they don't track who spends what. `recurring.paid_by` stays only because Confirm needs it for the ledger. One deliberate exception (Shawn, 2026-11-07): the two tithe rows keep their people's names, so they can be told apart and tracked.
 - **One-offs get no monthly average,** and one-time charges never count in a typical month.
-- **No budgets and no income tracking.** Visibility, not budgets.
+- **No budgets.** Visibility, not budgets. (Income tracking was ruled out here too, until v1.24 below.)
 
 **Ship 1, v1.19: protect the daily screens.**
 
@@ -133,3 +133,12 @@ Not in scope: setting a category's kind in the manager (new categories default t
 
 **v1.22, repairs (Shawn, 2026-11-08):** no new scope. When Recurring or the ledger can't load, Overview and Coming up say so instead of showing figures or "nothing". A failed confirm keeps its reason and the typed amount. Every "no connection" message reads the same on the iPhone. Deleting a category moves its Recurring items too. Logged-out users hold no table rights at all, and signed-in users only the reads and writes each table grants (`db/migrations/2026-11-08-category-delete-v1_22.sql`).
 
+
+## v1.24 — Money in (LOCKED by Shawn 2026-11-08, from a mockup)
+
+Amends "no income tracking" (v1.0 and v1.19). Why: the app knew what went out, but only roughly that income was higher, so it couldn't say what the household keeps each month. With that number a projection is possible, and spending can be reined in when needed. "It doesn't have to be a full-blown feature." Still no budgets.
+
+1. **Logging.** "+ Money in" on Money opens a form: amount, date, whose (Shawn / Claire / Both, Both for money given to the household or a joint dividend), type (Salary / Other), optional note. Each inflow is logged as it lands; a month's In is the sum. Only salary is marked; dividends, payouts and gifts are Other with a note.
+2. **Money, for the month being viewed.** Spending stays the big number with the total outflow line under it. Below it, three boxes: In · Out · Left over. Out is total outflow, counted or not. A hint says how much of Out went to Investment & Insurance, since that is saving too. Left over waits for the month's first inflow rather than show minus the outflow.
+3. **Tap In:** the month's inflows, Salary and Other subtotals at the top, each row with its date and a Shawn / Claire / Both tag. Tap a row you logged to edit or delete it. Names show only in this list, never as per-person totals.
+4. **Data:** `inflows` (amount, date, whose, kind salary/other, note, created_by), `db/migrations/2026-11-08-inflows-v1_24.sql`. RLS like expenses: the household reads every row, each person adds, edits and deletes their own. Salary is marked so a later projection can lean on the steady part; no projection screen in this ship.

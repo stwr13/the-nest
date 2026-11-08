@@ -149,6 +149,24 @@
         </div>
       </div>
       <p id="dash-outflow" class="dash-outflow" hidden></p>
+      <!-- v1.24: what came in, what went out, what was kept. Out is
+           total outflow, counted or not. Tap In for the month's list. -->
+      <div class="commit-split flow-split">
+        <button type="button" id="flow-in-box" class="split-box flow-in-box" aria-label="Money in this month, open the list">
+          <span class="k">In</span>
+          <span id="flow-in" class="v">—</span>
+        </button>
+        <div class="split-box">
+          <span class="k">Out</span>
+          <span id="flow-out" class="v">—</span>
+        </div>
+        <div id="flow-left-box" class="split-box flow-left-box">
+          <span class="k">Left over</span>
+          <span id="flow-left" class="v">—</span>
+        </div>
+      </div>
+      <p id="flow-hint" class="hint flow-hint"></p>
+      <button type="button" id="flow-add" class="flow-add">+ Money in</button>
       <div id="dash-split" class="commit-split dash-split" hidden>
         <div class="split-box">
           <div class="k">Everyday</div>
@@ -285,6 +303,55 @@
         <p id="rec-edit-status" class="form-error" role="alert" hidden></p>
         <button type="submit" id="rec-edit-save" class="btn btn-primary">Save</button>
         <button type="button" id="rec-edit-cancel" class="btn btn-ghost btn-block">Cancel</button>
+      </form>
+    </dialog>
+
+    <dialog id="inflow-list-dialog" class="cat-dialog">
+      <h2 id="inflow-list-title" class="card-title">Money in</h2>
+      <p class="inflow-subtotals"><span id="inflow-salary"></span><span id="inflow-other"></span></p>
+      <ul id="inflow-list" class="inflow-list"></ul>
+      <p id="inflow-empty" class="muted" hidden>Nothing logged as coming in this month.</p>
+      <p class="hint">Tap a row you logged to edit or delete it. Names show here only, never as totals per person.</p>
+      <button type="button" id="inflow-list-add" class="btn btn-primary">+ Money in</button>
+      <button type="button" id="inflow-list-close" class="btn btn-ghost btn-block">Close</button>
+    </dialog>
+
+    <dialog id="inflow-dialog" class="cat-dialog">
+      <form id="inflow-form" novalidate>
+        <h2 id="inflow-dialog-title" class="card-title">Money in</h2>
+        <div class="inflow-pair">
+          <div>
+            <label for="inflow-amount">Amount (SGD)</label>
+            <input id="inflow-amount" name="amount" type="text" inputmode="decimal"
+                   maxlength="60" autocomplete="off" placeholder="0.00" required />
+          </div>
+          <div>
+            <label for="inflow-date">Date</label>
+            <input id="inflow-date" name="date" type="date" required />
+          </div>
+        </div>
+        <fieldset class="inflow-field">
+          <legend>Whose</legend>
+          <div class="segment">
+            <label><input type="radio" name="whose" value="Shawn" /><span>Shawn</span></label>
+            <label><input type="radio" name="whose" value="Claire" /><span>Claire</span></label>
+            <label><input type="radio" name="whose" value="Both" /><span>Both</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="inflow-field">
+          <legend>Type</legend>
+          <div class="segment">
+            <label><input type="radio" name="kind" value="salary" /><span>Salary</span></label>
+            <label><input type="radio" name="kind" value="other" /><span>Other</span></label>
+          </div>
+        </fieldset>
+        <label for="inflow-note">Note <span class="optional">(optional)</span></label>
+        <input id="inflow-note" name="note" type="text" maxlength="200" autocomplete="off"
+               placeholder="Dividend, payout, blessing…" />
+        <p id="inflow-status" class="form-error" role="alert" hidden></p>
+        <button type="submit" id="inflow-save" class="btn btn-primary">Save</button>
+        <button type="button" id="inflow-delete" class="btn btn-ghost btn-block btn-danger-ghost" hidden>Delete</button>
+        <button type="button" id="inflow-cancel" class="btn btn-ghost btn-block">Cancel</button>
       </form>
     </dialog>
 
