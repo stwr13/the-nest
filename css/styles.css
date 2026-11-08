@@ -1397,3 +1397,25 @@ button.inflow-row { cursor: pointer; }
   font-weight: 600;
   color: var(--ink-soft);
 }
+
+/* ── v1.25: the $ shortcut ── */
+/* filled green so it stands out from the pale 🗃️ and the pills */
+.money-jump {
+  min-width: 44px;
+  padding: 0.35rem 0.6rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #fff;
+  background: var(--green);
+}
+.money-jump:active { background: var(--green-deep); }
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin: -0.25rem -0.35rem 0;
+}
+.sheet-head .card-title { margin: 0; text-align: center; flex: 1; }
+.sheet-flow { margin: 0.6rem 0 0.7rem; }

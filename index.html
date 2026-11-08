@@ -42,8 +42,8 @@
       <div class="whoami">
         <button id="cat-jump" class="btn btn-ghost btn-small idea-jump"
                 aria-label="Manage categories">🗃️</button>
-        <button id="idea-jump" class="btn btn-ghost btn-small idea-jump"
-                aria-label="Log an idea or friction note">💡</button>
+        <button id="money-jump" class="btn btn-small money-jump"
+                aria-label="Money in and savings this month">$</button>
         <span id="user-name" class="user-pill"></span>
         <button id="sign-out" class="btn btn-ghost">Sign out</button>
       </div>
@@ -224,8 +224,9 @@
       <ul id="cat-list" class="cat-list"></ul>
     </section>
 
-    <!-- capture box, not a destination — lives at the bottom of Money,
-         one 💡 header tap away (v1.3.2: its tab removed as noise) -->
+    <!-- capture box, not a destination — lives at the bottom of Money
+         (v1.3.2: its tab removed as noise; v1.25: its 💡 header jump
+         gave way to the $ button) -->
     <section class="card idea-card">
       <h2 class="card-title">Ideas &amp; friction</h2>
       <p class="muted idea-hint">Something slow, missing, or annoying? Log the itch, not the fix.</p>
@@ -306,8 +307,28 @@
       </form>
     </dialog>
 
+    <!-- v1.25: the $ sheet. The month on Money, in one place: In · Out ·
+         Savings, then what came in. ‹ › move Money's month with it. -->
     <dialog id="inflow-list-dialog" class="cat-dialog">
-      <h2 id="inflow-list-title" class="card-title">Money in</h2>
+      <div class="sheet-head">
+        <button type="button" id="sheet-prev" class="dash-nav" aria-label="Previous month">‹</button>
+        <h2 id="inflow-list-title" class="card-title">Money</h2>
+        <button type="button" id="sheet-next" class="dash-nav" aria-label="Next month">›</button>
+      </div>
+      <div class="commit-split flow-split sheet-flow">
+        <div class="split-box">
+          <span class="k">In</span>
+          <span id="sheet-in" class="v">—</span>
+        </div>
+        <div class="split-box">
+          <span class="k">Out</span>
+          <span id="sheet-out" class="v">—</span>
+        </div>
+        <div id="sheet-left-box" class="split-box flow-left-box">
+          <span class="k">Savings</span>
+          <span id="sheet-left" class="v">—</span>
+        </div>
+      </div>
       <p class="inflow-subtotals"><span id="inflow-salary"></span><span id="inflow-other"></span></p>
       <ul id="inflow-list" class="inflow-list"></ul>
       <p id="inflow-empty" class="muted" hidden>Nothing logged as coming in this month.</p>

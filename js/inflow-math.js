@@ -67,3 +67,11 @@ export function inflowFields({ amount, date, whose, kind, note }) {
     },
   };
 }
+
+// Savings for the month, or null when it shouldn't show. With nothing
+// logged as in, Savings would just be minus the outflow, which reads as
+// a real answer, so it waits for the first inflow. Shared by the boxes
+// on Money and the $ sheet (v1.25), so the two can't disagree.
+export function savingsCents({ inCents, outflowCents, ready, hasRows }) {
+  return ready && hasRows ? inCents - outflowCents : null;
+}

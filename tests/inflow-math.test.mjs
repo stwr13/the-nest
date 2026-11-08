@@ -96,3 +96,11 @@ test("inflowFields refuses what the table would refuse", () => {
   assert.ok(inflowFields({ ...ok, kind: "bonus" }).error);
   assert.ok(inflowFields({ ...ok, note: "x".repeat(201) }).error);
 });
+
+test("savingsCents waits for data and for the first inflow, and can go negative", async () => {
+  const { savingsCents } = await import("../js/inflow-math.js");
+  assert.equal(savingsCents({ inCents: 0, outflowCents: 5000, ready: true, hasRows: false }), null);
+  assert.equal(savingsCents({ inCents: 9000, outflowCents: 5000, ready: false, hasRows: true }), null);
+  assert.equal(savingsCents({ inCents: 9000, outflowCents: 5000, ready: true, hasRows: true }), 4000);
+  assert.equal(savingsCents({ inCents: 3000, outflowCents: 5000, ready: true, hasRows: true }), -2000);
+});

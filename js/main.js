@@ -26,7 +26,7 @@ import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
 import { isOffline, toCents } from "./helpers.js";
-import { monthInflows, inflowTitle, inflowShowsKind, inflowFields, KIND_LABEL } from "./inflow-math.js";
+import { monthInflows, inflowTitle, inflowShowsKind, inflowFields, savingsCents, KIND_LABEL } from "./inflow-math.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -986,9 +986,9 @@ document.getElementById("cat-add").addEventListener("click", () => openCategoryD
 
 // Header 🗃️: the card lives below the ledger (rare-use), but reaching
 // it must not require scrolling past the whole ledger — same pattern
-// as the 💡 idea jump. The glide is hand-rolled: iOS PWAs silently
-// ignore smooth scrollIntoView (💡 only glides because focusing its
-// input makes iOS animate toward the keyboard). Phone-found 2026-07-29.
+// as the old 💡 idea jump. The glide is hand-rolled: iOS PWAs silently
+// ignore smooth scrollIntoView (💡 only glided because focusing its
+// input made iOS animate toward the keyboard). Phone-found 2026-07-29.
 function glideTo(element) {
   const start = window.scrollY;
   const target = Math.min(
@@ -1511,15 +1511,9 @@ function showCardStatus(message) {
 
 // ── idea box: raw friction inbox for the usage trial ─────────────────
 
-// Header 💡: capture must stay one tap away. The card lives at the
-// bottom of Money (v1.3.2 — its tab was noise, Shawn's call); focus()
-// inside the tap handler opens the keyboard, and on iOS the keyboard
-// animation is what actually scrolls the card into view.
-document.getElementById("idea-jump").addEventListener("click", () => {
-  showTab("money");
-  ideaForm.body.focus({ preventScroll: true });
-  ideaForm.body.scrollIntoView({ behavior: "smooth", block: "center" });
-});
+// The card lives at the bottom of Money (v1.3.2 — its tab was noise,
+// Shawn's call). Its 💡 header jump gave way to $ in v1.25: the box has
+// had no use as a channel since September.
 
 ideaForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -3045,24 +3039,41 @@ async function refreshInflows() {
   if (inflowListDialog.open) renderInflowList();
 }
 
+// v1.25: the $ sheet carries the same three boxes. Both sets are painted
+// from one reading, so Money and the sheet can never disagree.
+const sheetIn = document.getElementById("sheet-in");
+const sheetOut = document.getElementById("sheet-out");
+const sheetLeft = document.getElementById("sheet-left");
+const sheetLeftBox = document.getElementById("sheet-left-box");
+const sheetPrev = document.getElementById("sheet-prev");
+const sheetNext = document.getElementById("sheet-next");
+
+function paintFlowBoxes([inEl, outEl, leftEl, leftBox], { inCents, outflowCents, leftCents, inflowsReady, ledgerReady }) {
+  inEl.textContent = inflowsReady ? wholeDollars(inCents) : "—";
+  outEl.textContent = ledgerReady ? wholeDollars(outflowCents) : "—";
+  const showLeft = leftCents !== null;
+  leftEl.textContent = showLeft
+    ? (leftCents < 0 ? `−${wholeDollars(-leftCents)}` : wholeDollars(leftCents))
+    : "—";
+  leftBox.classList.toggle("flow-left-kept", showLeft && leftCents >= 0);
+  leftBox.classList.toggle("flow-left-short", showLeft && leftCents < 0);
+}
+
 function renderFlow() {
   const key = monthKey(dashDate);
   const ledgerReady = sources.ledger.loaded;
   const inflowsReady = sources.inflows.loaded;
   const { outflowCents } = summarize(expensesCache, dashDate);
   const { inCents, rows } = monthInflows(inflowsCache, key);
-
-  flowIn.textContent = inflowsReady ? wholeDollars(inCents) : "—";
-  flowOut.textContent = ledgerReady ? wholeDollars(outflowCents) : "—";
-  // With nothing logged as in, Savings would just be minus the outflow,
-  // which reads as a real answer. It waits for the first inflow instead.
-  const showLeft = ledgerReady && inflowsReady && rows.length > 0;
-  const leftCents = inCents - outflowCents;
-  flowLeft.textContent = showLeft
-    ? (leftCents < 0 ? `−${wholeDollars(-leftCents)}` : wholeDollars(leftCents))
-    : "—";
-  flowLeftBox.classList.toggle("flow-left-kept", showLeft && leftCents >= 0);
-  flowLeftBox.classList.toggle("flow-left-short", showLeft && leftCents < 0);
+  const leftCents = savingsCents({
+    inCents,
+    outflowCents,
+    ready: ledgerReady && inflowsReady,
+    hasRows: rows.length > 0,
+  });
+  const figures = { inCents, outflowCents, leftCents, inflowsReady, ledgerReady };
+  paintFlowBoxes([flowIn, flowOut, flowLeft, flowLeftBox], figures);
+  paintFlowBoxes([sheetIn, sheetOut, sheetLeft, sheetLeftBox], figures);
 
   const lines = [];
   if (sources.inflows.failed) {
@@ -3077,7 +3088,12 @@ function renderFlow() {
 
 function renderInflowList() {
   const { rows, salaryCents, otherCents } = monthInflows(inflowsCache, monthKey(dashDate));
-  inflowListTitle.textContent = `Money in · ${monthFmt.format(dashDate)}`;
+  const otherYear = dashDate.getFullYear() !== new Date().getFullYear();
+  inflowListTitle.textContent = `Money · ${monthFmt.format(dashDate)}${otherYear ? ` ${dashDate.getFullYear()}` : ""}`;
+  // the same bounds as Money's own ‹ ›, which renderDashboard has just set
+  sheetPrev.disabled = dashPrev.disabled;
+  sheetNext.disabled = dashNext.disabled;
+  renderFlow();
   inflowSalary.textContent = `Salary ${sgd.format(salaryCents / 100)}`;
   inflowOther.textContent = `Other ${sgd.format(otherCents / 100)}`;
   inflowEmpty.hidden = rows.length > 0;
@@ -3220,6 +3236,17 @@ document.getElementById("inflow-cancel").addEventListener("click", closeInflowFo
 document.getElementById("flow-add").addEventListener("click", () => openInflowForm());
 flowInBox.addEventListener("click", openInflowList);
 document.getElementById("inflow-list-close").addEventListener("click", () => inflowListDialog.close());
+// v1.25: one tap from anywhere to the month's money. Stepping months in
+// the sheet moves Money's month too, so closing it lands on the same month.
+document.getElementById("money-jump").addEventListener("click", openInflowList);
+sheetPrev.addEventListener("click", () => {
+  showMonth(shiftMonth(dashDate, -1));
+  renderInflowList();
+});
+sheetNext.addEventListener("click", () => {
+  showMonth(shiftMonth(dashDate, 1));
+  renderInflowList();
+});
 document.getElementById("inflow-list-add").addEventListener("click", () => {
   inflowListDialog.close();
   openInflowForm(null, { fromList: true });
