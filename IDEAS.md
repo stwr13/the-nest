@@ -36,12 +36,13 @@ seeing and logging money in takes a couple of scrolls down Money. His ask:
 replace the 💡 header icon with a dollar sign "where I can input the
 money". Proposed shape:
 
-1. The 💡 header button becomes 💵. The idea box stays at the bottom of
+1. The 💡 header button becomes a green "$" button. The idea box stays at the bottom of
    Money, one scroll away (it has had no use as a channel since
    September).
-2. Tapping 💵 opens one sheet for the month on screen: In · Out · Savings
+2. Tapping $ opens one sheet for the month on screen, with ‹ › to step months: In · Out · Savings
    at the top, then the month's inflows with Salary and Other subtotals,
-   then "+ Money in". The figures and the log in one tap. This is the v1.24
+   then "+ Money in" (same form; saving returns to the sheet). Mockup:
+   vault `dollar-shortcut-mockup-2026-11-08`. This is the v1.24
    In list with the three boxes added.
 3. Nothing else moves. The boxes stay on Money; no sixth tab.
 
