@@ -2039,6 +2039,10 @@ const stoppedCount = document.getElementById("stopped-count");
 let recurringCache = [];
 const editingAmount = new Set(); // ids showing the amount box
 const amountDrafts = new Map(); // id -> what was typed there, so a re-render keeps it
+// v1.23: ids someone unticked. Ticked is the default, so confirming
+// everything stays one tap; unticking holds back what isn't charged yet.
+const dueUnticked = new Set();
+const dueSelected = (due) => due.filter((item) => !dueUnticked.has(item.id));
 const skipChoice = new Set(); // ids showing the skip/cancel fork
 // v1.19: folded on every launch. At one line it costs the log form about
 // a row of height; open, each item costs a compact row. The old full rows
@@ -2117,7 +2121,10 @@ function renderDue() {
   );
   const dueIds = new Set(due.map((item) => item.id));
   for (const id of amountDrafts.keys()) if (!dueIds.has(id)) amountDrafts.delete(id);
-  dueList.replaceChildren(...due.map((item) => dueRow(item, today)));
+  for (const id of dueUnticked) if (!dueIds.has(id)) dueUnticked.delete(id);
+  // a tick on a lone item would only ask the button's question twice
+  const ticks = due.length > 1;
+  dueList.replaceChildren(...due.map((item) => dueRow(item, today, ticks)));
   renderConfirmAll(due);
 }
 
@@ -2127,7 +2134,7 @@ dueToggle.addEventListener("click", () => {
 });
 
 // One compact row: name, amount, how late, and the two ways to change it.
-function dueRow(item, today) {
+function dueRow(item, today, ticks = false) {
   const row = document.createElement("div");
   row.className = "due-row";
 
@@ -2159,6 +2166,21 @@ function dueRow(item, today) {
   );
   right.append(amount, links);
 
+  if (ticks) {
+    const tick = document.createElement("label");
+    tick.className = "due-tick";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = !dueUnticked.has(item.id);
+    box.setAttribute("aria-label", `Include ${item.name} in Confirm`);
+    box.addEventListener("change", () => {
+      if (box.checked) dueUnticked.delete(item.id);
+      else dueUnticked.add(item.id);
+      renderConfirmAll(dueItems(recurringCache, todayISO()));
+    });
+    tick.append(box);
+    top.append(tick);
+  }
   top.append(left, right);
   row.append(top);
 
@@ -2194,10 +2216,20 @@ function dueLink(text, item, set) {
 // the item's amount yet, and this button would quietly confirm the old one.
 function renderConfirmAll(due) {
   if (confirmingAll) return; // the run in progress owns the label
-  const busy = due.some((item) => editingAmount.has(item.id) || skipChoice.has(item.id));
+  const selected = dueSelected(due);
+  // a row mid-edit or mid-skip is only a risk if the button would take it
+  const busy = selected.some((item) => editingAmount.has(item.id) || skipChoice.has(item.id));
   dueConfirmAll.hidden = due.length === 0 || busy;
-  dueConfirmAll.disabled = false;
-  dueConfirmAll.textContent = due.length === 1 ? "Confirm" : `Confirm all ${due.length}`;
+  dueConfirmAll.disabled = selected.length === 0;
+  const total = sgd.format(selected.reduce((sum, item) => sum + toCents(item.amount), 0) / 100);
+  dueConfirmAll.textContent =
+    due.length === 1
+      ? "Confirm"
+      : selected.length === 0
+        ? "Tick what to confirm"
+        : selected.length === due.length
+          ? `Confirm all ${due.length} · ${total}`
+          : `Confirm ${selected.length} of ${due.length} · ${total}`;
 }
 
 // Runs the same doConfirm a single row uses, one item at a time, so every
@@ -2206,7 +2238,7 @@ function renderConfirmAll(due) {
 // no stops the run with the rest still listed.
 async function confirmAllDue() {
   if (confirmingAll) return;
-  const items = dueItems(recurringCache, todayISO());
+  const items = dueSelected(dueItems(recurringCache, todayISO()));
   if (items.length === 0) return;
   confirmingAll = true;
   dueConfirmAll.disabled = true;
@@ -2385,69 +2417,55 @@ async function guardDue(action, { refreshAfter = true, show = showDueStatus } = 
   }
 }
 
+// v1.23: three tight lines, the actions as links on the last one. The old
+// stacked pill buttons left white space under every item and crowded the
+// right side.
 function registryRow(item) {
-  const row = document.createElement("div");
-  row.className = item.active ? "reg-row" : "reg-row reg-off";
+  const row = el("div", item.active ? "reg-row reg-grid" : "reg-row reg-grid reg-off");
 
-  const main = document.createElement("div");
-  main.className = "reg-main";
-  const name = document.createElement("div");
-  name.className = "reg-name";
-  name.textContent = item.name;
-  const meta = document.createElement("div");
-  meta.className = "reg-meta";
-  const bits = [];
-  if (item.active && item.next_due) {
-    bits.push(`Next ${shortDateFmt.format(isoToDate(item.next_due))}`);
-  } else {
-    bits.push("Stopped");
-  }
-  bits.push(categoryLabel(item.categories));
-  if (item.cards?.name) bits.push(item.cards.name);
-  bits.push(
-    item.last_confirmed
-      ? `last ${shortDateFmt.format(isoToDate(item.last_confirmed))}`
-      : "never confirmed",
-  );
-  meta.textContent = bits.join(" · ");
-  main.append(name, meta);
-
-  // "$X every month until age Y" as a live number instead of a fact
-  // somebody has to remember
-  const left = item.cadence === "once" ? null : remaining(item);
-  if (left) {
-    const runway = document.createElement("div");
-    runway.className = "runway";
-    runway.textContent = `${left.payments} left · ${sgdWhole.format(Math.round(left.cents / 100))} to go`;
-    main.append(runway);
-  }
-
-  const right = document.createElement("div");
-  right.className = "reg-right";
-  const amount = document.createElement("div");
-  amount.className = "reg-amt";
-  amount.textContent = sgd.format(Number(item.amount));
-  const cadence = document.createElement("div");
-  cadence.className = "reg-cad";
-  cadence.textContent = CADENCE_LABEL[item.cadence] ?? item.cadence;
-  right.append(amount, cadence);
+  const when =
+    item.active && item.next_due ? `Next ${shortDateFmt.format(isoToDate(item.next_due))}` : "Stopped";
+  const status = item.last_confirmed
+    ? `last ${shortDateFmt.format(isoToDate(item.last_confirmed))}`
+    : "never confirmed";
+  let cadence = CADENCE_LABEL[item.cadence] ?? item.cadence;
   if (item.cadence !== "monthly" && item.cadence !== "once") {
-    const equiv = document.createElement("div");
-    equiv.className = "reg-cad";
-    equiv.textContent = `${sgd.format(monthlyEquivalentCents(item) / 100)}/mo`;
-    right.append(equiv);
+    cadence += ` · ${sgd.format(monthlyEquivalentCents(item) / 100)}/mo`;
   }
+
+  const actions = el("div", "due-links");
   if (item.active) {
-    right.append(
-      smallButton("Edit", "btn-ghost", () => openRecDialog(item)),
-      smallButton("Stop", "btn-ghost btn-danger-ghost", async () => {
+    const link = (text, className, onClick) => {
+      const button = el("button", className, text);
+      button.type = "button";
+      button.addEventListener("click", onClick);
+      return button;
+    };
+    actions.append(
+      link("Edit", "due-link", () => openRecDialog(item)),
+      document.createTextNode(" · "),
+      link("Stop", "due-link due-link-danger", async () => {
         if (!window.confirm(`Stop ${item.name}? It stays in the list with its history.`)) return;
         await guardDue(() => deactivateRecurring(item.id), { show: showRunningStatus });
       }),
     );
   }
 
-  row.append(main, right);
+  row.append(
+    el("div", "reg-name", item.name),
+    el("div", "reg-amt", sgd.format(Number(item.amount))),
+    el("div", "reg-meta", `${when} · ${categoryLabel(item.categories)}`),
+    el("div", "reg-cad", cadence),
+    el("div", "reg-meta", [item.cards?.name, status].filter(Boolean).join(" · ")),
+    actions,
+  );
+
+  // "$X every month until age Y" as a live number instead of a fact
+  // somebody has to remember
+  const left = item.cadence === "once" ? null : remaining(item);
+  if (left) {
+    row.append(el("div", "runway", `${left.payments} left · ${sgdWhole.format(Math.round(left.cents / 100))} to go`));
+  }
   return row;
 }
 
