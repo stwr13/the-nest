@@ -7,6 +7,8 @@
 // because the due strip is shared and two phones must not be able to
 // log the same charge twice.
 
+import { toCents, isoDate } from "./helpers.js";
+
 // Mirrors the steps in public.recurring_next_due; a test compares them,
 // because an unknown cadence breaks confirm_recurring. 'once' steps 12
 // only to land past its own end date, which is what stops it.
@@ -21,9 +23,6 @@ export const CADENCE_LABEL = {
   once: "one time",
 };
 
-const iso = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
 // Mirrors public.recurring_next_due in the migration. Re-anchors every
 // step instead of adding a month to the last due date: an item anchored
 // on the 31st must land on the 28th in February and RETURN to the 31st
@@ -34,7 +33,7 @@ export function nextDue(fromDue, cadence, anchorDay) {
   const target = new Date(from.getFullYear(), from.getMonth() + CADENCE_MONTHS[cadence], 1);
   const daysInMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
   target.setDate(Math.min(anchorDay, daysInMonth));
-  return iso(target);
+  return isoDate(target);
 }
 
 // What the due strip shows: everything already owed, oldest first.
@@ -54,8 +53,7 @@ export function dueItems(registry, todayIso) {
 // spreading it would invent a commitment that isn't there.
 export function monthlyEquivalentCents(item) {
   if (item.cadence === "once") return 0;
-  const cents = Math.round(Number(item.amount) * 100);
-  return Math.round(cents / CADENCE_MONTHS[item.cadence]);
+  return Math.round(toCents(item.amount) / CADENCE_MONTHS[item.cadence]);
 }
 
 // For a commitment with an end date: how many payments are left and
@@ -72,7 +70,7 @@ export function remaining(item) {
     count += 1;
     cursor = nextDue(cursor, item.cadence, item.anchor_day);
   }
-  const cents = Math.round(Number(item.amount) * 100) * count;
+  const cents = toCents(item.amount) * count;
   return { payments: count, cents };
 }
 
@@ -91,7 +89,7 @@ export function recurringEdit(item, { name, amount, categoryId, nextDueDate }) {
 
   const fields = {};
   if (trimmed !== item.name) fields.name = trimmed;
-  if (Math.round(amount * 100) !== Math.round(Number(item.amount) * 100)) fields.amount = amount;
+  if (toCents(amount) !== toCents(item.amount)) fields.amount = amount;
   if (categoryId !== item.category_id) fields.category_id = categoryId;
   if (nextDueDate !== item.next_due) {
     if (item.cadence === "once") {

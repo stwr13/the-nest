@@ -1106,21 +1106,20 @@ select:focus {
 }
 
 /* ── v1.20: Overview ── */
-/* These four passed a colour-blind check with their direct labels and the
+/* These passed a colour-blind check with their direct labels and the
    gaps between segments; green-and-pink-only sets failed it. So the blue
-   and gold stay, on this one bar. */
+   stays, on this one bar. (A fourth, gold, went with the Giving layer in
+   v1.22.) */
 :root {
   --l1: #2e8b5e;
   --l2: #d9668a;
   --l3: #3b82c4;
-  --l4: #c28a18;
   --y-regular: #b5d6c3;
   --y-lump: #29583f;
 }
 .l1 { background: var(--l1); }
 .l2 { background: var(--l2); }
 .l3 { background: var(--l3); }
-.l4 { background: var(--l4); }
 
 .ov-sub { display: block; margin: 0.25rem 0 0; font-size: 0.8rem; font-weight: 400; line-height: 1.35; color: var(--ink-soft); }
 .ov-title { display: block; margin: 0; font-weight: 700; }

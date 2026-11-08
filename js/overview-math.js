@@ -13,12 +13,11 @@
 
 import { categoryLabel, monthKey } from "./dashboard-math.js";
 import { monthlyEquivalentCents, nextDue } from "./recurring-view.js";
+import { toCents, isoDate } from "./helpers.js";
 
 // A big entry outside a commitment is a one-off from this much up, in
 // whole cents so it compares exactly.
 export const ONE_OFF_CENTS = 30000;
-
-const toCents = (value) => Math.round(Number(value) * 100);
 
 // Which of the Money boxes an entry counts in.
 function boxOf(expense) {
@@ -27,18 +26,19 @@ function boxOf(expense) {
   return "everyday";
 }
 
-// The order matters: a confirmed tithe or investment premium carries a
-// recurring_id, and it must stay Giving or Set aside rather than become a
+// The order matters: a confirmed investment or insurance premium carries
+// a recurring_id, and it must stay Set aside rather than become a
 // commitment.
+//
+// The database also allows kind 'give'. Since v1.20.1 every gift and
+// tithe counts as spending, so nothing uses it, and it reads as everyday.
 export function classifyEntry(expense) {
-  const kind = expense.categories?.kind;
-  if (kind === "give") return "giving";
-  if (kind === "invest") return "set-aside";
+  if (expense.categories?.kind === "invest") return "set-aside";
   return boxOf(expense);
 }
 
 // The three boxes under the Money total. They use the same filter as the
-// total (excluded_from_totals), so they always add up to it. A giving or
+// total (excluded_from_totals), so they always add up to it. An
 // investment category someone has chosen to count falls to the same rules
 // as anything else, which keeps that promise rather than dropping the
 // entry from the boxes.
@@ -121,47 +121,39 @@ function groupByCategory(items) {
   return [...groups.values()].sort(byCentsDown);
 }
 
-// What a normal month takes, in four layers. Two are promises (the
-// registry) and two are habits (the ledger), which is why the headline can
+// What a normal month takes, in three layers. Two are promises (the
+// registry) and one is habit (the ledger), which is why the headline can
 // only ever be "about". A one-time charge is in none of them: it lands
 // once, in Year ahead, and spreading it would invent a monthly cost.
 export function typicalMonth(recurring, expenses, now) {
   const running = recurring
     .filter((item) => item.active && item.cadence !== "once")
     .map((item) => ({ ...item, monthlyCents: monthlyEquivalentCents(item) }));
-  const ofKind = (...kinds) =>
-    running.filter((item) => kinds.includes(item.categories?.kind ?? "everyday"));
+  const isSetAside = (item) => item.categories?.kind === "invest";
 
-  const billGroups = groupByCategory(ofKind("everyday", "lumpy"));
-  const setAsideItems = ofKind("invest").sort((a, b) => b.monthlyCents - a.monthlyCents);
-  const givingGroups = groupByCategory(ofKind("give"));
+  // everything that isn't set aside is a bill, whatever its kind, so a
+  // kind nothing expects can't drop an item out of every layer
+  const billGroups = groupByCategory(running.filter((item) => !isSetAside(item)));
+  const setAsideItems = running.filter(isSetAside).sort((a, b) => b.monthlyCents - a.monthlyCents);
 
   const months = fullMonthsBefore(expenses, now);
   const held = new Set(months.map((month) => month.key));
   const everydayByLabel = new Map();
   let everydaySum = 0;
-  let otherGivingSum = 0;
   for (const expense of expenses) {
-    if (!held.has(expense.date.slice(0, 7))) continue;
+    if (!held.has(expense.date.slice(0, 7)) || expense.categories?.excluded_from_totals) continue;
+    if (boxOf(expense) !== "everyday") continue;
     const cents = toCents(expense.amount);
-    if (expense.categories?.excluded_from_totals) {
-      // a linked tithe is already in the registry's figure: counting it
-      // again here is the double count the links exist to prevent
-      if (classifyEntry(expense) === "giving" && expense.recurring_id == null) otherGivingSum += cents;
-    } else if (boxOf(expense) === "everyday") {
-      const label = categoryLabel(expense.categories);
-      everydayByLabel.set(label, (everydayByLabel.get(label) ?? 0) + cents);
-      everydaySum += cents;
-    }
+    const label = categoryLabel(expense.categories);
+    everydayByLabel.set(label, (everydayByLabel.get(label) ?? 0) + cents);
+    everydaySum += cents;
   }
   const average = (sum) => (months.length ? Math.round(sum / months.length) : 0);
 
   const billsCents = billGroups.reduce((sum, group) => sum + group.cents, 0);
   const everydayCents = average(everydaySum);
   const setAsideCents = setAsideItems.reduce((sum, item) => sum + item.monthlyCents, 0);
-  const otherGivingCents = average(otherGivingSum);
-  const givingCents = givingGroups.reduce((sum, group) => sum + group.cents, otherGivingCents);
-  const totalCents = billsCents + everydayCents + setAsideCents + givingCents;
+  const totalCents = billsCents + everydayCents + setAsideCents;
 
   return {
     months,
@@ -177,7 +169,6 @@ export function typicalMonth(recurring, expenses, now) {
         .sort(byCentsDown),
     },
     setAside: { cents: setAsideCents, items: setAsideItems },
-    giving: { cents: givingCents, groups: givingGroups, otherCents: otherGivingCents },
   };
 }
 
@@ -251,8 +242,7 @@ export function yearAhead(recurring, now) {
 // How far back the list goes, as a date the query can use.
 export function oneOffsSince(todayIso) {
   const [year, month, day] = todayIso.split("-").map(Number);
-  const since = new Date(year - 1, month - 1, day);
-  return `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-${String(since.getDate()).padStart(2, "0")}`;
+  return isoDate(new Date(year - 1, month - 1, day));
 }
 
 // A list and a total, and deliberately no monthly average: these are rare,

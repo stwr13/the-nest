@@ -13,20 +13,19 @@
 // here would make "what's coming" mean "what's late", which is a
 // different question that already has two answers.
 
-const RANK = { event: 0, recurring: 1, todo: 2 };
+import { toCents, isoDate } from "./helpers.js";
 
-const toIso = (d) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const RANK = { event: 0, recurring: 1, todo: 2 };
 
 export function addDays(iso, days) {
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return toIso(d);
+  return isoDate(d);
 }
 
 export function endOfMonth(iso) {
   const d = new Date(iso + "T00:00:00");
-  return toIso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+  return isoDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
 }
 
 export function horizon(sources, todayIso, days = 30) {
@@ -122,7 +121,7 @@ export function upcomingCharges(groups, todayIso) {
   let laterCents = 0;
   let monthCount = 0;
   for (const item of items) {
-    const cents = Math.round(Number(item.amount) * 100);
+    const cents = toCents(item.amount);
     if (item.date <= monthEnd) {
       monthCents += cents;
       monthCount += 1;
