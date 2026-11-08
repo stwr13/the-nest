@@ -25,8 +25,8 @@ begin;
 -- 28th permanently.
 --
 -- end_date is what makes a commitment different from a subscription:
--- "$2,000/month until age 55" is a finite pile, and the registry can
--- say how much of it is left.
+-- a monthly premium that runs until a set age is a finite pile, and the
+-- registry can say how much of it is left.
 create table public.recurring (
   id          bigint generated always as identity primary key,
   name        text not null check (char_length(trim(name)) between 1 and 60),

@@ -25,6 +25,7 @@ import { horizon, upcomingCharges, endOfMonth, dayList, isMonthlyCharge } from "
 import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.js";
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
+import { isOffline, toCents } from "./helpers.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -163,6 +164,13 @@ let cardImageUrls = new Map(); // card_id -> signed URL (private bucket)
 let dialogCardId = null; // null while adding a new card
 const cardPicker = document.getElementById("card-picker");
 let expensesCache = [];
+// v1.22: whether each source Overview reads has loaded at least once, and
+// what went wrong if the latest try failed. An empty cache from a failed
+// load would otherwise read as a real answer ("Nothing big lands").
+const sources = {
+  ledger: { loaded: false, failed: null },
+  recurring: { loaded: false, failed: null },
+};
 let dashDate = startOfMonth(new Date()); // which month the dashboard shows
 let ledgerFilter = "all";
 let ledgerCategory = "all";
@@ -235,7 +243,7 @@ function friendlyAuthError(error) {
   if (error.message?.includes("Invalid login credentials")) {
     return "Wrong email or password — try again.";
   }
-  if (error.message?.includes("fetch")) {
+  if (isOffline(error)) {
     return "No connection — couldn't sign in.";
   }
   return `Couldn't sign in: ${error.message}`;
@@ -272,9 +280,10 @@ async function loadApp() {
       cardSelect.value = String(usualCard);
     }
     syncCardPicker();
+    sources.ledger = { loaded: true, failed: null };
     renderAll(expenses);
   } catch (error) {
-    showLedgerStatus(loadErrorMessage(error));
+    ledgerFailed(error);
   }
   // Deliberately separate: the idea box and to-do list are auxiliary,
   // and their failures must never take the ledger down with them. Each
@@ -288,11 +297,20 @@ async function loadApp() {
 
 async function refresh() {
   try {
-    renderAll(await fetchExpenses());
+    const expenses = await fetchExpenses();
+    sources.ledger = { loaded: true, failed: null };
+    renderAll(expenses);
     refreshOneOffs(); // a save can add one; its errors show in its own card
   } catch (error) {
-    showLedgerStatus(loadErrorMessage(error));
+    ledgerFailed(error);
   }
+}
+
+function ledgerFailed(error) {
+  const message = loadErrorMessage(error);
+  sources.ledger.failed = message;
+  showLedgerStatus(message);
+  renderOverview(); // so Overview says so too, rather than guess
 }
 
 function renderAll(expenses) {
@@ -304,7 +322,7 @@ function renderAll(expenses) {
 }
 
 function loadErrorMessage(error) {
-  return error.message?.includes("fetch")
+  return isOffline(error)
     ? "No connection — couldn't load the ledger."
     : `Couldn't load the ledger: ${error.message}`;
 }
@@ -692,7 +710,7 @@ expenseForm.addEventListener("submit", async (event) => {
     showSavedJump(savedId, editingId === null ? fields : null);
   } catch (error) {
     showFormStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — entry not saved."
         : `Couldn't save: ${error.message}`,
     );
@@ -840,7 +858,7 @@ async function confirmDelete(expense) {
     await refresh();
   } catch (error) {
     showLedgerStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — entry not deleted."
         : `Couldn't delete: ${error.message}`,
     );
@@ -874,7 +892,7 @@ async function exportCsv() {
     URL.revokeObjectURL(url);
   } catch (error) {
     showLedgerStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — export failed."
         : `Couldn't export: ${error.message}`,
     );
@@ -1025,7 +1043,8 @@ catForm.addEventListener("submit", async (event) => {
     }
     catDialog.close();
     await refreshCategories();
-    await refresh(); // ledger + dashboard labels may have changed
+    // the ledger, the dashboard and the Recurring rows all show the name
+    await Promise.all([refresh(), refreshRecurring()]);
   } catch (error) {
     showCatStatus(friendlyCategoryError(error));
   }
@@ -1046,12 +1065,15 @@ catDeleteBtn.addEventListener("click", async () => {
   catDeleteInfo.textContent = `Counting entries in ${categoryLabel(category)}…`;
   showCatDeleteStatus(null);
   catDeleteDialog.showModal();
+  // Recurring items move too (v1.22), stopped ones included
+  const items = recurringCache.filter((r) => r.category_id === category.id).length;
+  const itemsText = items === 0 ? "" : ` ${items} Recurring ${items === 1 ? "item moves" : "items move"} too.`;
   try {
     const count = await countExpensesForCategory(category.id);
     catDeleteInfo.textContent =
-      count === 0
+      (count === 0
         ? `No entries use ${categoryLabel(category)}.`
-        : `${count} ${count === 1 ? "entry" : "entries"} will move out of ${categoryLabel(category)}.`;
+        : `${count} ${count === 1 ? "entry" : "entries"} will move out of ${categoryLabel(category)}.`) + itemsText;
   } catch {
     catDeleteInfo.textContent = `Couldn't count entries in ${categoryLabel(category)} — the move below still works.`;
   }
@@ -1064,10 +1086,10 @@ catDeleteForm.addEventListener("submit", async (event) => {
     await reassignAndDeleteCategory(dialogCategoryId, Number(catDeleteTarget.value));
     catDeleteDialog.close();
     await refreshCategories();
-    await refresh();
+    await Promise.all([refresh(), refreshRecurring()]); // both may have moved
   } catch (error) {
     showCatDeleteStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — nothing was changed."
         : `Couldn't delete: ${error.message}`,
     );
@@ -1078,7 +1100,7 @@ document.getElementById("cat-delete-cancel").addEventListener("click", () => cat
 
 function friendlyCategoryError(error) {
   if (error.message?.includes("duplicate key")) return "That name already exists.";
-  if (error.message?.includes("fetch")) return "No connection — not saved.";
+  if (isOffline(error)) return "No connection — not saved.";
   return `Couldn't save: ${error.message}`;
 }
 
@@ -1469,7 +1491,7 @@ document.getElementById("card-cancel").addEventListener("click", () => cardDialo
 
 function friendlyCardError(error) {
   if (error.message?.includes("duplicate key")) return "That name already exists.";
-  if (error.message?.includes("fetch")) return "No connection — not saved.";
+  if (isOffline(error)) return "No connection — not saved.";
   return `Couldn't save: ${error.message}`;
 }
 
@@ -1504,7 +1526,7 @@ ideaForm.addEventListener("submit", async (event) => {
     await refreshIdeas();
   } catch (error) {
     showIdeaStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — idea not saved."
         : `Couldn't save: ${error.message}`,
     );
@@ -1519,7 +1541,7 @@ async function refreshIdeas() {
     renderIdeas(await fetchIdeas());
   } catch (error) {
     showIdeaStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — couldn't load ideas."
         : `Couldn't load ideas: ${error.message}`,
     );
@@ -1562,7 +1584,7 @@ async function confirmDeleteIdea(idea) {
     await deleteIdea(idea.id);
     await refreshIdeas();
   } catch (error) {
-    showIdeaStatus(`Couldn't delete: ${error.message}`);
+    showIdeaStatus(isOffline(error) ? "No connection — not deleted." : `Couldn't delete: ${error.message}`);
   }
 }
 
@@ -1725,7 +1747,7 @@ todoForm.addEventListener("submit", async (event) => {
     await refreshTodos();
   } catch (error) {
     showTodoStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — to-do not saved."
         : `Couldn't save: ${error.message}`,
     );
@@ -1749,7 +1771,7 @@ async function refreshTodos() {
     renderTodos(await fetchTodos());
   } catch (error) {
     showTodoStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — couldn't load to-dos."
         : `Couldn't load to-dos: ${error.message}`,
     );
@@ -1821,7 +1843,7 @@ buyForm.addEventListener("submit", async (event) => {
     await refreshTodos();
   } catch (error) {
     showBuyStatus(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — item not saved."
         : `Couldn't save: ${error.message}`,
     );
@@ -1940,7 +1962,7 @@ async function toggleTodo(todo) {
     await refreshTodos();
   } catch (error) {
     statusFnFor(todo)(
-      error.message?.includes("fetch")
+      isOffline(error)
         ? "No connection — not updated."
         : `Couldn't update: ${error.message}`,
     );
@@ -1955,7 +1977,7 @@ async function confirmDeleteTodo(todo) {
     if (buyEditingId === todo.id) exitBuyEdit();
     await refreshTodos();
   } catch (error) {
-    statusFnFor(todo)(`Couldn't delete: ${error.message}`);
+    statusFnFor(todo)(isOffline(error) ? "No connection — not deleted." : `Couldn't delete: ${error.message}`);
   }
 }
 
@@ -2016,6 +2038,7 @@ const stoppedCount = document.getElementById("stopped-count");
 
 let recurringCache = [];
 const editingAmount = new Set(); // ids showing the amount box
+const amountDrafts = new Map(); // id -> what was typed there, so a re-render keeps it
 const skipChoice = new Set(); // ids showing the skip/cancel fork
 // v1.19: folded on every launch. At one line it costs the log form about
 // a row of height; open, each item costs a compact row. The old full rows
@@ -2026,13 +2049,17 @@ let confirmingAll = false;
 async function refreshRecurring() {
   try {
     recurringCache = await fetchRecurring();
+    sources.recurring = { loaded: true, failed: null };
     renderRecurring();
   } catch (error) {
-    showDueStatus(
-      error.message?.includes("fetch")
-        ? "No connection — couldn't load recurring items."
-        : `Couldn't load recurring items: ${error.message}`,
-    );
+    const message = isOffline(error)
+      ? "No connection — couldn't load recurring items."
+      : `Couldn't load recurring items: ${error.message}`;
+    sources.recurring.failed = message;
+    showDueStatus(message);
+    // so Overview and Coming up say so too, rather than guess
+    renderOverview();
+    renderSoon();
   }
 }
 
@@ -2086,8 +2113,10 @@ function renderDue() {
   dueBody.hidden = !dueOpen;
   dueCount.textContent = String(due.length);
   dueTotal.textContent = sgd.format(
-    due.reduce((sum, item) => sum + Math.round(Number(item.amount) * 100), 0) / 100,
+    due.reduce((sum, item) => sum + toCents(item.amount), 0) / 100,
   );
+  const dueIds = new Set(due.map((item) => item.id));
+  for (const id of amountDrafts.keys()) if (!dueIds.has(id)) amountDrafts.delete(id);
   dueList.replaceChildren(...due.map((item) => dueRow(item, today)));
   renderConfirmAll(due);
 }
@@ -2154,6 +2183,7 @@ function dueLink(text, item, set) {
     editingAmount.delete(item.id);
     skipChoice.delete(item.id);
     if (opening) set.add(item.id);
+    if (!editingAmount.has(item.id)) amountDrafts.delete(item.id); // closed: start fresh next time
     renderDue();
   });
   return link;
@@ -2204,17 +2234,26 @@ async function confirmAllDue() {
     else confirmed += 1;
   }
 
+  await Promise.all([refreshRecurring(), refresh()]);
   confirmingAll = false;
+
+  // A failed refresh leaves the old list up, so then the message has to
+  // say what went through, or it looks as if nothing did.
+  const problem = sources.recurring.failed;
+  const parts = [];
   if (stopped) {
-    showDueStatus(stopped);
-  } else if (alreadyDone > 0) {
+    parts.push(stopped);
+  } else {
+    if (problem && confirmed > 0) parts.push(`${confirmed} confirmed.`);
     // the other phone got there first on some: nothing went wrong, and the
     // pinned due dates mean nothing was logged twice
-    showDueStatus(`${alreadyDone} already done on the other phone — refreshed.`, { news: true });
-  } else {
-    showDueStatus(null);
+    if (alreadyDone > 0) parts.push(`${alreadyDone} already done on the other phone${problem ? "." : " — refreshed."}`);
   }
-  await Promise.all([refreshRecurring(), refresh()]);
+  if (problem) parts.push(`${problem} This list may be out of date.`);
+  showDueStatus(parts.join(" ") || null, { news: !stopped && !problem && alreadyDone > 0 });
+  // the refresh re-renders only when it succeeds; this hands the button
+  // back either way, so it can't stay on "Confirming…"
+  renderDue();
 }
 
 dueConfirmAll.addEventListener("click", confirmAllDue);
@@ -2229,16 +2268,23 @@ function amountEditor(item) {
   const input = document.createElement("input");
   input.type = "text";
   input.inputMode = "decimal";
-  input.value = Number(item.amount).toFixed(2);
+  input.value = amountDrafts.get(item.id) ?? Number(item.amount).toFixed(2);
   input.setAttribute("aria-label", `Amount charged for ${item.name}`);
-  const save = smallButton("Confirm", "btn-primary", () => {
+  input.addEventListener("input", () => amountDrafts.set(item.id, input.value));
+  const save = smallButton("Confirm", "btn-primary", async () => {
     const parsed = evaluateAmount(input.value);
     if (parsed === null || parsed <= 0) {
       showDueStatus("Enter an amount greater than zero.");
       return;
     }
     editingAmount.delete(item.id);
-    doConfirm(item, parsed);
+    const outcome = await doConfirm(item, parsed);
+    // A declined duplicate or a failed confirm puts the row back as it
+    // was, typed amount and all, so trying again is one tap. Once it's
+    // done, here or on the other phone, the typed amount has had its say.
+    if (outcome === "declined" || outcome === "failed") editingAmount.add(item.id);
+    else amountDrafts.delete(item.id);
+    renderDue();
   });
   box.append(input, save);
   const hint = document.createElement("p");
@@ -2321,18 +2367,20 @@ async function guardDue(action, { refreshAfter = true, show = showDueStatus } = 
     return "done";
   } catch (error) {
     const message = error?.message ?? String(error);
+    // Refresh first and say why last (v1.22): when the refresh fails too,
+    // its "couldn't load" used to replace the reason this didn't go
+    // through, which left it unclear whether anything was saved.
+    if (refreshAfter) await refreshRecurring();
     if (/already confirmed|already moved on/i.test(message)) {
-      show("Already done on the other phone — refreshed.", { news: true });
-      if (refreshAfter) await refreshRecurring();
+      const refreshed = refreshAfter && !sources.recurring.failed;
+      show(`Already done on the other phone${refreshed ? " — refreshed." : "."}`, { news: refreshed });
       return "already";
     }
-    // WebKit says "Load failed" where Chromium says "Failed to fetch"
     show(
-      /fetch|load failed/i.test(message)
+      isOffline(error)
         ? "No connection — that didn't go through."
         : `Couldn't do that: ${message}`,
     );
-    if (refreshAfter) await refreshRecurring();
     return "failed";
   }
 }
@@ -2448,7 +2496,7 @@ recEditForm.addEventListener("submit", async (event) => {
     await refreshRecurring();
   } catch (failure) {
     showRecEditStatus(
-      /fetch|load failed/i.test(failure.message ?? "")
+      isOffline(failure)
         ? "No connection — not saved."
         : `Couldn't save: ${failure.message}`,
     );
@@ -2528,7 +2576,7 @@ recForm.addEventListener("submit", async (event) => {
     syncRunning();
     await refreshRecurring();
   } catch (error) {
-    recStatus.textContent = `Couldn't add it: ${error.message}`;
+    recStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     recStatus.hidden = false;
   }
 });
@@ -2564,6 +2612,7 @@ document.getElementById("make-recurring").addEventListener("click", () => {
 const YEAR_BAR_PX = 104; // the tallest bar; the rest of .ycol holds the label
 const ovHeadline = document.getElementById("ov-headline");
 const ovSource = document.getElementById("ov-source");
+const ovStatus = document.getElementById("ov-status");
 const ovStack = document.getElementById("ov-stack");
 const ovLayers = document.getElementById("ov-layers");
 const yaSentence = document.getElementById("ya-sentence");
@@ -2727,13 +2776,13 @@ function everydayBody(typical) {
   ];
 }
 
-function setAsideBody(setAside) {
+function setAsideBody(setAside, notCounted) {
   const oneTime = recurringCache.filter(
     (item) => item.active && item.cadence === "once" && item.categories?.kind === "invest",
   );
   const notes = oneTime.map(
     (item) =>
-      ` The ${wholeDollars(Math.round(Number(item.amount) * 100))} ${item.name} in ${monthYearText(item.next_due)} shows in Year ahead, not here.`,
+      ` The ${wholeDollars(toCents(item.amount))} ${item.name} in ${monthYearText(item.next_due)} shows in Year ahead, not here.`,
   );
   return [
     ...setAside.items.map((item) =>
@@ -2747,23 +2796,33 @@ function setAsideBody(setAside) {
     el(
       "p",
       "hint",
-      `Not counted as spending. Items that aren't monthly show their monthly equivalent, with the real charge below.${notes.join("")}`,
+      `${notCounted ? "Not counted as spending. " : ""}Items that aren't monthly show their monthly equivalent, with the real charge below.${notes.join("")}`,
     ),
   ];
 }
 
-// One line per category, never per person.
-function givingBody(giving, months) {
-  const rows = giving.groups.map((group) =>
-    miniRow(group.name, "Monthly", sgd.format(group.cents / 100)),
-  );
-  if (giving.otherCents > 0) {
-    rows.push(miniRow("Other giving", averageText(months), sgd.format(giving.otherCents / 100)));
+// Until both sources have loaded once there are no figures, only why: an
+// empty list from a failed load would read as a real answer. After that,
+// a failed refresh keeps the last good figures and says so.
+function renderOverview() {
+  const failed = sources.recurring.failed ?? sources.ledger.failed;
+  const ready = sources.recurring.loaded && sources.ledger.loaded;
+  ovStatus.textContent = failed && ready ? `${failed} Showing what loaded earlier.` : (failed ?? "");
+  ovStatus.hidden = !failed;
+
+  if (ready) {
+    renderTypicalMonth();
+  } else {
+    ovHeadline.textContent = "—";
+    const missing = [!sources.recurring.loaded && "Recurring", !sources.ledger.loaded && "the ledger"];
+    ovSource.textContent = failed ? `Needs ${missing.filter(Boolean).join(" and ")} to load.` : "Loading…";
+    ovStack.hidden = true;
+    ovLayers.replaceChildren();
   }
-  return rows;
+  renderYearAhead();
 }
 
-function renderOverview() {
+function renderTypicalMonth() {
   const typical = typicalMonth(recurringCache, expensesCache, new Date());
   ovHeadline.textContent = `About ${sgdWhole.format(typical.headlineDollars)}`;
   const count = typical.months.length;
@@ -2772,13 +2831,26 @@ function renderOverview() {
       ? "From Recurring. The ledger doesn't hold a full month yet."
       : `From Recurring and the last ${count === 1 ? "month" : `${count} months`} of the ledger`;
 
-  // A layer with nothing in it says nothing: since v1.20.1 all giving counts
-  // as spending, so Giving shows only if a category is ever set up that way.
+  // Named after the category it reads, so a rename in the manager shows
+  // here too, and only called "not counted" while the category says so.
+  const setAsideCategories = [
+    ...new Map(typical.setAside.items.map((item) => [item.category_id, item.categories])).values(),
+  ];
+  const setAsideName = (setAsideCategories.length === 1 && setAsideCategories[0]?.name) || "Set aside";
+  const notCounted = setAsideCategories.every((category) => category?.excluded_from_totals);
+
+  // A layer with nothing in it says nothing.
   const layers = [
     { key: "bills", colour: "l1", name: "Regular commitments", cents: typical.bills.cents, body: () => billsBody(typical.bills) },
     { key: "everyday", colour: "l2", name: "Everyday", cents: typical.everyday.cents, body: () => everydayBody(typical) },
-    { key: "set-aside", colour: "l3", name: "Investment & insurance", sub: "Not counted as spending", cents: typical.setAside.cents, body: () => setAsideBody(typical.setAside) },
-    { key: "giving", colour: "l4", name: "Giving", sub: "Not spending", cents: typical.giving.cents, body: () => givingBody(typical.giving, typical.months) },
+    {
+      key: "set-aside",
+      colour: "l3",
+      name: setAsideName,
+      sub: notCounted ? "Not counted as spending" : null,
+      cents: typical.setAside.cents,
+      body: () => setAsideBody(typical.setAside, notCounted),
+    },
   ].filter((layer) => layer.cents > 0);
   ovStack.hidden = typical.totalCents === 0;
   ovStack.setAttribute(
@@ -2798,11 +2870,15 @@ function renderOverview() {
       layerRow(layer.key, layer.colour, layer.name, layer.sub, layer.cents, layer.body()),
     ),
   );
-
-  renderYearAhead();
 }
 
 function renderYearAhead() {
+  if (!sources.recurring.loaded) {
+    yaSentence.textContent = sources.recurring.failed ? "Needs Recurring to load." : "Loading…";
+    yaBars.replaceChildren();
+    yaPanel.replaceChildren();
+    return;
+  }
   const { months, heaviest } = yearAhead(recurringCache, new Date());
   const selected = months.find((month) => month.key === yearPicked) ?? heaviest;
 
@@ -2871,7 +2947,7 @@ async function refreshOneOffs() {
     oneOffStatus.hidden = true;
     renderOneOffs();
   } catch (error) {
-    oneOffStatus.textContent = /fetch|load failed/i.test(error.message ?? "")
+    oneOffStatus.textContent = isOffline(error)
       ? "No connection — couldn't load the one-offs."
       : `Couldn't load the one-offs: ${error.message}`;
     oneOffStatus.hidden = false;
@@ -2911,6 +2987,7 @@ const soonList = document.getElementById("soon-list");
 const soonEmpty = document.getElementById("soon-empty");
 const soonHint = document.getElementById("soon-hint");
 const soonStatus = document.getElementById("soon-status");
+const soonRecStatus = document.getElementById("soon-rec-status");
 const soonWindow = document.getElementById("soon-window");
 const soonCharges = document.getElementById("soon-charges");
 const soonChargeList = document.getElementById("soon-charge-list");
@@ -2926,7 +3003,7 @@ async function refreshSoon() {
     soonStatus.hidden = true;
     renderSoon();
   } catch (error) {
-    soonStatus.textContent = error.message?.includes("fetch")
+    soonStatus.textContent = isOffline(error)
       ? "No connection — couldn't load what's coming."
       : `Couldn't load what's coming: ${error.message}`;
     soonStatus.hidden = false;
@@ -2943,9 +3020,15 @@ function renderSoon() {
     today,
   );
   soonWindow.textContent = "next 30 days";
+  // Until Recurring has loaded there are no charges to show, so "nothing
+  // coming" would be a guess (v1.22). A failed load says so instead.
+  const chargesMissing = !sources.recurring.loaded;
+  const missingNote = chargesMissing ? sources.recurring.failed : null;
+  soonRecStatus.textContent = missingNote ? `${missingNote} Charges aren't shown.` : "";
+  soonRecStatus.hidden = !missingNote;
   // "nothing coming" must look at everything, not just the day list: with
   // only monthly charges ahead the list is empty and the line above isn't
-  soonEmpty.hidden = groups.length > 0;
+  soonEmpty.hidden = groups.length > 0 || chargesMissing;
 
   const charges = upcomingCharges(groups, today);
   renderCharges(charges, today);
@@ -3093,7 +3176,7 @@ eventForm.addEventListener("submit", async (event) => {
     eventForm.reset();
     await refreshSoon();
   } catch (error) {
-    eventStatus.textContent = `Couldn't add it: ${error.message}`;
+    eventStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     eventStatus.hidden = false;
   }
 });
@@ -3122,7 +3205,7 @@ wishForm.addEventListener("submit", async (event) => {
     wishForm.reset();
     await refreshTodos();
   } catch (error) {
-    wishStatus.textContent = `Couldn't add it: ${error.message}`;
+    wishStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     wishStatus.hidden = false;
   }
 });

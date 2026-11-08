@@ -30,10 +30,15 @@ const entry = (over = {}) => ({
   ...over,
 });
 
-test("classify: giving and set aside win over a recurring link", () => {
-  // the order is the whole point: a confirmed tithe has a recurring_id
-  assert.equal(classifyEntry(entry({ categories: cat("give", true), recurring_id: 7 })), "giving");
+test("classify: set aside wins over a recurring link", () => {
+  // the order is the whole point: a confirmed premium has a recurring_id
   assert.equal(classifyEntry(entry({ categories: cat("invest", true), recurring_id: 7 })), "set-aside");
+});
+
+test("classify: the unused 'give' kind reads as everyday", () => {
+  // since v1.20.1 every gift and tithe counts as spending
+  assert.equal(classifyEntry(entry({ categories: cat("give", true), recurring_id: 7 })), "commitment");
+  assert.equal(classifyEntry(entry({ categories: cat("give") })), "everyday");
 });
 
 test("classify: a linked entry is a commitment, however big", () => {
@@ -48,8 +53,8 @@ test("classify: lumpy categories and big entries are one-offs", () => {
   assert.equal(ONE_OFF_CENTS, 30000);
 });
 
-test("classify: giving and big amounts ignore the threshold order", () => {
-  assert.equal(classifyEntry(entry({ categories: cat("give", true), amount: "800.00" })), "giving");
+test("classify: set aside ignores the one-off threshold", () => {
+  assert.equal(classifyEntry(entry({ categories: cat("invest", true), amount: "800.00" })), "set-aside");
 });
 
 test("classify: an entry with no kind yet reads as everyday", () => {
@@ -93,7 +98,7 @@ test("nothing classifies by a category name or a note", () => {
   assert.equal(classifyEntry(entry({ categories: renamed("Travel", "everyday"), note: "flight" })), "everyday");
   assert.equal(classifyEntry(entry({ categories: renamed("Tithes", "everyday"), note: "tithe" })), "everyday");
   assert.equal(classifyEntry(entry({ categories: renamed("Holidays", "lumpy") })), "one-off");
-  assert.equal(classifyEntry(entry({ categories: renamed("Church", "give") })), "giving");
+  assert.equal(classifyEntry(entry({ categories: renamed("Insurance", "invest") })), "set-aside");
 });
 
 test("the three boxes add up to the dashboard total", () => {
@@ -187,9 +192,9 @@ const named = (id, name, kind = "everyday", excluded = false) => ({
 const HOME = named(1, "Home");
 const TRIPS = named(2, "Trips", "lumpy");
 const SAVINGS = named(3, "Savings", "invest", true);
-const GIVING = named(4, "Giving", "give", true);
+const GIVING = named(4, "Giving", "give", true); // a kind nothing uses since v1.20.1
 const FOOD = named(5, "Food");
-const OTHER_GIVING = named(6, "Gifts of money", "give", true);
+const LEFT_OUT = named(6, "Left out", "everyday", true);
 
 const item = (over = {}) => ({
   id: 1,
@@ -208,7 +213,7 @@ const item = (over = {}) => ({
 
 const inCat = (category) => ({ category_id: category.id, categories: category });
 
-test("a typical month has four layers from the right sources", () => {
+test("a typical month has three layers from the right sources", () => {
   const registry = [
     item({ id: 1, amount: "1000.00" }),
     item({ id: 2, amount: "600.00", cadence: "quarterly", ...inCat(HOME) }),
@@ -228,20 +233,22 @@ test("a typical month has four layers from the right sources", () => {
     entry({ amount: "1000.00", date: "2026-10-11", ...inCat(FOOD) }), // big: a one-off
     entry({ amount: "40.00", date: "2026-10-12", ...inCat(TRIPS) }), // lumpy: a one-off
     entry({ amount: "1000.00", date: "2026-10-13", recurring_id: 1, ...inCat(HOME) }), // commitment
-    entry({ amount: "12.00", date: "2026-10-14", ...inCat(OTHER_GIVING) }), // unlinked giving
-    entry({ amount: "300.00", date: "2026-10-15", recurring_id: 5, ...inCat(GIVING) }), // linked giving
+    entry({ amount: "12.00", date: "2026-10-14", ...inCat(LEFT_OUT) }), // not in the totals
+    entry({ amount: "300.00", date: "2026-10-15", recurring_id: 5, ...inCat(GIVING) }), // commitment
     entry({ amount: "77.00", date: "2026-11-02", ...inCat(FOOD) }), // this month: left out
   ];
   const typical = typicalMonth(registry, ledger, NOW);
 
   assert.deepEqual(typical.months.map((m) => m.key), ["2026-08", "2026-09", "2026-10"]);
-  assert.equal(typical.bills.cents, 100000 + 20000 + 2000);
+  // the two items in the unused 'give' kind are bills like any other
+  assert.equal(typical.bills.cents, 100000 + 20000 + 2000 + 30000 + 15000);
   assert.equal(typical.everyday.cents, 6000); // (90 + 60 + 30) / 3
   assert.equal(typical.setAside.cents, 50000);
-  assert.equal(typical.giving.otherCents, 400); // 12 / 3, the linked tithe stays out
-  assert.equal(typical.giving.cents, 45000 + 400);
-  assert.equal(typical.totalCents, 122000 + 6000 + 50000 + 45400);
+  assert.equal(typical.totalCents, 167000 + 6000 + 50000);
   assert.equal(typical.headlineDollars, 2200, "nearest hundred dollars");
+  assert.deepEqual(Object.keys(typical).sort(), [
+    "bills", "everyday", "headlineDollars", "months", "setAside", "totalCents",
+  ]);
 });
 
 test("the headline rounds to the nearest hundred", () => {
@@ -281,26 +288,24 @@ test("everyday breaks down by category over the same months", () => {
   ]);
 });
 
-test("giving is one line per category, never per person", () => {
+test("bills are one line per category, never per person", () => {
   const registry = [
-    item({ id: 1, name: "One person's giving", amount: "300.00", paid_by: "Shawn", ...inCat(GIVING) }),
-    item({ id: 2, name: "The other's giving", amount: "150.00", paid_by: "Claire", ...inCat(GIVING) }),
+    item({ id: 1, name: "One person's item", amount: "300.00", paid_by: "Shawn" }),
+    item({ id: 2, name: "The other's item", amount: "150.00", paid_by: "Claire" }),
   ];
-  const { groups } = typicalMonth(registry, [], NOW).giving;
+  const { groups } = typicalMonth(registry, [], NOW).bills;
   assert.equal(groups.length, 1);
-  assert.equal(groups[0].name, "Giving");
+  assert.equal(groups[0].name, "Home");
   assert.equal(groups[0].cents, 45000);
 });
 
-test("a giving category someone chose to count isn't counted twice", () => {
-  const counted = named(7, "Counted giving", "give", false);
+test("a category left out of the totals stays out of everyday", () => {
   const ledger = [
     entry({ amount: "1.00", date: "2026-08-01", ...inCat(FOOD) }),
-    entry({ amount: "30.00", date: "2026-09-10", ...inCat(counted) }),
+    entry({ amount: "30.00", date: "2026-09-10", ...inCat(LEFT_OUT) }),
   ];
   const typical = typicalMonth([], ledger, new Date(2026, 9, 1));
-  assert.equal(typical.giving.otherCents, 0);
-  assert.equal(typical.everyday.cents, Math.round((100 + 3000) / 2));
+  assert.equal(typical.everyday.cents, Math.round(100 / 2));
 });
 
 test("no full months yet: the averages are zero rather than broken", () => {

@@ -871,7 +871,7 @@ registry predicts; the ledger records; the only bridge is a person
 tapping Confirm. Nothing auto-commits — the day you cancel Spotify is
 the day auto-commit starts lying, and it's the day nobody is looking.
 
-The third case settled itself on existing machinery: a $2,000/month
+The third case settled itself on existing machinery: a large monthly
 investment-linked premium must be in the ledger (it left the account,
 reconciliation needs it) but must not count as spending (it would swamp
 the household number every month and teach both of them to distrust the
