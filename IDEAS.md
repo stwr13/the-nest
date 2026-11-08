@@ -30,11 +30,12 @@ Parked, Shawn's own (2026-11-08): **tagging Investment & Insurance for
 reconciliation**, so what went in can later be matched to what comes back
 at maturity, "for record purposes". Not built; wait for him to raise it.
 
-**Next ship, v1.25: a $ shortcut for money in — working scope, not
-locked (raised by Shawn 2026-11-08, right after v1.24 went live).** Why:
+**Next ship, v1.25: a $ shortcut for money in — LOCKED by Shawn
+2026-11-08 from the mockup ("Lock it in and build"), not built.** Raised
+right after v1.24 went live. Why:
 seeing and logging money in takes a couple of scrolls down Money. His ask:
 replace the 💡 header icon with a dollar sign "where I can input the
-money". Proposed shape:
+money". The shape:
 
 1. The 💡 header button becomes a green "$" button. The idea box stays at the bottom of
    Money, one scroll away (it has had no use as a channel since
