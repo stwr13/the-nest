@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   monthInflows,
-  setAsideOut,
   inflowTitle,
   inflowShowsKind,
   inflowFields,
@@ -60,21 +59,6 @@ test("no per-person total: the result carries only Salary, Other and In", () => 
   assert.deepEqual(Object.keys(month).sort(), ["inCents", "otherCents", "rows", "salaryCents"]);
   const source = readFileSync(new URL("../js/inflow-math.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /whose\s*===|\.whose\]/, "nothing groups or sums by whose");
-});
-
-test("setAsideOut sums Investment & Insurance by kind, never by name", () => {
-  const invest = { name: "Investment & Insurance", kind: "invest" };
-  const expenses = [
-    { amount: "300.00", date: "2026-11-02", categories: invest },
-    { amount: "20.50", date: "2026-11-09", categories: invest },
-    { amount: "999.00", date: "2026-10-02", categories: invest },
-    { amount: "80.00", date: "2026-11-02", categories: { name: "Investment & Insurance look-alike", kind: "everyday" } },
-  ];
-  assert.deepEqual(setAsideOut(expenses, "2026-11"), { cents: 32050, label: "Investment & Insurance" });
-});
-
-test("setAsideOut with nothing set aside is zero", () => {
-  assert.equal(setAsideOut([], "2026-11").cents, 0);
 });
 
 test("a row's title is its note, otherwise its type", () => {

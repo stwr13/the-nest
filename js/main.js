@@ -26,7 +26,7 @@ import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
 import { isOffline, toCents } from "./helpers.js";
-import { monthInflows, setAsideOut, inflowTitle, inflowShowsKind, inflowFields, KIND_LABEL } from "./inflow-math.js";
+import { monthInflows, inflowTitle, inflowShowsKind, inflowFields, KIND_LABEL } from "./inflow-math.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -3007,8 +3007,9 @@ document.getElementById("dash-overview").addEventListener("click", () => showTab
 // Shawn knew what went out but only roughly that income was higher, so
 // the app couldn't say what the household keeps each month. In, Out and
 // Savings answer that for the month on screen. Out is total outflow,
-// counted or not; Investment & Insurance sits inside it, and the hint
-// says how much, because that is saving too. Names show only in the
+// counted or not. Investment & Insurance stays in Out: it isn't savings
+// until it matures, and then it is logged as money in (Shawn,
+// 2026-11-08). Names show only in the
 // list, never as per-person totals.
 const flowInBox = document.getElementById("flow-in-box");
 const flowIn = document.getElementById("flow-in");
@@ -3068,12 +3069,6 @@ function renderFlow() {
     lines.push(sources.inflows.failed);
   } else if (inflowsReady && rows.length === 0) {
     lines.push("Log what comes in to see the month's savings.");
-  }
-  if (ledgerReady) {
-    const setAside = setAsideOut(expensesCache, key);
-    if (setAside.cents > 0) {
-      lines.push(`Out includes ${wholeDollars(setAside.cents)} to ${setAside.label}, which is saving too.`);
-    }
   }
   if (rows.length > 0) lines.push("Tap In for the list.");
   flowHint.textContent = lines.join(" ");

@@ -3,8 +3,8 @@
 // What it answers: of what came in this month, how much is left once
 // everything that went out is taken off. Out is total outflow, counted
 // or not, so Savings is what the household actually kept. Investment
-// & Insurance sits inside Out, and the hint says how much, because that
-// is saving too.
+// & Insurance counts in Out like anything else: it isn't savings until it
+// matures, and then it comes back as money in.
 //
 // `whose` is a tag on each row of the list, and never a total: there is
 // no per-person sum anywhere in this module, and a test holds that line.
@@ -31,22 +31,6 @@ export function monthInflows(inflows, key) {
     else otherCents += toCents(row.amount);
   }
   return { rows, salaryCents, otherCents, inCents: salaryCents + otherCents };
-}
-
-// What went to Investment & Insurance this month, by categories.kind,
-// never by name. Named after its category, as on Overview; if there
-// were ever more than one such category, a neutral name instead.
-export function setAsideOut(expenses, key) {
-  let cents = 0;
-  const names = new Set();
-  for (const expense of expenses) {
-    if (expense.categories?.kind !== "invest") continue;
-    if (expense.date.slice(0, 7) !== key) continue;
-    cents += toCents(expense.amount);
-    names.add(expense.categories.name);
-  }
-  const label = names.size === 1 ? [...names][0] : "investment and insurance";
-  return { cents, label };
 }
 
 // The row's headline is its note when there is one ("Dividend"),
