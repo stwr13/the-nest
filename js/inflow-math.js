@@ -2,7 +2,7 @@
 //
 // What it answers: of what came in this month, how much is left once
 // everything that went out is taken off. Out is total outflow, counted
-// or not, so Left over is what the household actually kept. Investment
+// or not, so Savings is what the household actually kept. Investment
 // & Insurance sits inside Out, and the hint says how much, because that
 // is saving too.
 //

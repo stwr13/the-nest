@@ -3006,7 +3006,7 @@ document.getElementById("dash-overview").addEventListener("click", () => showTab
 // ── Money in (v1.24) ──────────────────────────────────────────────────
 // Shawn knew what went out but only roughly that income was higher, so
 // the app couldn't say what the household keeps each month. In, Out and
-// Left over answer that for the month on screen. Out is total outflow,
+// Savings answer that for the month on screen. Out is total outflow,
 // counted or not; Investment & Insurance sits inside it, and the hint
 // says how much, because that is saving too. Names show only in the
 // list, never as per-person totals.
@@ -3053,7 +3053,7 @@ function renderFlow() {
 
   flowIn.textContent = inflowsReady ? wholeDollars(inCents) : "—";
   flowOut.textContent = ledgerReady ? wholeDollars(outflowCents) : "—";
-  // With nothing logged as in, Left over would just be minus the outflow,
+  // With nothing logged as in, Savings would just be minus the outflow,
   // which reads as a real answer. It waits for the first inflow instead.
   const showLeft = ledgerReady && inflowsReady && rows.length > 0;
   const leftCents = inCents - outflowCents;
@@ -3067,7 +3067,7 @@ function renderFlow() {
   if (sources.inflows.failed) {
     lines.push(sources.inflows.failed);
   } else if (inflowsReady && rows.length === 0) {
-    lines.push("Log what comes in to see what's left over.");
+    lines.push("Log what comes in to see the month's savings.");
   }
   if (ledgerReady) {
     const setAside = setAsideOut(expensesCache, key);
