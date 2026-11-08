@@ -106,7 +106,7 @@ Turn a one-time spending audit into a living part of the app, without moving the
 **The rules, which hold on every screen:**
 
 - **Spending is the share.** Always `expenses.amount`, never `card_charged`. Only `js/cards-math.js` reads the card charge, for miles caps, because the bank's cap counts the whole bill.
-- **Every entry classes one way, in this order:** category kind `give` is giving; kind `invest` is set aside; a `recurring_id` makes it a commitment; kind `lumpy`, or $300 or more, makes it a one-off; everything else is everyday. Code never matches on category names or note text, because categories can be renamed.
+- **Every entry classes one way, in this order:** kind `invest` is set aside; a `recurring_id` makes it a commitment; kind `lumpy`, or $300 or more, makes it a one-off; everything else is everyday. Kind `give` meant giving until v1.22; nothing used it after v1.20.1, and it now reads as everyday. Code never matches on category names or note text, because categories can be renamed.
 - **No per-person view on Overview.** Between the two of them money is joint and they don't track who spends what. `recurring.paid_by` stays only because Confirm needs it for the ledger. One deliberate exception (Shawn, 2026-11-07): the two tithe rows keep their people's names, so they can be told apart and tracked.
 - **One-offs get no monthly average,** and one-time charges never count in a typical month.
 - **No budgets and no income tracking.** Visibility, not budgets.
@@ -119,7 +119,7 @@ Turn a one-time spending audit into a living part of the app, without moving the
 
 **Ship 2, v1.20: Overview replaces the Recurring tab.** The tab is relabelled, and there is no sixth tab. In order: a typical month as one rounded figure with a stacked bar and four rows that open (Regular commitments; Everyday; Investment & insurance; Giving when anything is in it); Year ahead, twelve months of regular and lump charges with Everyday left out; Big one-offs over the last 12 months, listed with a total; the Running list and add form, tucked away; Stopped.
 
-**A typical month has up to four layers, and an empty one hides:** Regular commitments is active Recurring items of kind everyday or lumpy, at their monthly equivalent. Everyday is the average of the last 3 full calendar months of entries classed as everyday. Investment & insurance is active Recurring items of kind invest. Giving is recurring giving plus a 3-month average of unlinked giving entries.
+**A typical month has up to three layers, and an empty one hides:** Regular commitments is every active Recurring item not of kind invest, at its monthly equivalent. Everyday is the average of the last 3 full calendar months of entries classed as everyday. The set-aside layer is active Recurring items of kind invest, named after their category (Investment & Insurance). A fourth, Giving, went in v1.22, unused since v1.20.1. Overview shows no figures until Recurring and the ledger have both loaded.
 
 Data model additions (`db/migrations/2026-11-07-overview-v1_19.sql`, additive): `categories.kind`; cadences `half-yearly` and `once`, the latter required to end on its own due date so it stops after one confirm. Household data changes (new categories, past entries moved and linked) ran through the SQL editor and are not in this repo. They had the SPEC's undo: a CSV export plus an in-Supabase snapshot. Rows moved to the new cadences only after both phones had the new code, because older clients don't know them.
 
@@ -130,4 +130,6 @@ Not in scope: setting a category's kind in the manager (new categories default t
 **v1.20.3, outflow (Shawn, 2026-11-07):** Money's headline stays spending. A line under it shows total outflow, including what isn't counted, whenever the two differ.
 
 **v1.21, editing the registry (Shawn, 2026-11-07):** a Recurring item's name, amount, category and next due date can be edited from Overview or the Running list. Edits apply from the next charge and never change logged entries. How often an item repeats and which card pays it aren't editable yet.
+
+**v1.22, repairs (Shawn, 2026-11-08):** no new scope. When Recurring or the ledger can't load, Overview and Coming up say so instead of showing figures or "nothing". A failed confirm keeps its reason and the typed amount. Every "no connection" message reads the same on the iPhone. Deleting a category moves its Recurring items too. Logged-out users hold no table rights at all, and signed-in users only the reads and writes each table grants (`db/migrations/2026-11-08-category-delete-v1_22.sql`).
 
