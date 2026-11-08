@@ -6,10 +6,10 @@ begin;
 -- 1. Deleting a category moves its Recurring items too.
 -- Since v1.14, recurring.category_id points at categories with ON DELETE
 -- RESTRICT, but this function only ever moved expenses. So deleting any
--- category that held a Recurring item failed with a foreign-key error,
--- and after the November merge that is most of them. Same narrow door as
--- before: either household account may empty one category into another
--- and delete it, nothing else.
+-- category that held a Recurring item failed with a foreign-key error;
+-- after the November merge, four of the ten categories hold one. Same
+-- narrow door as before: either household account may empty one category
+-- into another and delete it, nothing else.
 create or replace function public.reassign_and_delete_category(from_id bigint, to_id bigint)
 returns void
 language plpgsql
@@ -33,15 +33,17 @@ revoke all on function public.reassign_and_delete_category(bigint, bigint) from 
 grant execute on function public.reassign_and_delete_category(bigint, bigint) to authenticated;
 
 -- 2. Take back table rights the app never uses.
--- Supabase's defaults grant every table right to anon and authenticated
--- and leave row security to decide what each can see. RLS covers select,
--- insert, update and delete. It does not cover TRUNCATE, which empties a
--- table whatever the policies say. Nothing in the API can issue one
--- today, but nothing in the app needs it either, so it goes, along with
--- TRIGGER and REFERENCES. The future-table default changes with it, so a
--- new table doesn't bring them back.
-revoke truncate, trigger, references on all tables in schema public from anon, authenticated;
+-- Every table here was created with this project's default rights, which
+-- give anon and authenticated TRUNCATE, TRIGGER, REFERENCES and MAINTAIN
+-- (the last new in Postgres 17). Row security covers select, insert,
+-- update and delete. It does not cover TRUNCATE, which empties a table
+-- whatever the policies say. Nothing in the API can issue one today, but
+-- nothing in the app needs any of the four, so they go. The default for
+-- future tables changes with them, so a new table doesn't bring them
+-- back. Signed-in users keep exactly the select, insert, update and
+-- delete each table's migration granted.
+revoke truncate, trigger, references, maintain on all tables in schema public from anon, authenticated;
 alter default privileges for role postgres in schema public
-  revoke truncate, trigger, references on tables from anon, authenticated;
+  revoke truncate, trigger, references, maintain on tables from anon, authenticated;
 
 commit;

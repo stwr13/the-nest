@@ -13,8 +13,10 @@ export const isoDate = (date) =>
 // Whether a failed request means "no connection". Each browser words it
 // differently: Chrome on a desktop says "Failed to fetch", Firefox
 // "NetworkError when attempting to fetch resource", and WebKit (so every
-// browser on the iPhone, Chrome included) says "Load failed".
+// browser on the iPhone, Chrome included) says "Load failed". Older iOS
+// versions said "The Internet connection appears to be offline." or "The
+// network connection was lost."
 export function isOffline(error) {
   const message = error?.message ?? String(error ?? "");
-  return /fetch|load failed/i.test(message);
+  return /fetch|load failed|internet connection appears to be offline|network connection was lost/i.test(message);
 }

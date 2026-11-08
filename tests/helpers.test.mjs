@@ -19,6 +19,8 @@ test("a date is the local calendar date, zero-padded", () => {
 test("no connection reads the same on every browser", () => {
   assert.ok(isOffline(new TypeError("Load failed")), "WebKit, so every iPhone browser");
   assert.ok(isOffline({ message: "TypeError: Load failed" }), "as supabase-js passes it on");
+  assert.ok(isOffline(new TypeError("The Internet connection appears to be offline.")), "older iOS");
+  assert.ok(isOffline(new TypeError("The network connection was lost.")), "older iOS, mid-request");
   assert.ok(isOffline(new TypeError("Failed to fetch")), "Chrome on a desktop");
   assert.ok(isOffline(new TypeError("NetworkError when attempting to fetch resource.")), "Firefox");
   assert.ok(!isOffline(new Error("duplicate key value violates unique constraint")));
@@ -29,4 +31,16 @@ test("the app asks one helper, not its own copy of the check", () => {
   const main = readFileSync(new URL("../js/main.js", import.meta.url), "utf8");
   assert.ok(!main.includes('includes("fetch")'), "main.js should call isOffline");
   assert.ok(!/\/fetch\|load failed\/i/.test(main), "main.js should call isOffline");
+});
+
+// A raw error shown to a person must have had its chance to read as "No
+// connection" first. v1.22 found five that never did.
+test("every raw error message is checked for no connection first", () => {
+  const lines = readFileSync(new URL("../js/main.js", import.meta.url), "utf8").split("\n");
+  const raw = /Couldn't [^`]*\$\{(error\.message|failure\.message|message)\}/;
+  const unchecked = lines
+    .map((line, i) => ({ line, i }))
+    .filter(({ line, i }) => raw.test(line) && !lines.slice(Math.max(0, i - 5), i + 1).join("\n").includes("isOffline("))
+    .map(({ line, i }) => `main.js:${i + 1} ${line.trim()}`);
+  assert.deepEqual(unchecked, []);
 });

@@ -1584,7 +1584,7 @@ async function confirmDeleteIdea(idea) {
     await deleteIdea(idea.id);
     await refreshIdeas();
   } catch (error) {
-    showIdeaStatus(`Couldn't delete: ${error.message}`);
+    showIdeaStatus(isOffline(error) ? "No connection — not deleted." : `Couldn't delete: ${error.message}`);
   }
 }
 
@@ -1977,7 +1977,7 @@ async function confirmDeleteTodo(todo) {
     if (buyEditingId === todo.id) exitBuyEdit();
     await refreshTodos();
   } catch (error) {
-    statusFnFor(todo)(`Couldn't delete: ${error.message}`);
+    statusFnFor(todo)(isOffline(error) ? "No connection — not deleted." : `Couldn't delete: ${error.message}`);
   }
 }
 
@@ -2057,7 +2057,9 @@ async function refreshRecurring() {
       : `Couldn't load recurring items: ${error.message}`;
     sources.recurring.failed = message;
     showDueStatus(message);
-    renderOverview(); // so Overview says so too, rather than guess
+    // so Overview and Coming up say so too, rather than guess
+    renderOverview();
+    renderSoon();
   }
 }
 
@@ -2277,9 +2279,10 @@ function amountEditor(item) {
     }
     editingAmount.delete(item.id);
     const outcome = await doConfirm(item, parsed);
-    // answering no to the duplicate question puts the row back as it was,
-    // typed amount and all, rather than leaving it half closed
-    if (outcome === "declined") editingAmount.add(item.id);
+    // A declined duplicate or a failed confirm puts the row back as it
+    // was, typed amount and all, so trying again is one tap. Once it's
+    // done, here or on the other phone, the typed amount has had its say.
+    if (outcome === "declined" || outcome === "failed") editingAmount.add(item.id);
     else amountDrafts.delete(item.id);
     renderDue();
   });
@@ -2364,9 +2367,13 @@ async function guardDue(action, { refreshAfter = true, show = showDueStatus } = 
     return "done";
   } catch (error) {
     const message = error?.message ?? String(error);
+    // Refresh first and say why last (v1.22): when the refresh fails too,
+    // its "couldn't load" used to replace the reason this didn't go
+    // through, which left it unclear whether anything was saved.
+    if (refreshAfter) await refreshRecurring();
     if (/already confirmed|already moved on/i.test(message)) {
-      show("Already done on the other phone — refreshed.", { news: true });
-      if (refreshAfter) await refreshRecurring();
+      const refreshed = refreshAfter && !sources.recurring.failed;
+      show(`Already done on the other phone${refreshed ? " — refreshed." : "."}`, { news: refreshed });
       return "already";
     }
     show(
@@ -2374,7 +2381,6 @@ async function guardDue(action, { refreshAfter = true, show = showDueStatus } = 
         ? "No connection — that didn't go through."
         : `Couldn't do that: ${message}`,
     );
-    if (refreshAfter) await refreshRecurring();
     return "failed";
   }
 }
@@ -2570,7 +2576,7 @@ recForm.addEventListener("submit", async (event) => {
     syncRunning();
     await refreshRecurring();
   } catch (error) {
-    recStatus.textContent = `Couldn't add it: ${error.message}`;
+    recStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     recStatus.hidden = false;
   }
 });
@@ -2830,7 +2836,7 @@ function renderTypicalMonth() {
   const setAsideCategories = [
     ...new Map(typical.setAside.items.map((item) => [item.category_id, item.categories])).values(),
   ];
-  const setAsideName = setAsideCategories.length === 1 ? setAsideCategories[0]?.name : "Set aside";
+  const setAsideName = (setAsideCategories.length === 1 && setAsideCategories[0]?.name) || "Set aside";
   const notCounted = setAsideCategories.every((category) => category?.excluded_from_totals);
 
   // A layer with nothing in it says nothing.
@@ -2981,6 +2987,7 @@ const soonList = document.getElementById("soon-list");
 const soonEmpty = document.getElementById("soon-empty");
 const soonHint = document.getElementById("soon-hint");
 const soonStatus = document.getElementById("soon-status");
+const soonRecStatus = document.getElementById("soon-rec-status");
 const soonWindow = document.getElementById("soon-window");
 const soonCharges = document.getElementById("soon-charges");
 const soonChargeList = document.getElementById("soon-charge-list");
@@ -3013,9 +3020,15 @@ function renderSoon() {
     today,
   );
   soonWindow.textContent = "next 30 days";
+  // Until Recurring has loaded there are no charges to show, so "nothing
+  // coming" would be a guess (v1.22). A failed load says so instead.
+  const chargesMissing = !sources.recurring.loaded;
+  const missingNote = chargesMissing ? sources.recurring.failed : null;
+  soonRecStatus.textContent = missingNote ? `${missingNote} Charges aren't shown.` : "";
+  soonRecStatus.hidden = !missingNote;
   // "nothing coming" must look at everything, not just the day list: with
   // only monthly charges ahead the list is empty and the line above isn't
-  soonEmpty.hidden = groups.length > 0;
+  soonEmpty.hidden = groups.length > 0 || chargesMissing;
 
   const charges = upcomingCharges(groups, today);
   renderCharges(charges, today);
@@ -3163,7 +3176,7 @@ eventForm.addEventListener("submit", async (event) => {
     eventForm.reset();
     await refreshSoon();
   } catch (error) {
-    eventStatus.textContent = `Couldn't add it: ${error.message}`;
+    eventStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     eventStatus.hidden = false;
   }
 });
@@ -3192,7 +3205,7 @@ wishForm.addEventListener("submit", async (event) => {
     wishForm.reset();
     await refreshTodos();
   } catch (error) {
-    wishStatus.textContent = `Couldn't add it: ${error.message}`;
+    wishStatus.textContent = isOffline(error) ? "No connection — not added." : `Couldn't add it: ${error.message}`;
     wishStatus.hidden = false;
   }
 });
