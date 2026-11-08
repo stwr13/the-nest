@@ -26,6 +26,7 @@ import { defaultCategoryId, defaultCardId, usageRank } from "./category-default.
 import { cardSummary, bestNextCard, normalizeTags, allTags, cardsForTag } from "./cards-math.js";
 import { evaluateAmount, hasOperator, leadingNumber } from "./amount-expr.js";
 import { isOffline, toCents } from "./helpers.js";
+import { monthInflows, inflowTitle, inflowShowsKind, inflowFields, KIND_LABEL } from "./inflow-math.js";
 import {
   fetchCategories,
   fetchExpenses,
@@ -60,6 +61,10 @@ import {
   fetchEvents,
   addEvent,
   deleteEvent,
+  fetchInflows,
+  addInflow,
+  updateInflow,
+  deleteInflow,
 } from "./data.js";
 
 const loginView = document.getElementById("login-view");
@@ -170,7 +175,9 @@ let expensesCache = [];
 const sources = {
   ledger: { loaded: false, failed: null },
   recurring: { loaded: false, failed: null },
+  inflows: { loaded: false, failed: null },
 };
+let inflowsCache = [];
 let dashDate = startOfMonth(new Date()); // which month the dashboard shows
 let ledgerFilter = "all";
 let ledgerCategory = "all";
@@ -293,6 +300,7 @@ async function loadApp() {
   refreshRecurring();
   refreshSoon();
   refreshOneOffs();
+  refreshInflows();
 }
 
 async function refresh() {
@@ -521,6 +529,7 @@ function renderDashboard(expenses) {
     ),
     ...excludedRows.map(([label, cents]) => excludedCategoryRow(label, cents)),
   );
+  renderFlow();
 }
 
 function wholeDollars(cents) {
@@ -2993,6 +3002,228 @@ function renderOneOffs() {
 }
 
 document.getElementById("dash-overview").addEventListener("click", () => showTab("rec"));
+
+// ── Money in (v1.24) ──────────────────────────────────────────────────
+// Shawn knew what went out but only roughly that income was higher, so
+// the app couldn't say what the household keeps each month. In, Out and
+// Savings answer that for the month on screen. Out is total outflow,
+// counted or not. Investment & Insurance stays in Out: it isn't savings
+// until it matures, and then it is logged as money in (Shawn,
+// 2026-11-08). Names show only in the
+// list, never as per-person totals.
+const flowInBox = document.getElementById("flow-in-box");
+const flowIn = document.getElementById("flow-in");
+const flowOut = document.getElementById("flow-out");
+const flowLeft = document.getElementById("flow-left");
+const flowLeftBox = document.getElementById("flow-left-box");
+const flowHint = document.getElementById("flow-hint");
+const inflowListDialog = document.getElementById("inflow-list-dialog");
+const inflowListTitle = document.getElementById("inflow-list-title");
+const inflowSalary = document.getElementById("inflow-salary");
+const inflowOther = document.getElementById("inflow-other");
+const inflowList = document.getElementById("inflow-list");
+const inflowEmpty = document.getElementById("inflow-empty");
+const inflowDialog = document.getElementById("inflow-dialog");
+const inflowForm = document.getElementById("inflow-form");
+const inflowDialogTitle = document.getElementById("inflow-dialog-title");
+const inflowStatus = document.getElementById("inflow-status");
+const inflowSave = document.getElementById("inflow-save");
+const inflowDelete = document.getElementById("inflow-delete");
+let inflowEditing = null; // the row being edited; null while adding
+let inflowFromList = false; // reopen the list when the form closes
+
+async function refreshInflows() {
+  try {
+    inflowsCache = await fetchInflows();
+    sources.inflows = { loaded: true, failed: null };
+  } catch (error) {
+    sources.inflows.failed = isOffline(error)
+      ? "No connection — couldn't load money in."
+      : `Couldn't load money in: ${error.message}`;
+  }
+  renderFlow();
+  if (inflowListDialog.open) renderInflowList();
+}
+
+function renderFlow() {
+  const key = monthKey(dashDate);
+  const ledgerReady = sources.ledger.loaded;
+  const inflowsReady = sources.inflows.loaded;
+  const { outflowCents } = summarize(expensesCache, dashDate);
+  const { inCents, rows } = monthInflows(inflowsCache, key);
+
+  flowIn.textContent = inflowsReady ? wholeDollars(inCents) : "—";
+  flowOut.textContent = ledgerReady ? wholeDollars(outflowCents) : "—";
+  // With nothing logged as in, Savings would just be minus the outflow,
+  // which reads as a real answer. It waits for the first inflow instead.
+  const showLeft = ledgerReady && inflowsReady && rows.length > 0;
+  const leftCents = inCents - outflowCents;
+  flowLeft.textContent = showLeft
+    ? (leftCents < 0 ? `−${wholeDollars(-leftCents)}` : wholeDollars(leftCents))
+    : "—";
+  flowLeftBox.classList.toggle("flow-left-kept", showLeft && leftCents >= 0);
+  flowLeftBox.classList.toggle("flow-left-short", showLeft && leftCents < 0);
+
+  const lines = [];
+  if (sources.inflows.failed) {
+    lines.push(sources.inflows.failed);
+  } else if (inflowsReady && rows.length === 0) {
+    lines.push("Log what comes in to see the month's savings.");
+  }
+  if (rows.length > 0) lines.push("Tap In for the list.");
+  flowHint.textContent = lines.join(" ");
+  flowHint.hidden = lines.length === 0;
+}
+
+function renderInflowList() {
+  const { rows, salaryCents, otherCents } = monthInflows(inflowsCache, monthKey(dashDate));
+  inflowListTitle.textContent = `Money in · ${monthFmt.format(dashDate)}`;
+  inflowSalary.textContent = `Salary ${sgd.format(salaryCents / 100)}`;
+  inflowOther.textContent = `Other ${sgd.format(otherCents / 100)}`;
+  inflowEmpty.hidden = rows.length > 0;
+  if (sources.inflows.failed) {
+    inflowEmpty.hidden = false;
+    inflowEmpty.textContent = sources.inflows.failed;
+  } else {
+    inflowEmpty.textContent = "Nothing logged as coming in this month.";
+  }
+  inflowList.replaceChildren(...rows.map(inflowRow));
+}
+
+function inflowRow(inflow) {
+  const li = document.createElement("li");
+  const own = inflow.created_by === currentUser?.id;
+  const row = document.createElement(own ? "button" : "div");
+  row.className = "inflow-row";
+  if (own) {
+    row.type = "button";
+    row.addEventListener("click", () => {
+      inflowListDialog.close();
+      openInflowForm(inflow, { fromList: true });
+    });
+  }
+  const text = el("span", "inflow-text");
+  const title = el("span", "inflow-title", inflowTitle(inflow));
+  const tag = el("span", `inflow-tag inflow-tag-${inflow.whose.toLowerCase()}`, inflow.whose);
+  const date = shortDateFmt.format(isoToDate(inflow.date));
+  const meta = el(
+    "span",
+    "inflow-meta",
+    inflowShowsKind(inflow) ? `${date} · ${KIND_LABEL[inflow.kind]}` : date,
+  );
+  text.append(title, tag, meta);
+  const amount = el("span", "inflow-amount", sgd.format(Number(inflow.amount)));
+  row.append(text, amount);
+  li.append(row);
+  return li;
+}
+
+function openInflowList() {
+  renderInflowList();
+  inflowListDialog.showModal();
+}
+
+function openInflowForm(inflow = null, { fromList = false } = {}) {
+  inflowEditing = inflow;
+  inflowFromList = fromList;
+  inflowDialogTitle.textContent = inflow ? "Edit money in" : "Money in";
+  inflowForm.amount.value = inflow ? Number(inflow.amount).toFixed(2) : "";
+  inflowForm.date.value = inflow?.date ?? todayISO();
+  // set each radio outright: assigning a value no radio has would leave
+  // the last pick checked
+  setRadio("whose", inflow?.whose ?? displayNameFor(currentUser));
+  setRadio("kind", inflow?.kind ?? "salary");
+  inflowForm.note.value = inflow?.note ?? "";
+  inflowDelete.hidden = !inflow;
+  showInflowStatus(null);
+  inflowDialog.showModal();
+}
+
+function setRadio(name, value) {
+  for (const radio of inflowForm.querySelectorAll(`input[name="${name}"]`)) {
+    radio.checked = radio.value === value;
+  }
+}
+
+function closeInflowForm() {
+  inflowDialog.close();
+}
+
+// Closing the form, by any route (Cancel, Escape, a save), goes back to
+// the list when that is where it was opened from.
+inflowDialog.addEventListener("close", () => {
+  if (inflowFromList) {
+    inflowFromList = false;
+    openInflowList();
+  }
+});
+
+function showInflowStatus(message) {
+  inflowStatus.textContent = message ?? "";
+  inflowStatus.hidden = !message;
+}
+
+function inflowFailure(failure, verb) {
+  return isOffline(failure)
+    ? `No connection — not ${verb}.`
+    : `Couldn't ${verb === "saved" ? "save" : "delete"}: ${failure.message}`;
+}
+
+inflowForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const { error, fields } = inflowFields({
+    amount: evaluateAmount(inflowForm.amount.value),
+    date: inflowForm.date.value,
+    whose: inflowForm.whose.value,
+    kind: inflowForm.kind.value,
+    note: inflowForm.note.value,
+  });
+  if (error) {
+    showInflowStatus(error);
+    return;
+  }
+  inflowSave.disabled = true;
+  inflowSave.textContent = "Saving…";
+  try {
+    if (inflowEditing) await updateInflow(inflowEditing.id, fields);
+    else await addInflow(fields);
+    // a save for another month moves the view there, so it can be seen
+    if (fields.date.slice(0, 7) !== monthKey(dashDate)) dashDate = startOfMonth(isoToDate(fields.date));
+    await refreshInflows();
+    renderDashboard(expensesCache);
+    renderCards(expensesCache);
+    closeInflowForm();
+  } catch (failure) {
+    showInflowStatus(inflowFailure(failure, "saved"));
+  } finally {
+    inflowSave.disabled = false;
+    inflowSave.textContent = "Save";
+  }
+});
+
+inflowDelete.addEventListener("click", async () => {
+  if (!inflowEditing) return;
+  if (!confirm(`Delete this inflow (${inflowTitle(inflowEditing)}, ${sgd.format(Number(inflowEditing.amount))})?`)) return;
+  inflowDelete.disabled = true;
+  try {
+    await deleteInflow(inflowEditing.id);
+    await refreshInflows();
+    closeInflowForm();
+  } catch (failure) {
+    showInflowStatus(inflowFailure(failure, "deleted"));
+  } finally {
+    inflowDelete.disabled = false;
+  }
+});
+
+document.getElementById("inflow-cancel").addEventListener("click", closeInflowForm);
+document.getElementById("flow-add").addEventListener("click", () => openInflowForm());
+flowInBox.addEventListener("click", openInflowList);
+document.getElementById("inflow-list-close").addEventListener("click", () => inflowListDialog.close());
+document.getElementById("inflow-list-add").addEventListener("click", () => {
+  inflowListDialog.close();
+  openInflowForm(null, { fromList: true });
+});
 
 // ── Coming up: the household horizon (v1.15) ─────────────────────────
 // Not a calendar. The things the household jointly needs to see — a

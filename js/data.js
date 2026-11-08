@@ -318,3 +318,32 @@ export async function deleteEvent(id) {
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── money in (v1.24) ─────────────────────────────────────────────────
+// Every row: a household logs a handful a month, so the whole table is
+// small, and the month view filters it client-side.
+
+export async function fetchInflows() {
+  const { data, error } = await supabase
+    .from("inflows")
+    .select("id, amount, date, whose, kind, note, created_by")
+    .order("date", { ascending: false })
+    .order("id", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addInflow(fields) {
+  const { error } = await supabase.from("inflows").insert(fields);
+  if (error) throw error;
+}
+
+export async function updateInflow(id, fields) {
+  const { error } = await supabase.from("inflows").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteInflow(id) {
+  const { error } = await supabase.from("inflows").delete().eq("id", id);
+  if (error) throw error;
+}
