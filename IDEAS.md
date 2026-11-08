@@ -12,11 +12,20 @@ session instead).
 
 ## Open decisions — board as of 2026-11-08 (resume here)
 
-Live app is **v1.24.0**: the daily screens protected (v1.19), Overview in
+Live app is **v1.25.0**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), ten categories instead of eighteen,
 Recurring items editable from Overview (v1.21), the repairs from a full
-review (v1.22), tick boxes in Due now with tighter Running rows (v1.23), and
-money in (v1.24). Scope and rules are in SPEC.md.
+review (v1.22), tick boxes in Due now with tighter Running rows (v1.23),
+money in (v1.24), and a $ shortcut to it in the header (v1.25). Scope and
+rules are in SPEC.md.
+
+**Shipped 2026-11-08, v1.25: the $ shortcut.** The 💡 header button is now
+a green $. It opens one sheet for the month on Money: In · Out · Savings,
+Salary and Other, the month's inflows and "+ Money in". ‹ › in the sheet
+step months and move Money's month with them, so closing the sheet lands
+on the same month. The idea box stays at the bottom of Money with no
+header jump. Watch: does money in now get logged as it lands, rather than
+in a batch?
 
 **Shipped 2026-11-08, v1.24: money in.** "+ Money in" on Money logs each
 inflow; Money shows In · Out · Savings for the viewed month; tap In for the
@@ -30,22 +39,7 @@ Parked, Shawn's own (2026-11-08): **tagging Investment & Insurance for
 reconciliation**, so what went in can later be matched to what comes back
 at maturity, "for record purposes". Not built; wait for him to raise it.
 
-**Next ship, v1.25: a $ shortcut for money in — LOCKED by Shawn
-2026-11-08 from the mockup ("Lock it in and build"), not built.** Raised
-right after v1.24 went live. Why:
-seeing and logging money in takes a couple of scrolls down Money. His ask:
-replace the 💡 header icon with a dollar sign "where I can input the
-money". The shape:
-
-1. The 💡 header button becomes a green "$" button. The idea box stays at the bottom of
-   Money, one scroll away (it has had no use as a channel since
-   September).
-2. Tapping $ opens one sheet for the month on screen, with ‹ › to step months: In · Out · Savings
-   at the top, then the month's inflows with Salary and Other subtotals,
-   then "+ Money in" (same form; saving returns to the sheet). Mockup:
-   vault `dollar-shortcut-mockup-2026-11-08`. This is the v1.24
-   In list with the three boxes added.
-3. Nothing else moves. The boxes stay on Money; no sixth tab.
+No next ship is locked.
 
 Shawn's to answer, none of them blocking:
 

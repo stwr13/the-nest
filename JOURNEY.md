@@ -1505,3 +1505,33 @@ update and delete, logged-out users nothing. The preview ran the real code
 against an in-memory stand-in for Supabase with sample figures, kept
 outside the repo. 127/127 tests. Version 1.24.0. Snapshot, sample data:
 `docs/snapshots/2026-11-08-v1.24.0-money-in-sample-data.png`.
+
+## 2026-11-08 (v1.25.0) — the $ shortcut
+
+Raised right after v1.24 went live: seeing and logging money in took a
+couple of scrolls down Money. Shawn's ask was to swap the 💡 header icon
+for a dollar sign "where I can input the money". Locked from a mockup the
+same day ("Lock it in and build").
+
+What shipped: the 💡 header button is now a filled green $, so it stands
+out from the pale 🗃️ and the pills. It opens one sheet for the month shown
+on Money: "Money · <Month>" with ‹ › to step months, In · Out · Savings,
+the Salary and Other subtotals, the month's inflows (your own rows tap to
+edit or delete), "+ Money in" and Close. It is the v1.24 In list with the
+three boxes added; tapping In on Money still opens it.
+
+Decided in the build: stepping months in the sheet moves Money's month too
+rather than keeping its own, so closing the sheet lands on the same month,
+and it follows how a save for another month already moved Money. The
+sheet's ‹ › take the same bounds as Money's. Both sets of boxes are painted
+from one reading, with the Savings rule (wait for the first inflow, red
+with a minus when short) moved into `savingsCents` in `inflow-math.js` and
+tested. The idea box stays at the bottom of Money with no header jump; it
+has had no use as a channel since September.
+
+Nothing else moved: the boxes stay on Money, no new tab, no data or
+schema change. Previewed at phone width against the in-memory Supabase
+stand-in with sample figures: the header, the sheet, month stepping both
+ways, add, edit and delete from the sheet, a month with no inflows, and
+Money underneath. 128/128 tests. Version 1.25.0. Snapshot, sample data:
+`docs/snapshots/2026-11-08-v1.25.0-dollar-sheet-sample-data.png`.
