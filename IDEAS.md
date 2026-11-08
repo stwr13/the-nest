@@ -18,9 +18,30 @@ Recurring items editable from Overview (v1.21), the repairs from a full
 review (v1.22), and tick boxes in Due now with tighter Running rows (v1.23).
 Scope and rules are in SPEC.md.
 
-**Raised 2026-11-08, not scoped: inflow** (income, dividends). SPEC rules
-out income tracking ("Visibility, not budgets"), so this is a scope
-change for Shawn to decide on its own, not part of v1.23.
+**Next ship, v1.24: inflow — LOCKED by Shawn 2026-11-08 from a mockup, not
+built.** Why: he knows what goes out but only roughly that income is higher,
+so he can't see what the household actually saves each month. With that
+number (his example: 3,000–4,000 a month) he can project, and rein spending
+in when needed. "It doesn't have to be a full-blown feature."
+
+1. **Logging.** A "+ Money in" button on Money opens a form: amount, date,
+   whose (Shawn / Claire / Both — Both for money given to the household or
+   a joint dividend), type (Salary / Other), optional note ("Dividend",
+   "Blessing"). Each inflow is logged as it lands; the month total is the
+   sum. Only salary is marked, "just for knowledge purposes"; dividends,
+   payouts and gifts are Other with a note.
+2. **Money, for the month being viewed.** Spending stays the big number with
+   the total outflow line under it, as now. Below: three boxes, In · Out ·
+   Left over (Left over green). Out is total outflow. A hint says how much
+   of Out went to Investment & Insurance, since that's saving too.
+3. **Tap In:** the month's inflows, Salary and Other subtotals at the top,
+   each row with date and a Shawn / Claire / Both tag; tap a row to edit or
+   delete it. Names show only in this list, never as per-person totals
+   (the tithe-style exception: known, not compared).
+4. **Data:** a new table with RLS like the others (household reads, add,
+   edit and delete own). Salary is marked so a later projection can lean on
+   the steady part; no projection screen in this ship.
+5. **SPEC:** amend "no income tracking" in this ship. Still no budgets.
 
 Shawn's to answer, none of them blocking:
 
