@@ -102,7 +102,12 @@ test("every cadence the database allows has the same step here", () => {
   const newest = readdirSync(dir)
     .filter((f) => f.endsWith(".sql"))
     .sort()
-    .filter((f) => readFileSync(new URL(f, dir), "utf8").includes("recurring_next_due("))
+    // the newest file that DEFINES the function, not one that only grants on it
+    .filter((f) =>
+      readFileSync(new URL(f, dir), "utf8").includes(
+        "create or replace function public.recurring_next_due(",
+      ),
+    )
     .at(-1);
   const sql = readFileSync(new URL(newest, dir), "utf8");
   const steps = {};
