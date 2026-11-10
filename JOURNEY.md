@@ -1535,3 +1535,42 @@ stand-in with sample figures: the header, the sheet, month stepping both
 ways, add, edit and delete from the sheet, a month with no inflows, and
 Money underneath. 128/128 tests. Version 1.25.0. Snapshot, sample data:
 `docs/snapshots/2026-11-08-v1.25.0-dollar-sheet-sample-data.png`.
+
+## 2026-11-10 — security review: sound, one database tidy-up
+
+Shawn asked whether the app, Supabase and everything outward-facing was
+well covered. Everything was checked read-only, from outside as a
+stranger holding the publishable key and from inside through the
+dashboard.
+
+What held: all eight tables, both write functions and storage refused a
+logged-out caller. Signups are closed and there are two accounts. Every
+table has row security on, including the backup tables in `snapshots`,
+which no app role can reach. All policies apply to signed-in users only.
+No secret is in the repo or its history. The Security Advisor showed no
+errors; most of its warnings are the shared-list policies, which are
+deliberate.
+
+What changed: `confirm_recurring`, `skip_recurring` and
+`recurring_next_due` were still open to PUBLIC, the Postgres default the
+v1.14 migration never took back. The two that write were already stopped
+at the table grants and the third only does date arithmetic, so nothing
+was exposed. They are now closed to logged-out callers and have a fixed
+`search_path` (`db/migrations/2026-11-10-function-lockdown.sql`, with its
+undo). Run and verified against production: a logged-out call is refused
+on all three, and signed-in users keep the right. Still to see in real
+use: one Confirm or Skip tap on a Due now item.
+
+Decided: Shawn asked for a recommendation in plain words before
+approving, with the condition that nothing is deleted and the app runs
+as before. CLAUDE.md now says every new function revokes execute from
+`public, anon`. He turned on two-factor for the code host and MFA for
+the database account the same evening.
+
+Caught on the way: the cadence test picked "the newest migration that
+mentions `recurring_next_due`" and so read the new file, which only sets
+rights on it. It now picks the newest file that defines the function.
+128/128 tests. No app files changed, so the version stays 1.25.0.
+
+Telegram reminders (v1.12) were never switched on: no function is
+deployed and no cron job exists.

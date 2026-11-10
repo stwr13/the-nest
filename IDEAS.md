@@ -39,6 +39,11 @@ Parked, Shawn's own (2026-11-08): **tagging Investment & Insurance for
 reconciliation**, so what went in can later be matched to what comes back
 at maturity, "for record purposes". Not built; wait for him to raise it.
 
+**Done 2026-11-10: security review.** Sound from outside and inside; one
+database tidy-up run (three functions closed to logged-out callers, no
+app change, still v1.25.0). Watch: the first Confirm or Skip tap on a Due
+now item after it. Detail in JOURNEY.md.
+
 No next ship is locked.
 
 Shawn's to answer, none of them blocking:
@@ -54,6 +59,9 @@ Shawn's to answer, none of them blocking:
 3. **Unconfirmed details in the registry:** a charge with no card set, a
    payment route assumed, three premiums assumed annual, and two tithe
    dates taken from past entries.
+4. **Optional settings from the 2026-11-10 review**, all his own clicks in
+   Supabase: a longer minimum password length, and switching off the
+   unused legacy API keys. Backups on the current plan are unchecked.
 
 Decided, so it isn't asked again: the two tithe rows stay named after
 people, so they can be told apart and tracked, even though they show by
