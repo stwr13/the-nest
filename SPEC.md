@@ -12,7 +12,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 4. **Duplicate warning** — same amount within ±1 day prompts "possible duplicate — save anyway?" Warns, never blocks.
 5. **Two-account auth** — email + password via Supabase; signups closed after both accounts exist.
 6. **CSV export** — one button, full ledger download. This is the backup story.
-7. **Idea box** (added 2026-07-16) — one-line friction/idea capture inside the app, so both users can log itches during real use without leaving it. Raw notes live in the `ideas` table (household reads all, add/delete own); curated into IDEAS.md at scoping time. Process tooling, not a product bet: its value is the usage-trial data itself.
+7. **Idea box** (added 2026-07-16; **retired 2026-11-13, v1.26** — unused as a channel since September, things get raised in session instead. The card and its code are gone from the app; the `ideas` table and its rows stay in Supabase.) — one-line friction/idea capture inside the app, so both users can log itches during real use without leaving it. Raw notes live in the `ideas` table (household reads all, add/delete own); curated into IDEAS.md at scoping time. Process tooling, not a product bet: its value is the usage-trial data itself.
 
 ## Data model
 
@@ -24,7 +24,7 @@ Working title: The Nest (rename later is cheap). Currency: SGD. Users: Shawn and
 - Supabase free tier pauses after ~7 days of inactivity — daily use keeps it alive; unpause manually in the console if it happens.
 - No offline entry: a failed save shows a visible error, nothing is queued.
 - Single currency (SGD).
-- The ledger view shows the most recent 1000 entries (API page cap); CSV export always contains the full history.
+- ~~The ledger view shows the most recent 1000 entries (API page cap).~~ Fixed in v1.26: the ledger loads every entry, in pages of 1000, and a failed page fails the whole load visibly rather than show a part-ledger. CSV export has always contained the full history.
 - iOS PWA installs via the share-sheet → Add to Home Screen (Safari or Chrome; both use WebKit on iOS).
 
 ## Out of scope for v1.0
@@ -142,3 +142,14 @@ Amends "no income tracking" (v1.0 and v1.19). Why: the app knew what went out, b
 2. **Money, for the month being viewed.** Spending stays the big number with the total outflow line under it. Below it, three boxes: In · Out · Savings (named "Left over" in the mockup; renamed by Shawn before ship, "it doesn't seem right"). Out is total outflow, counted or not. Investment & Insurance stays in Out, and the mockup's hint calling it saving is dropped: it isn't realised savings until it matures, and then the payout is logged as money in (Shawn, before ship). Savings waits for the month's first inflow rather than show minus the outflow.
 3. **Tap In:** the month's inflows, Salary and Other subtotals at the top, each row with its date and a Shawn / Claire / Both tag. Tap a row you logged to edit or delete it. Names show only in this list, never as per-person totals.
 4. **Data:** `inflows` (amount, date, whose, kind salary/other, note, created_by), `db/migrations/2026-11-08-inflows-v1_24.sql`. RLS like expenses: the household reads every row, each person adds, edits and deletes their own. Salary is marked so a later projection can lean on the steady part; no projection screen in this ship.
+
+## v1.26 — Whole ledger, less clutter, a standing backup (LOCKED by Shawn 2026-11-13, from a review, a plan and mockups)
+
+No new screen. Four items, the first because the app was about ten weeks from quietly showing a wrong number.
+
+1. **The ledger loads every entry.** The API returns at most 1000 rows a request and the app asked once, so past 1000 entries the oldest month on Money would have shown a part-total, and a wrong In · Out · Savings, with no warning. It now asks in pages until a short page comes back (`js/paging.js`, Node-tested). If any page fails the whole load fails with the usual message; a part-ledger is never shown as complete. A row repeated across two pages, which can happen when the other phone saves between requests, is counted once.
+2. **The idea box is retired** (feature 7 above). Nothing is deleted from the database.
+3. **Bills only, a tick on a card.** For an account that only ever pays standing charges. It leaves the logging picker and the "which card" advice. It stays selectable for Recurring items, is confirmed from Due now as before, stays in the Cards area undimmed with a line saying why it has no tile, and keeps its old entries; editing one of those never moves it to another card. It gets no vote in which card the form opens on. One column, `cards.bills_only` (`db/migrations/2026-11-13-bills-only-cards-v1_26.sql`, additive). Which card gets the tick is the household's own tap.
+4. **A monthly backup inside Supabase.** On the 1st of each month a scheduled job copies every table in `public` into dated tables in `snapshots` (`db/migrations/2026-11-13-monthly-snapshot-v1_26.sql`). It never prunes or replaces anything. The copies can't be reached through the app, and no key is stored anywhere. Amends feature 6: CSV export is no longer the only backup story. The copies sit in the same database as the originals, so they cover a bad edit or a bad migration, not the loss of the project. Shawn chose a schedule over a button.
+
+Declined, not to be offered again: any projection or month-end estimate ("i want an accurate depiction of actual"), a quick-repeat row on the form, and a backup button. Not in scope and undecided: a copy of the backup outside Supabase, ledger search and per-category counts, removing the event form, tucking the category manager away, a "due items not logged" line, and the header at phone width.

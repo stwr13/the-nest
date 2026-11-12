@@ -178,3 +178,35 @@ test("only retired cards left means no recommendation", () => {
   assert.equal(bestNextCard(summary), null);
   assert.equal(cardsForTag(summary, "dining").best, null);
 });
+
+// ── v1.26: bills-only cards ─────────────────────────────────────────
+test("a bills-only card never wins, whatever its headroom", () => {
+  const cards = [
+    { id: 1, name: "Live", cap: 1000, earn_types: ["dining"] },
+    { id: 2, name: "Loan account", cap: 5000, earn_types: ["dining"], bills_only: true },
+  ];
+  const summary = cardSummary([], cards, AUG);
+  assert.equal(bestNextCard(summary).id, 1);
+  const { ranked, best } = cardsForTag(summary, "dining");
+  assert.deepEqual(ranked.map((c) => c.id), [1]);
+  assert.equal(best.id, 1);
+});
+
+test("a bills-only card adds no tag chips, but its spend still counts", () => {
+  const cards = [
+    { id: 1, name: "Live", cap: 1000, earn_types: ["dining"] },
+    { id: 2, name: "Loan account", cap: null, earn_types: ["loans"], bills_only: true },
+  ];
+  assert.deepEqual(allTags(cards), ["dining"]);
+  const summary = cardSummary([e("2026-08-03", 120, 2)], cards, AUG);
+  const account = summary.find((c) => c.id === 2);
+  assert.equal(account.spentCents, 12000);
+  assert.equal(account.bills_only, true); // the Cards area still shows it
+});
+
+test("only bills-only cards left means no recommendation", () => {
+  const cards = [{ id: 1, name: "Loan account", cap: 750, earn_types: ["dining"], bills_only: true }];
+  const summary = cardSummary([], cards, AUG);
+  assert.equal(bestNextCard(summary), null);
+  assert.equal(cardsForTag(summary, "dining").best, null);
+});

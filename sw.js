@@ -27,6 +27,7 @@ const SHELL = [
   "js/amount-expr.js",
   "js/helpers.js",
   "js/inflow-math.js",
+  "js/paging.js",
   "js/version.js",
   "js/vendor/supabase-js-2.111.0.js",
   "manifest.webmanifest",

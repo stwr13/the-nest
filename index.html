@@ -224,21 +224,6 @@
       <ul id="cat-list" class="cat-list"></ul>
     </section>
 
-    <!-- capture box, not a destination — lives at the bottom of Money
-         (v1.3.2: its tab removed as noise; v1.25: its 💡 header jump
-         gave way to the $ button) -->
-    <section class="card idea-card">
-      <h2 class="card-title">Ideas &amp; friction</h2>
-      <p class="muted idea-hint">Something slow, missing, or annoying? Log the itch, not the fix.</p>
-      <form id="idea-form">
-        <input id="idea-body" name="body" type="text" maxlength="500" required
-               placeholder="What was the question or annoyance?"
-               aria-label="Idea or friction note" autocomplete="off" />
-        <p id="idea-status" class="form-error" role="alert" hidden></p>
-        <button type="submit" id="idea-submit" class="btn btn-primary idea-submit">Log it</button>
-      </form>
-      <ul id="idea-list" class="ledger idea-list"></ul>
-    </section>
     </div>
 
     <dialog id="cat-dialog" class="cat-dialog">
@@ -278,6 +263,10 @@
         <label for="card-review">Rules good until <span class="optional">(optional — for cards you re-pick each quarter)</span></label>
         <input id="card-review" name="earn_review_date" type="date" />
         <p class="hint">Past this date the card is flagged for a check and stops out-ranking cards whose rules you have confirmed. Leave empty if the earn structure never changes.</p>
+        <label class="cat-flag">
+          <input id="card-bills-only" name="bills_only" type="checkbox" />
+          <span>Bills only — keep it out of the logging picker</span>
+        </label>
         <label class="cat-flag">
           <input id="card-retired" name="retired" type="checkbox" />
           <span>Retired — hide from the picker, keep its old entries</span>

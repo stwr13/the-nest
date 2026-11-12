@@ -1,8 +1,10 @@
 # IDEAS.md — candidates for after v1.0
 
 Not commitments. Two weeks of real use decides what earns a place
-(SPEC.md rule). This file is the curated backlog; the raw inbox is the
-in-app idea box (`ideas` table). Harvested 2026-07-26: 11 captures,
+(SPEC.md rule). This file is the curated backlog. The raw inbox used to
+be the in-app idea box; it was retired in v1.26 (2026-11-13), and things
+are now raised in session and written straight to the board below. The
+`ideas` table and its rows are kept in Supabase. Harvested 2026-07-26: 11 captures,
 2026-07-17 → 07-26, both authors — Claude now drives the SQL editor
 through Chrome directly (Claude in Chrome extension), so future
 harvests need no copy-paste. Second harvest 2026-08-01: 3 new
@@ -44,7 +46,47 @@ database tidy-up run (three functions closed to logged-out callers, no
 app change, still v1.25.0). Watch: the first Confirm or Skip tap on a Due
 now item after it. Detail in JOURNEY.md.
 
-No next ship is locked.
+**LOCKED 2026-11-13: v1.26.0.** Shawn, after a review of the app and how
+it is used, a plan and mockups: "ok build based on the plan in a new
+session". In scope: the full ledger load, the idea box retired, the
+bills-only tick, and a monthly backup inside Supabase. Detail below.
+
+- Decided: **no projection.** "Still to come" (item 4 on the 2026-09-19
+  board) and any month-end estimate are declined. Shawn: "i dont want a
+  projection, i want an accurate depiction of actual." Not to be offered
+  again.
+- Decided: **retire the idea box** ("yes retire the idea box"). Working
+  shape: the card and its code leave Money; the `ideas` table and its
+  rows stay in Supabase.
+- Locked: load the ledger in pages past the
+  1,000-entry API cap. The ledger reaches it around late January 2027;
+  after that the oldest month in view shows a part-total with no warning.
+- Decided: **no quick repeat.** Shown as a mockup (chips of his usual
+  entries above the form). Shawn: one category holds many different past
+  entries, so a prefill often needs changing again, "its not practical...
+  i dont think this is needed." Not to be offered again.
+- Decided: **backup runs on a schedule, not a button** ("yes, schedule
+  for it"). The one-tap backup sheet is dropped. Open: where the copy
+  lands. A monthly job inside Supabase can copy every table to
+  `snapshots` with no key stored anywhere. A copy that lands in the vault
+  on the Mac mini needs a read-only credential kept on the Mini. He did
+  not pick between them; the lock is read as the recommended one, the
+  Supabase-only schedule. A vault copy is undecided and not in v1.26.
+- **Bills-only tick on a card** (item 1 below): hides a payment-only
+  account from the logging picker without calling it retired. Explained;
+  Shawn: "ok". Read as yes and in the locked scope; confirm at the
+  preview. Needs one new column on `cards`.
+- Shown as a mockup, undecided: ledger search by note, with a count and
+  average per category on Money.
+- Undecided: removing the unused event form and tucking the category
+  manager away; a line on Money for due items not yet logged; the header
+  wrapping onto two lines at phone width (seen in a render, not yet
+  checked on a phone).
+- Found while planning: the duplicate warning fires on any same amount
+  within a day either side, whatever the note, so a daily repeat at the
+  same price triggers it. Not raised by him as a problem.
+- Mockups (sample data) were shown in session and are not in the repo.
+- Hand-off: the build runs in a fresh session started from this block.
 
 Shawn's to answer, none of them blocking:
 

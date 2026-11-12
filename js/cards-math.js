@@ -40,6 +40,14 @@ export function cardSummary(expenses, cards, monthDate, todayIso = null) {
   });
 }
 
+// v1.18: a retired card takes no part in the advice. v1.26: nor does a
+// bills-only card, which is never picked by hand, so recommending it
+// answers a question nobody is asking. Both keep their spend in
+// cardSummary; history is not advice.
+function advised(card) {
+  return !card.retired && !card.bills_only;
+}
+
 // The generic "which card should I use?" answer: the capped card with
 // the most headroom left. Uncapped cards don't compete (they have no
 // bonus ceiling to maximize). Null when no capped card has room.
@@ -48,10 +56,11 @@ export function cardSummary(expenses, cards, monthDate, todayIso = null) {
 // stale rule is usually still roughly right — but it never beats a
 // card the household has actually confirmed.
 // v1.18: a retired card is never the answer, whatever its numbers say.
+// v1.26: nor is a bills-only one.
 export function bestNextCard(summary) {
   return (
     summary
-      .filter((c) => !c.retired && c.capCents != null && !c.overCap)
+      .filter((c) => advised(c) && c.capCents != null && !c.overCap)
       .sort(
         (a, b) =>
           Number(Boolean(a.stale)) - Number(Boolean(b.stale)) ||
@@ -78,7 +87,7 @@ export function normalizeTags(text) {
 export function allTags(cards) {
   const seen = new Set();
   for (const c of cards) {
-    if (c.retired) continue; // v1.18: a retired card adds no chips
+    if (!advised(c)) continue; // a retired or bills-only card adds no chips
     for (const t of c.earn_types ?? []) seen.add(t);
   }
   return [...seen].sort();
@@ -89,7 +98,7 @@ export function allTags(cards) {
 // protect), cap-hit matches last (flagged, not hidden: "it earns here
 // but it's full" is the warning that saves the wasted spend).
 export function cardsForTag(summary, tag) {
-  const matches = summary.filter((c) => !c.retired && (c.earn_types ?? []).includes(tag));
+  const matches = summary.filter((c) => advised(c) && (c.earn_types ?? []).includes(tag));
   const open = matches
     .filter((c) => !c.overCap && c.capCents != null)
     .sort(

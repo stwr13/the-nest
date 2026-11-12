@@ -40,9 +40,6 @@ import {
   updateCategory,
   countExpensesForCategory,
   reassignAndDeleteCategory,
-  fetchIdeas,
-  addIdea,
-  deleteIdea,
   fetchTodos,
   addTodo,
   updateTodo,
@@ -111,10 +108,6 @@ const catDeleteForm = document.getElementById("cat-delete-form");
 const catDeleteInfo = document.getElementById("cat-delete-info");
 const catDeleteTarget = document.getElementById("cat-delete-target");
 const catDeleteStatus = document.getElementById("cat-delete-status");
-const ideaForm = document.getElementById("idea-form");
-const ideaStatus = document.getElementById("idea-status");
-const ideaSubmit = document.getElementById("idea-submit");
-const ideaList = document.getElementById("idea-list");
 const todoForm = document.getElementById("todo-form");
 const todoStatus = document.getElementById("todo-status");
 const todoSubmit = document.getElementById("todo-submit");
@@ -282,20 +275,24 @@ async function loadApp() {
     if (usual !== null && [...categorySelect.options].some((o) => o.value === String(usual))) {
       categorySelect.value = String(usual);
     }
-    const usualCard = defaultCardId(expenses, currentUser?.id, todayISO());
-    if (usualCard !== null && [...cardSelect.options].some((o) => o.value === String(usualCard))) {
-      cardSelect.value = String(usualCard);
-    }
+    // v1.26: only cards in the picker get a vote, so a bills-only
+    // account confirmed from Due now can't out-vote the usual card
+    const pickable = new Set(pickerCards().map((c) => c.id));
+    const usualCard = defaultCardId(
+      expenses.filter((e) => pickable.has(e.card_id)),
+      currentUser?.id,
+      todayISO(),
+    );
+    if (usualCard !== null) cardSelect.value = String(usualCard);
     syncCardPicker();
     sources.ledger = { loaded: true, failed: null };
     renderAll(expenses);
   } catch (error) {
     ledgerFailed(error);
   }
-  // Deliberately separate: the idea box and to-do list are auxiliary,
+  // Deliberately separate: the to-do list and the rest are auxiliary,
   // and their failures must never take the ledger down with them. Each
   // shows its errors in its own card via its refresh's catch.
-  refreshIdeas();
   refreshTodos();
   refreshRecurring();
   refreshSoon();
@@ -1135,9 +1132,22 @@ function liveCards() {
   return cardsCache.filter((c) => !c.retired);
 }
 
+// v1.26: a bills-only card (an account that only ever pays standing
+// charges) stays out of the logging picker but is still offered for
+// Recurring items, so Due now confirms keep landing on it. Its old
+// entries edit the same way a retired card's do.
+function pickerCards() {
+  return liveCards().filter((c) => !c.bills_only);
+}
+
 function renderCardOptions() {
   const selected = cardSelect.value;
-  cardSelect.replaceChildren(...liveCards().map((c) => new Option(c.name, c.id)));
+  // An entry on a hidden card (or with no card) is mid-edit: its
+  // temporary option must outlive a rebuild, or saving a card while the
+  // edit is open would drop it and the Update would move the entry.
+  const temp = cardSelect.querySelector("option[data-temp]");
+  cardSelect.replaceChildren(...pickerCards().map((c) => new Option(c.name, c.id)));
+  if (temp && ![...cardSelect.options].some((o) => o.value === temp.value)) cardSelect.prepend(temp);
   if ([...cardSelect.options].some((o) => o.value === selected)) {
     cardSelect.value = selected;
   }
@@ -1263,6 +1273,8 @@ function syncCardPicker() {
 // but the option vanishes once the edit ends so new entries must pick.
 // v1.18: same trick for an entry on a retired card — without it the
 // select would silently fall back and a save would move the entry.
+// v1.26: a bills-only card is outside the picker too and takes the
+// same path.
 function setCardSelectValue(cardId) {
   clearTempCardOption();
   if (cardId != null) {
@@ -1379,6 +1391,13 @@ function renderCards(expenses) {
         flag.className = "card-row-retired";
         flag.textContent = "retired — not in the picker";
         left.append(flag);
+      } else if (c.bills_only) {
+        // v1.26: not dimmed and not sunk — it is in use, just never
+        // picked by hand. The line says why its tile is missing.
+        const flag = document.createElement("span");
+        flag.className = "card-row-retired";
+        flag.textContent = "bills only — not in the logging picker";
+        left.append(flag);
       } else if (c.stale) {
         const flag = document.createElement("span");
         flag.className = "card-row-stale";
@@ -1432,6 +1451,7 @@ function openCardDialog(card) {
   cardForm.tags.value = (card?.earn_types ?? []).join(", ");
   cardForm.note.value = card?.note ?? "";
   cardForm.earn_review_date.value = card?.earn_review_date ?? "";
+  cardForm.bills_only.checked = Boolean(card?.bills_only);
   cardForm.retired.checked = Boolean(card?.retired);
   cardDeleteBtn.hidden = card === null;
   showCardStatus(null);
@@ -1459,6 +1479,7 @@ cardForm.addEventListener("submit", async (event) => {
     earn_types: normalizeTags(cardForm.tags.value),
     note: cardForm.note.value.replace(/\s+/g, " ").trim() || null,
     earn_review_date: cardForm.earn_review_date.value || null,
+    bills_only: cardForm.bills_only.checked,
     retired: cardForm.retired.checked,
   };
   try {
@@ -1507,93 +1528,6 @@ function friendlyCardError(error) {
 function showCardStatus(message) {
   cardStatus.textContent = message ?? "";
   cardStatus.hidden = !message;
-}
-
-// ── idea box: raw friction inbox for the usage trial ─────────────────
-
-// The card lives at the bottom of Money (v1.3.2 — its tab was noise,
-// Shawn's call). Its 💡 header jump gave way to $ in v1.25: the box has
-// had no use as a channel since September.
-
-ideaForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  showIdeaStatus(null);
-  ideaSubmit.disabled = true;
-  ideaSubmit.textContent = "Logging…";
-  try {
-    await addIdea({
-      body: ideaForm.body.value.trim(),
-      author: displayNameFor(currentUser) ?? currentUser?.email ?? "unknown",
-    });
-    ideaForm.reset();
-    await refreshIdeas();
-  } catch (error) {
-    showIdeaStatus(
-      isOffline(error)
-        ? "No connection — idea not saved."
-        : `Couldn't save: ${error.message}`,
-    );
-  } finally {
-    ideaSubmit.disabled = false;
-    ideaSubmit.textContent = "Log it";
-  }
-});
-
-async function refreshIdeas() {
-  try {
-    renderIdeas(await fetchIdeas());
-  } catch (error) {
-    showIdeaStatus(
-      isOffline(error)
-        ? "No connection — couldn't load ideas."
-        : `Couldn't load ideas: ${error.message}`,
-    );
-  }
-}
-
-function renderIdeas(ideas) {
-  ideaList.replaceChildren(...ideas.map(renderIdea));
-}
-
-function renderIdea(idea) {
-  const li = document.createElement("li");
-
-  const main = document.createElement("div");
-  main.className = "entry-main";
-
-  const body = document.createElement("p");
-  body.className = "entry-title";
-  body.textContent = idea.body;
-
-  const meta = document.createElement("p");
-  meta.className = "entry-meta";
-  meta.textContent = `${idea.author} · ${dateFmt.format(new Date(idea.created_at))}`;
-
-  main.append(body, meta);
-  li.append(main);
-
-  if (idea.created_by === currentUser?.id) {
-    const side = document.createElement("div");
-    side.className = "entry-side";
-    side.append(entryButton("Delete", () => confirmDeleteIdea(idea)));
-    li.append(side);
-  }
-  return li;
-}
-
-async function confirmDeleteIdea(idea) {
-  if (!window.confirm("Delete this note?")) return;
-  try {
-    await deleteIdea(idea.id);
-    await refreshIdeas();
-  } catch (error) {
-    showIdeaStatus(isOffline(error) ? "No connection — not deleted." : `Couldn't delete: ${error.message}`);
-  }
-}
-
-function showIdeaStatus(message) {
-  ideaStatus.textContent = message ?? "";
-  ideaStatus.hidden = !message;
 }
 
 function resetFormDefaults() {
@@ -2959,8 +2893,9 @@ function renderYearAhead() {
   );
 }
 
-// Every figure here is one tap from its rows. It has its own query because
-// the ledger cache holds only the newest 1000 entries.
+// Every figure here is one tap from its rows. It has its own query, which
+// dates from when the ledger cache held only the newest 1000 entries; the
+// cache is complete since v1.26 and the query stays as it is.
 async function refreshOneOffs() {
   try {
     const lumpy = categoriesCache.filter((c) => c.kind === "lumpy").map((c) => c.id);

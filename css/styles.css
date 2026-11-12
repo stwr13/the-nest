@@ -491,12 +491,9 @@ select:focus {
   100% { background: transparent; }
 }
 
-/* ── idea box ── */
+/* ── header jump button (🗃️). The class name is from the idea box's
+   old 💡 jump; the idea box itself was retired in v1.26. ── */
 .idea-jump { min-width: 44px; padding: 0.35rem 0.6rem; }
-.idea-hint { margin: 0 0 0.75rem; }
-.idea-submit { margin-top: 0.75rem; }
-.idea-list { margin-top: 1rem; }
-.idea-list .entry-title { font-weight: 400; }
 
 /* ── tab bar (v1.2 ship 1) ── */
 /* room for the fixed bar + iOS home-indicator inset */

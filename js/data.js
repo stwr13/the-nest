@@ -1,4 +1,5 @@
 import { supabase } from "./supabase.js";
+import { fetchAllPages } from "./paging.js";
 
 export async function fetchCategories() {
   const { data, error } = await supabase
@@ -13,14 +14,24 @@ export async function fetchCategories() {
   return data;
 }
 
+// Every entry, not just the first page (v1.26): the API returns at most
+// 1000 rows a request, and a ledger cut off there shows its oldest month
+// as a part-total. A failed page throws, so the caller shows the load
+// error rather than a short ledger.
 export async function fetchExpenses() {
-  const { data, error } = await supabase
-    .from("expenses")
-    .select("id, amount, date, paid_by, note, created_by, category_id, card_id, card_charged, recurring_id, categories(name, icon, excluded_from_totals, kind)")
-    .order("date", { ascending: false })
-    .order("id", { ascending: false });
-  if (error) throw error;
-  return data;
+  return fetchAllPages(
+    async (from, to) => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("id, amount, date, paid_by, note, created_by, category_id, card_id, card_charged, recurring_id, categories(name, icon, excluded_from_totals, kind)")
+        .order("date", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      return data;
+    },
+    { keyOf: (row) => row.id },
+  );
 }
 
 // ── cards: household-managed miles/cap list (v1.4) ───────────────────
@@ -28,7 +39,7 @@ export async function fetchExpenses() {
 export async function fetchCards() {
   const { data, error } = await supabase
     .from("cards")
-    .select("id, name, cap, note, earn_types, color, image, sort_order, earn_review_date, retired")
+    .select("id, name, cap, note, earn_types, color, image, sort_order, earn_review_date, retired, bills_only")
     .order("sort_order")
     .order("name");
   if (error) throw error;
@@ -85,9 +96,10 @@ export async function findPossibleDuplicates(amount, date, excludeId = null) {
   return data;
 }
 
-// Its own query, not the ledger cache: fetchExpenses holds only the newest
-// 1000 rows, which stops covering a 12-month look-back well inside the
-// first year. The server narrows it down; classifyEntry has the final say.
+// Its own query, not the ledger cache: it started when the cache held only
+// the newest 1000 rows. The cache is complete since v1.26; this stays
+// because it is in use and the server does the narrowing. classifyEntry
+// has the final say.
 export async function fetchOneOffCandidates(sinceIso, minAmount, lumpyCategoryIds) {
   const candidates = [`amount.gte.${minAmount}`];
   if (lumpyCategoryIds.length) candidates.push(`category_id.in.(${lumpyCategoryIds.join(",")})`);
@@ -105,19 +117,16 @@ export async function fetchOneOffCandidates(sinceIso, minAmount, lumpyCategoryId
 // PostgREST caps responses at 1000 rows; a backup that silently
 // truncates is worse than none, so page until done.
 export async function fetchAllExpensesForExport() {
-  const pageSize = 1000;
-  const all = [];
-  for (let from = 0; ; from += pageSize) {
+  return fetchAllPages(async (from, to) => {
     const { data, error } = await supabase
       .from("expenses")
       .select("date, amount, card_charged, paid_by, note, categories(name), cards(name)")
       .order("date", { ascending: true })
       .order("id", { ascending: true })
-      .range(from, from + pageSize - 1);
+      .range(from, to);
     if (error) throw error;
-    all.push(...data);
-    if (data.length < pageSize) return all;
-  }
+    return data;
+  });
 }
 
 function shiftDate(dateStr, days) {
@@ -210,27 +219,6 @@ export async function updateTodo(id, fields) {
 
 export async function deleteTodo(id) {
   const { error } = await supabase.from("todos").delete().eq("id", id);
-  if (error) throw error;
-}
-
-// ── ideas: raw friction inbox, curated into IDEAS.md at scoping time ──
-
-export async function fetchIdeas() {
-  const { data, error } = await supabase
-    .from("ideas")
-    .select("id, body, author, created_at, created_by")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data;
-}
-
-export async function addIdea(fields) {
-  const { error } = await supabase.from("ideas").insert(fields);
-  if (error) throw error;
-}
-
-export async function deleteIdea(id) {
-  const { error } = await supabase.from("ideas").delete().eq("id", id);
   if (error) throw error;
 }
 
