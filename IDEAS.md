@@ -12,14 +12,34 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-11-08 (resume here)
+## Open decisions — board as of 2026-11-13 (resume here)
 
-Live app is **v1.25.0**: the daily screens protected (v1.19), Overview in
+Live app is **v1.26.0**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), ten categories instead of eighteen,
 Recurring items editable from Overview (v1.21), the repairs from a full
 review (v1.22), tick boxes in Due now with tighter Running rows (v1.23),
-money in (v1.24), and a $ shortcut to it in the header (v1.25). Scope and
-rules are in SPEC.md.
+money in (v1.24), a $ shortcut to it in the header (v1.25), and the whole
+ledger loaded, the idea box retired, a bills-only tick on cards and a
+monthly backup inside Supabase (v1.26). Scope and rules are in SPEC.md.
+
+**Shipped 2026-11-13, v1.26.** Shawn locked it with "ok build based on
+the plan in a new session" and shipped it from a phone-width preview on
+sample data with "Yes, ship it". Both database changes were run and
+checked the same day, and the first backup copy was taken. Detail in
+JOURNEY.md. Watch, costing nothing:
+
+- **The tick is not on any card yet.** Which account gets it is Shawn's
+  own tap in the card editor (Cards, tap the card, tick Bills only).
+- **The first scheduled backup** is due on 1 December 2026, about 08:10
+  Singapore time. Worth one look at `snapshots` after that date; a run
+  missed while the project is paused is not caught up.
+- **Late January 2027**, when the ledger passes 1,000 entries: the oldest
+  month on Money should still add up. Tested on sample data only.
+
+Still open from that scope, undecided: whether a copy of the backup
+should also land outside Supabase (in the vault on the Mac mini). It
+needs a read-only credential kept on the Mini, so it is his decision and
+nothing was built or stored for it.
 
 **Shipped 2026-11-08, v1.25: the $ shortcut.** The 💡 header button is now
 a green $. It opens one sheet for the month on Money: In · Out · Savings,
@@ -46,55 +66,45 @@ database tidy-up run (three functions closed to logged-out callers, no
 app change, still v1.25.0). Watch: the first Confirm or Skip tap on a Due
 now item after it. Detail in JOURNEY.md.
 
-**LOCKED 2026-11-13: v1.26.0.** Shawn, after a review of the app and how
-it is used, a plan and mockups: "ok build based on the plan in a new
-session". In scope: the full ledger load, the idea box retired, the
-bills-only tick, and a monthly backup inside Supabase. Detail below.
+**Decided 2026-11-13, at the v1.26 lock, so they aren't asked again:**
 
-- Decided: **no projection.** "Still to come" (item 4 on the 2026-09-19
-  board) and any month-end estimate are declined. Shawn: "i dont want a
-  projection, i want an accurate depiction of actual." Not to be offered
-  again.
-- Decided: **retire the idea box** ("yes retire the idea box"). Working
-  shape: the card and its code leave Money; the `ideas` table and its
-  rows stay in Supabase.
-- Locked: load the ledger in pages past the
-  1,000-entry API cap. The ledger reaches it around late January 2027;
-  after that the oldest month in view shows a part-total with no warning.
-- Decided: **no quick repeat.** Shown as a mockup (chips of his usual
-  entries above the form). Shawn: one category holds many different past
+- **No projection.** "Still to come" (item 4 on the 2026-09-19 board)
+  and any month-end estimate are declined. Shawn: "i dont want a
+  projection, i want an accurate depiction of actual."
+- **No quick repeat.** Shown as a mockup (chips of his usual entries
+  above the form). Shawn: one category holds many different past
   entries, so a prefill often needs changing again, "its not practical...
-  i dont think this is needed." Not to be offered again.
-- Decided: **backup runs on a schedule, not a button** ("yes, schedule
-  for it"). The one-tap backup sheet is dropped. Open: where the copy
-  lands. A monthly job inside Supabase can copy every table to
-  `snapshots` with no key stored anywhere. A copy that lands in the vault
-  on the Mac mini needs a read-only credential kept on the Mini. He did
-  not pick between them; the lock is read as the recommended one, the
-  Supabase-only schedule. A vault copy is undecided and not in v1.26.
-- **Bills-only tick on a card** (item 1 below): hides a payment-only
-  account from the logging picker without calling it retired. Explained;
-  Shawn: "ok". Read as yes and in the locked scope; confirm at the
-  preview. Needs one new column on `cards`.
-- Shown as a mockup, undecided: ledger search by note, with a count and
-  average per category on Money.
-- Undecided: removing the unused event form and tucking the category
-  manager away; a line on Money for due items not yet logged; the header
-  wrapping onto two lines at phone width (seen in a render, not yet
-  checked on a phone).
+  i dont think this is needed."
+- **Backup on a schedule, not a button** ("yes, schedule for it"). The
+  one-tap backup sheet is dropped.
+- **The idea box is retired** ("yes retire the idea box"). The `ideas`
+  table and its rows stay in Supabase.
+- **Bills-only tick.** His reply at the lock was "ok"; he saw it working
+  in the preview and shipped it.
+
+Shown or raised 2026-11-13 and still undecided, so not built:
+
+- Ledger search by note, with a count and average per category on Money
+  (shown as a mockup).
+- Removing the unused event form and tucking the category manager away.
+- A line on Money for due items not yet logged.
+- The header wrapping onto two lines at phone width (seen in a render;
+  the v1.26 preview at 375px wraps "The Nest" and "Sign out" too; not
+  yet checked on a phone).
 - Found while planning: the duplicate warning fires on any same amount
   within a day either side, whatever the note, so a daily repeat at the
   same price triggers it. Not raised by him as a problem.
-- Mockups (sample data) were shown in session and are not in the repo.
-- Hand-off: the build runs in a fresh session started from this block.
+- Known and left from the v1.26 code review: if the other phone deletes
+  an entry in the instant between two page requests, one row can be
+  missing until the next refresh; and past 1,000 entries each save
+  reloads the ledger in two requests.
 
 Shawn's to answer, none of them blocking:
 
-1. **Picker tile.** A payment-only account now sits in the logging picker,
-   one wrong tap from a new entry, for the same reason he asked for a
-   retired card to leave it. The Retired tick hides it but labels it
-   "retired". With 14 tiles in four rows, Save is still below the first
-   screen even with Due now folded; losing a row takes getting down to 12.
+1. **Picker tile.** Built in v1.26 as the Bills only tick; it waits on
+   his tap on the payment-only account. With 14 tiles in four rows, Save
+   is still below the first screen even with Due now folded; losing a
+   row takes getting down to 12, so one tick alone does not do it.
 2. **Group meals logged at full value with no split.** A handful from
    August to October. If any were paid in advance for others, entering
    the share lowers Everyday.

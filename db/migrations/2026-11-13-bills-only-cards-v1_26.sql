@@ -3,6 +3,7 @@
 -- app reads this column. Additive only, safe to re-run. No rows change:
 -- every card starts un-ticked, and which card gets the tick is a tap in
 -- the card editor, not SQL.
+-- Run against production and verified on 2026-11-13.
 --
 -- An account that only ever pays standing charges (a loan repayment
 -- account, say) is not retired, but its tile in the logging picker is

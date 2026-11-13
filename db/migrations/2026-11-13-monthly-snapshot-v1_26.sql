@@ -1,6 +1,8 @@
 -- The Nest v1.26 — a monthly backup inside Supabase
 -- Run once in the Supabase SQL Editor. Safe to re-run. No app change,
 -- and no row in any app table changes: this only ever adds copies.
+-- Run against production and verified on 2026-11-13; the first copy was
+-- taken by hand the same day.
 --
 -- What it does: on the 1st of each month a scheduled job copies every
 -- table in `public` into the `snapshots` schema, one dated table each

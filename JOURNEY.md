@@ -1574,3 +1574,81 @@ rights on it. It now picks the newest file that defines the function.
 
 Telegram reminders (v1.12) were never switched on: no function is
 deployed and no cron job exists.
+
+## 2026-11-13 (v1.26.0) — whole ledger, idea box retired, bills-only cards, a standing backup
+
+Shawn reviewed the app and how it is used, saw a plan and mockups, and
+locked four items with "ok build based on the plan in a new session". No
+new screen.
+
+What shipped:
+
+- **The ledger loads every entry.** The API returns at most 1000 rows a
+  request and the app asked once. The ledger was about ten weeks from
+  that line; past it the oldest month on Money would have shown a
+  part-total, and a wrong In · Out · Savings, with no warning. The load
+  now asks in pages until a short one comes back (`js/paging.js`). If a
+  page fails the whole load fails with the usual message, and a row
+  repeated across two pages is counted once. CSV export uses the same
+  loop.
+- **The idea box is gone from Money.** Unused as a channel since
+  September. The `ideas` table, its rows and its policies are untouched.
+- **Bills only, a tick on a card,** above Retired in the card editor. A
+  ticked card leaves the logging picker and the "which card" advice,
+  stays in the Cards area undimmed with a line saying why it has no
+  tile, is still offered for Recurring items and confirmed from Due now,
+  and keeps its old entries. No card is ticked by the ship: that is the
+  household's own tap.
+- **A monthly backup inside Supabase.** A scheduled job copies every
+  table in `public` into dated tables in `snapshots` at 00:10 UTC on the
+  1st (08:10 in Singapore). It never prunes or replaces. No key is
+  stored anywhere and the app is not involved.
+
+Decided: no projection or month-end estimate ("i want an accurate
+depiction of actual"), no quick-repeat row on the form, and a schedule
+rather than a backup button. Whether a copy should also land outside
+Supabase is undecided and nothing was built for it. Three things were
+added beyond the brief and shown to him at the preview: the "bills only
+— not in the logging picker" line in the Cards area, a bills-only card
+getting no vote in which card the form opens on, and the backup copying
+whatever tables exist on the day rather than a fixed list.
+
+Caught on the way:
+
+- The code review found that saving any card while an old entry on a
+  hidden card was open for editing dropped that entry's card, so Update
+  would have moved it to the first card in the picker. True for retired
+  cards since v1.18; fixed for both.
+- `pg_cron` turned out never to have been enabled. The v1.12 Telegram
+  migration planned a job, but it was never run. This ship enables it.
+- The repo rule grants a new function to `authenticated`. The snapshot
+  function is closed to `authenticated` as well, since only the job
+  calls it; the migration says so.
+- Left as is: a delete on the other phone in the instant between two
+  page requests can leave one row out until the next refresh, and past
+  1,000 entries each save reloads the ledger in two requests.
+
+Database, run in production after his "Yes, ship it" and checked by
+SELECT: `cards.bills_only` exists, false on every card, and no card's
+review date was touched
+(`db/migrations/2026-11-13-bills-only-cards-v1_26.sql`). The job
+`nest-monthly-snapshot` is active; the function has an empty
+`search_path` and refuses logged-out and signed-in app callers; a first
+copy taken by hand made eight tables dated 2026-11-13 whose row counts
+match their sources, each with row security on and no rights for app
+roles (`db/migrations/2026-11-13-monthly-snapshot-v1_26.sql`). The
+column went in before the push, because the new app asks for it on every
+load.
+
+The SQL could not be tried anywhere first: there is no Postgres on the
+Mac. Each migration is one transaction, so a failure would have changed
+nothing. The preview ran the real code against an in-memory stand-in for
+Supabase that honours the page cap, on 1,389 sample entries: the oldest
+month and the month that straddles entry 1,000 both matched totals
+worked out straight from the rows, and a forced failure on the second
+page showed the load error with no ledger. 145/145 tests, 17 of them
+new. Version 1.26.0. Snapshot, sample data:
+`docs/snapshots/2026-11-13-v1.26.0-bills-only-sample-data.png`.
+
+Still to see in real use: the first scheduled copy on 1 December 2026,
+and the ledger passing 1,000 entries, expected in late January 2027.
