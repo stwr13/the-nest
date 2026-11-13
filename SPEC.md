@@ -117,7 +117,7 @@ Turn a one-time spending audit into a living part of the app, without moving the
 2. **Coming up's day list drops monthly charges.** They stay inside the expandable summary line. Quarterly, half-yearly, yearly and one-time charges still show by date.
 3. **Money splits its total** into Everyday, Commitments and One-offs for the viewed month. The total keeps its meaning. Everyday compares with the Everyday average of up to 3 earlier full months, skipping a part-month at the start of history.
 
-**Ship 2, v1.20: Overview replaces the Recurring tab.** The tab is relabelled, and there is no sixth tab. In order: a typical month as one rounded figure with a stacked bar and four rows that open (Regular commitments; Everyday; Investment & insurance; Giving when anything is in it); Year ahead, twelve months of regular and lump charges with Everyday left out; Big one-offs over the last 12 months, listed with a total; the Running list and add form, tucked away; Stopped.
+**Ship 2, v1.20: Overview replaces the Recurring tab.** The tab is relabelled, and there is no sixth tab. In order: a typical month as one rounded figure with a stacked bar and four rows that open (Regular commitments; Everyday; Investment & insurance; Giving when anything is in it); Year ahead, twelve months of regular and lump charges with Everyday left out (replaced in v1.27 by Month by month, below); Big one-offs over the last 12 months, listed with a total; the Running list and add form, tucked away; Stopped.
 
 **A typical month has up to three layers, and an empty one hides:** Regular commitments is every active Recurring item not of kind invest, at its monthly equivalent. Everyday is the average of the last 3 full calendar months of entries classed as everyday. The set-aside layer is active Recurring items of kind invest, named after their category (Investment & Insurance). A fourth, Giving, went in v1.22, unused since v1.20.1. Overview shows no figures until Recurring and the ledger have both loaded.
 
@@ -153,3 +153,15 @@ No new screen. Four items, the first because the app was about ten weeks from qu
 4. **A monthly backup inside Supabase.** On the 1st of each month a scheduled job copies every table in `public` into dated tables in `snapshots` (`db/migrations/2026-11-13-monthly-snapshot-v1_26.sql`). It never prunes or replaces anything. The copies can't be reached through the app, and no key is stored anywhere. Amends feature 6: CSV export is no longer the only backup story. The copies sit in the same database as the originals, so they cover a bad edit or a bad migration, not the loss of the project. Shawn chose a schedule over a button.
 
 Declined, not to be offered again: any projection or month-end estimate ("i want an accurate depiction of actual"), a quick-repeat row on the form, and a backup button. Not in scope and undecided: a copy of the backup outside Supabase, ledger search and per-category counts, removing the event form, tucking the category manager away, a "due items not logged" line, and the header at phone width.
+
+## v1.27 — Month by month (LOCKED by Shawn 2026-11-14, from two mockups)
+
+Replaces Year ahead on Overview. Shawn: "I like the bar so that it allows me to look at the past in comparison, maybe six months more. I don't really need to see the forecast, because it's just going to come, and these are recurring bills that I already take into consideration."
+
+1. **Seven bars: the last six full months and this one** (`monthByMonth` in `js/overview-math.js`, Node-tested). Each bar is that month's spending, the same figure as Money's total, stacked from the bottom as Commitments, Everyday and One-offs, using Money's three boxes. Investment & Insurance stays out, as on Money.
+2. **This month is actual so far**, lighter and labelled "so far". No estimate of where it ends.
+3. **A month before the ledger's first full month shows no bar** and can't be tapped: a part-month would read as a light month. A full month with nothing logged is a real zero.
+4. **The panel under the bars opens on this month.** Tapping a bar shows that month's three parts. The pick is not kept across launches.
+5. **The forward view goes.** Overdue bills stay in Due now and the next 30 days in Coming up. A v1.26.1 build (open Year ahead on this month, name the heaviest month's year, count an overdue rarer charge in this month) was built and held, then dropped with it; it was never pushed.
+
+Not in scope: anything forward-looking.

@@ -7,7 +7,8 @@ import {
   fullMonthsBefore,
   everydayComparison,
   typicalMonth,
-  yearAhead,
+  monthByMonth,
+  PAST_MONTHS,
   oneOffs,
   oneOffsSince,
   ONE_OFF_CENTS,
@@ -315,93 +316,89 @@ test("no full months yet: the averages are zero rather than broken", () => {
   assert.deepEqual(typical.months, []);
 });
 
-// ── year ahead ───────────────────────────────────────────────────────
+// ── month by month (v1.27) ───────────────────────────────────────────
 
-const monthOf = (year, key) => year.months.find((m) => m.key === key);
-
-test("twelve months from the current one", () => {
-  const { months } = yearAhead([], NOW);
-  assert.equal(months.length, 12);
-  assert.equal(months[0].key, "2026-11");
-  assert.equal(months[11].key, "2027-10");
-});
-
-test("a monthly item counts in every month, including the current one once charged", () => {
-  const charged = item({ next_due: "2026-12-10", last_confirmed: "2026-11-10" });
-  const year = yearAhead([charged], NOW);
-  for (const month of year.months) {
-    assert.equal(month.regularCents, 10000, month.key);
-    assert.equal(month.regularCount, 1, month.key);
-    assert.equal(month.lumpCents, 0, month.key);
+// A ledger from January 2026 with all three boxes and an entry left out
+// of the totals in every month.
+const history = () => {
+  const rows = [];
+  for (let m = 1; m <= 11; m += 1) {
+    const mm = String(m).padStart(2, "0");
+    rows.push(entry({ amount: "40.00", date: "2026-" + mm + "-01" }));
+    rows.push(entry({ amount: String(100 + m) + ".50", date: "2026-" + mm + "-05" }));
+    rows.push(entry({ amount: "1200.00", date: "2026-" + mm + "-03", recurring_id: 3 }));
+    if (m % 3 === 0) rows.push(entry({ amount: "650.00", date: "2026-" + mm + "-09", categories: cat("lumpy") }));
+    rows.push(entry({ amount: "900.00", date: "2026-" + mm + "-06", categories: cat("invest", true), recurring_id: 9 }));
   }
-});
+  return rows;
+};
 
-test("an overdue monthly item isn't counted twice in the current month", () => {
-  const overdue = item({ next_due: "2026-10-10" });
-  assert.equal(monthOf(yearAhead([overdue], NOW), "2026-11").regularCents, 10000);
-});
-
-test("a monthly item that hasn't started yet doesn't count before it starts", () => {
-  const later = item({ next_due: "2027-02-10" });
-  const year = yearAhead([later], NOW);
-  assert.equal(monthOf(year, "2026-11").regularCents, 0);
-  assert.equal(monthOf(year, "2027-01").regularCents, 0);
-  assert.equal(monthOf(year, "2027-02").regularCents, 10000);
-});
-
-test("a monthly item stops counting after its end date", () => {
-  const ending = item({ next_due: "2026-11-10", end_date: "2027-01-15" });
-  const year = yearAhead([ending], NOW);
-  assert.equal(monthOf(year, "2027-01").regularCents, 10000);
-  assert.equal(monthOf(year, "2027-02").regularCents, 0);
-});
-
-test("rarer items land on their own dates and nowhere else", () => {
-  const year = yearAhead(
-    [
-      item({ name: "Quarterly", amount: "300.00", cadence: "quarterly", anchor_day: 4, next_due: "2027-01-04" }),
-      item({ name: "Half-yearly", amount: "120.00", cadence: "half-yearly", anchor_day: 12, next_due: "2026-11-12" }),
-      item({ name: "Yearly", amount: "900.00", cadence: "yearly", anchor_day: 7, next_due: "2027-08-07" }),
-      item({ name: "One time", amount: "5000.00", cadence: "once", anchor_day: 3, next_due: "2027-08-03", end_date: "2027-08-03" }),
-    ],
-    NOW,
+test("month by month: six full months and this one, oldest first", () => {
+  const months = monthByMonth(history(), NOW);
+  assert.equal(PAST_MONTHS, 6);
+  assert.deepEqual(
+    months.map((m) => m.key),
+    ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"],
   );
-  const lumps = (key) => monthOf(year, key).lumps.map((l) => l.name);
-  assert.deepEqual(lumps("2026-11"), ["Half-yearly"]);
-  assert.deepEqual(lumps("2027-01"), ["Quarterly"]);
-  assert.deepEqual(lumps("2027-04"), ["Quarterly"]);
-  assert.deepEqual(lumps("2027-05"), ["Half-yearly"]);
-  assert.deepEqual(lumps("2027-08"), ["One time", "Yearly"], "biggest first");
-  assert.deepEqual(lumps("2027-10"), ["Quarterly"]);
-  assert.deepEqual(lumps("2027-09"), []);
-  assert.equal(year.months.reduce((n, m) => n + m.lumps.filter((l) => l.name === "One time").length, 0), 1);
+  assert.deepEqual(months.map((m) => m.current), [false, false, false, false, false, false, true]);
+  for (const month of months) assert.ok(month.split, month.key);
 });
 
-test("a rare item confirmed this month still counts this month", () => {
-  const paid = item({ amount: "240.00", cadence: "yearly", next_due: "2027-11-10", last_confirmed: "2026-11-10" });
-  assert.equal(monthOf(yearAhead([paid], NOW), "2026-11").lumpCents, 24000);
-
-  const lastPayment = item({ amount: "240.00", cadence: "once", active: false, next_due: null, end_date: "2026-11-10", last_confirmed: "2026-11-10" });
-  assert.equal(monthOf(yearAhead([lastPayment], NOW), "2026-11").lumpCents, 24000);
+test("month by month: every bar is Money's total for its month, split as Money splits it", () => {
+  const expenses = history();
+  for (const month of monthByMonth(expenses, NOW)) {
+    assert.deepEqual(month.split, monthSplit(expenses, month.key), month.key);
+    assert.equal(month.totalCents, summarize(expenses, month.date).thisCents, month.key);
+  }
+  // a quarter-month carries its one-off; a left-out entry never counts
+  const sept = monthByMonth(expenses, NOW).find((m) => m.key === "2026-09");
+  assert.deepEqual(sept.split, { everydayCents: 4000 + 10950, commitmentCents: 120000, oneOffCents: 65000 });
 });
 
-test("stopped items don't land", () => {
-  const stopped = item({ active: false, next_due: null, last_confirmed: "2026-10-10" });
-  for (const month of yearAhead([stopped], NOW).months) assert.equal(month.totalCents, 0);
+test("month by month: months before the ledger's first full month stay blank", () => {
+  const started = [entry({ date: "2026-07-15" }), entry({ date: "2026-08-02" }), entry({ date: "2026-10-20" })];
+  const months = monthByMonth(started, NOW);
+  const blank = months.filter((m) => !m.split).map((m) => m.key);
+  assert.deepEqual(blank, ["2026-05", "2026-06", "2026-07"], "July began mid-month, so it would read as a light month");
+  for (const month of months.filter((m) => !m.split)) assert.equal(month.totalCents, 0);
+  assert.equal(months.find((m) => m.key === "2026-09").totalCents, 0, "a full month with nothing logged is a real zero");
+
+  const clean = monthByMonth([entry({ date: "2026-07-01" })], NOW);
+  assert.ok(clean.find((m) => m.key === "2026-07").split, "a ledger that starts on the 1st counts that month");
 });
 
-test("the heaviest month is the biggest total, the earliest on a tie", () => {
-  const year = yearAhead(
-    [
-      item({ amount: "100.00" }),
-      item({ name: "A", amount: "500.00", cadence: "yearly", next_due: "2027-03-10" }),
-      item({ name: "B", amount: "500.00", cadence: "yearly", next_due: "2027-06-10" }),
-    ],
-    NOW,
+test("month by month: this month is what's logged so far, never an estimate", () => {
+  const justStarted = [entry({ amount: "12.34", date: "2026-11-02" }), entry({ amount: "5.00", date: "2026-11-06" })];
+  const months = monthByMonth(justStarted, NOW);
+  const current = months[months.length - 1];
+  assert.equal(current.current, true);
+  assert.equal(current.totalCents, 1734);
+  assert.ok(months.slice(0, -1).every((m) => !m.split));
+
+  const empty = monthByMonth([], NOW);
+  assert.equal(empty[6].totalCents, 0);
+  assert.ok(empty[6].split, "this month still has a bar to tap");
+});
+
+test("month by month: the window crosses into a new year", () => {
+  const months = monthByMonth(history(), new Date(2027, 1, 10));
+  assert.deepEqual(
+    months.map((m) => m.key),
+    ["2026-08", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01", "2027-02"],
   );
-  assert.equal(year.heaviest.key, "2027-03");
-  assert.equal(year.heaviest.lumpCents, 50000);
-  assert.equal(year.heaviest.regularCents, 10000);
+});
+
+// v1.27 replaced Year ahead. The panel opens on this month, a tapped month
+// isn't kept across launches, and nothing looks forward any more.
+test("Overview shows Month by month, opening on this month", () => {
+  const main = readFileSync(new URL("../js/main.js", import.meta.url), "utf8");
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const render = main.slice(main.indexOf("function renderMonthByMonth()"), main.indexOf("async function refreshOneOffs"));
+  assert.ok(render.length > 1000, "found renderMonthByMonth");
+  assert.match(render, /\?\? current;/);
+  assert.ok(render.includes('"so far"'));
+  assert.ok(!/localStorage|sessionStorage/.test(render), "a tapped month isn't remembered across launches");
+  assert.ok(!main.includes("yearAhead") && !html.includes("Year ahead"), "the forward view is gone");
 });
 
 // ── big one-offs ─────────────────────────────────────────────────────

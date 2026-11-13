@@ -41,6 +41,46 @@ should also land outside Supabase (in the vault on the Mac mini). It
 needs a read-only credential kept on the Mini, so it is his decision and
 nothing was built or stored for it.
 
+**LOCKED 2026-11-14: v1.27.0, Month by month replaces Year ahead.**
+How it got here, all on 2026-11-14:
+
+- Shawn on 2026-11-13: "the year it's showing is telling me July 2027,
+  even though it's still talking about the current year and current
+  month". The figures were right; the panel under Year ahead's bars
+  opened on the heaviest month, eight months out, so it read like a wrong
+  year. He chose "This month", and v1.26.1 was locked: open on this
+  month, name the heaviest month's year, and count an overdue yearly,
+  half-yearly, quarterly or one-time charge in the current month (found
+  while looking; Year ahead's walk from `next_due` skipped it).
+- v1.26.1 was built (tests, review, preview) and held before push when
+  Shawn asked: "Why do we need to show twelve months or eleven months
+  worth of what's ahead? I feel that's overkill." A list of the year's
+  bigger charges was mocked up instead of the bars.
+- On seeing it: "I like the bar so that it allows me to look at the past
+  in comparison, maybe six months more. I don't really need to see the
+  forecast, because it's just going to come, and these are recurring
+  bills that I already take into consideration."
+- Four questions; his picks, then a mockup on sample data, then "Yes,
+  lock it". Opus-class build (reworks part of a screen, new sums), as
+  offered at the lock.
+
+Scope:
+
+1. **Month by month replaces Year ahead on Overview.** Each bar is a
+   month's spending, the same figure as Money's total for that month,
+   stacked as Commitments, Everyday and One-offs.
+2. **Six full months plus this month**: seven bars. A month before the
+   ledger's first full month shows no bar (a part-month would read as a
+   light month).
+3. **This month shows, marked "so far"**: actual to date, no estimate of
+   where it ends. The panel under the bars opens on it; tapping a bar
+   shows that month's three parts. The pick is not kept across launches.
+4. **The forward view goes**, with the held v1.26.1 build (never pushed;
+   its diff is kept outside the repo). Overdue bills stay in Due now and
+   the next 30 days in Coming up.
+
+No schema or live-data change.
+
 **Shipped 2026-11-08, v1.25: the $ shortcut.** The 💡 header button is now
 a green $. It opens one sheet for the month on Money: In · Out · Savings,
 Salary and Other, the month's inflows and "+ Money in". ‹ › in the sheet

@@ -12,7 +12,7 @@
 // categories.kind is for.
 
 import { categoryLabel, monthKey } from "./dashboard-math.js";
-import { monthlyEquivalentCents, nextDue } from "./recurring-view.js";
+import { monthlyEquivalentCents } from "./recurring-view.js";
 import { toCents, isoDate } from "./helpers.js";
 
 // A big entry outside a commitment is a one-off from this much up, in
@@ -124,7 +124,7 @@ function groupByCategory(items) {
 // What a normal month takes, in three layers. Two are promises (the
 // registry) and one is habit (the ledger), which is why the headline can
 // only ever be "about". A one-time charge is in none of them: it lands
-// once, in Year ahead, and spreading it would invent a monthly cost.
+// once, on its date, and spreading it would invent a monthly cost.
 export function typicalMonth(recurring, expenses, now) {
   const running = recurring
     .filter((item) => item.active && item.cadence !== "once")
@@ -172,69 +172,31 @@ export function typicalMonth(recurring, expenses, now) {
   };
 }
 
-// ── year ahead (v1.20) ───────────────────────────────────────────────
+// ── month by month (v1.27) ───────────────────────────────────────────
 
-const monthIndex = (iso) => Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7)) - 1;
+// How many full months sit before the current one. Shawn, 2026-11-14:
+// "I like the bar so that it allows me to look at the past in
+// comparison". It replaced Year ahead, a twelve-month look forward at
+// charges already promised.
+export const PAST_MONTHS = 6;
 
-// Every date an item lands on inside the window, honouring its end date.
-function landings(item, firstIndex, lastIndex) {
-  const dates = [];
-  let cursor = item.next_due;
-  while (cursor && monthIndex(cursor) <= lastIndex && (!item.end_date || cursor <= item.end_date)) {
-    if (monthIndex(cursor) >= firstIndex) dates.push(cursor);
-    if (item.cadence === "once") break;
-    cursor = nextDue(cursor, item.cadence, item.anchor_day);
-  }
-  return dates;
-}
-
-// Twelve months from the current one: when the big charges land, against
-// the usual monthly commitments. Everyday spending isn't in it, because
-// this is what's already promised.
-//
-// A monthly item counts in full for the current month even once it has
-// been charged and moved on, or this month's bar would shrink with every
-// confirm. A rarer item confirmed this month counts for the same reason.
-export function yearAhead(recurring, now) {
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const firstIndex = first.getFullYear() * 12 + first.getMonth();
-  const lastIndex = firstIndex + 11;
+// The last PAST_MONTHS months and this one, oldest first, each with
+// Money's three boxes for that month, so a bar is always the same figure
+// as Money's total. This month is actual so far, never an estimate of
+// where it ends. A month before the ledger's first full month has no
+// split: its bar would read as a light month rather than a missing one.
+export function monthByMonth(expenses, now, count = PAST_MONTHS) {
+  const full = new Set(fullMonthsBefore(expenses, now, count).map((month) => month.key));
   const months = [];
-  for (let i = 0; i < 12; i += 1) {
-    const date = new Date(first.getFullYear(), first.getMonth() + i, 1);
-    months.push({ key: monthKey(date), date, regularCents: 0, regularCount: 0, lumpCents: 0, lumps: [] });
+  for (let back = count; back >= 0; back -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    const key = monthKey(date);
+    const current = back === 0;
+    const split = current || full.has(key) ? monthSplit(expenses, key) : null;
+    const totalCents = split ? split.everydayCents + split.commitmentCents + split.oneOffCents : 0;
+    months.push({ key, date, current, split, totalCents });
   }
-  const at = (index) => months[index - firstIndex];
-  const addLump = (index, item) => {
-    const cents = toCents(item.amount);
-    at(index).lumpCents += cents;
-    at(index).lumps.push({ name: item.name, cents });
-  };
-
-  for (const item of recurring) {
-    if (item.cadence !== "monthly" && item.last_confirmed && monthIndex(item.last_confirmed) === firstIndex) {
-      addLump(firstIndex, item);
-    }
-    if (!item.active) continue;
-    const indexes = landings(item, firstIndex, lastIndex).map(monthIndex);
-    if (item.cadence === "monthly") {
-      if (item.next_due && monthIndex(item.next_due) === firstIndex + 1) indexes.unshift(firstIndex);
-      for (const index of indexes) {
-        at(index).regularCents += toCents(item.amount);
-        at(index).regularCount += 1;
-      }
-    } else {
-      for (const index of indexes) addLump(index, item);
-    }
-  }
-
-  let heaviest = null;
-  for (const month of months) {
-    month.lumps.sort(byCentsDown);
-    month.totalCents = month.regularCents + month.lumpCents;
-    if (heaviest === null || month.totalCents > heaviest.totalCents) heaviest = month;
-  }
-  return { months, heaviest };
+  return months;
 }
 
 // ── big one-offs (v1.20) ─────────────────────────────────────────────

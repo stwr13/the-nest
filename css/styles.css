@@ -1122,13 +1122,14 @@ select:focus {
 /* These passed a colour-blind check with their direct labels and the
    gaps between segments; green-and-pink-only sets failed it. So the blue
    stays, on this one bar. (A fourth, gold, went with the Giving layer in
-   v1.22.) */
+   v1.22.) Month by month (v1.27) adds amber for One-offs: in simulated
+   colour-blind views it sits further from both green and pink than they
+   sit from each other. */
 :root {
   --l1: #2e8b5e;
   --l2: #d9668a;
   --l3: #3b82c4;
-  --y-regular: #b5d6c3;
-  --y-lump: #29583f;
+  --l-oneoff: #d99a3d;
 }
 .l1 { background: var(--l1); }
 .l2 { background: var(--l2); }
@@ -1212,24 +1213,23 @@ select:focus {
 
 .ov-cats { margin-top: 0.2rem; }
 
-/* year ahead */
-.ya-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin: 0.5rem 0 0.3rem; font-size: 0.76rem; color: var(--ink-soft); }
-.ya-key { display: inline-block; width: 10px; height: 10px; margin-right: 0.3rem; border-radius: 3px; vertical-align: -1px; }
-.ya-regular { background: var(--y-regular); }
-.ya-lump { background: var(--y-lump); }
+/* month by month (v1.27) */
+.mm-one { background: var(--l-oneoff); }
+.mm-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin: 0.5rem 0 0.3rem; font-size: 0.76rem; color: var(--ink-soft); }
+.mm-key { display: inline-block; width: 10px; height: 10px; margin-right: 0.3rem; border-radius: 3px; vertical-align: -1px; }
 
-.ya-bars {
+.mm-bars {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 3px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 0.3rem;
 }
-.ycol {
+.mm-col {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   min-width: 0;
-  height: 128px;
+  height: 168px;
   padding: 0 1px;
   font-family: inherit;
   background: none;
@@ -1238,26 +1238,36 @@ select:focus {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.ycol[aria-pressed="true"] { background: var(--pink-soft); outline: 2px solid var(--pink); }
-.ycol:focus-visible { outline: 2px solid var(--green); }
-.ybar { display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
-.ylump, .yreg { display: block; width: 100%; max-width: 24px; margin: 0 auto; }
-.ylump { background: var(--y-lump); }
-.yreg { background: var(--y-regular); }
-.ybar > :first-child { border-radius: 4px 4px 0 0; }
-.ylab {
+.mm-col:disabled { cursor: default; }
+.mm-col[aria-pressed="true"] { background: var(--pink-soft); outline: 2px solid var(--pink); }
+.mm-col:focus-visible { outline: 2px solid var(--green); }
+.mm-bar { display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+.mm-seg { display: block; width: 100%; max-width: 30px; margin: 0 auto; }
+.mm-bar > :first-child { border-radius: 5px 5px 0 0; }
+/* this month is still running: lighter, and labelled "so far" */
+.mm-now .mm-seg { opacity: 0.55; }
+.mm-fig {
+  margin-bottom: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--green-deep);
+  white-space: nowrap;
+}
+.mm-lab {
   margin-top: 0.2rem;
-  padding-bottom: 0.1rem;
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-align: center;
   color: var(--ink-soft);
   white-space: nowrap;
 }
-.ycol[aria-pressed="true"] .ylab { color: var(--green-deep); }
+.mm-col:disabled .mm-lab { opacity: 0.5; }
+.mm-col[aria-pressed="true"] .mm-lab { color: var(--green-deep); }
+.mm-sub { min-height: 0.75rem; padding-bottom: 0.1rem; font-size: 0.55rem; text-align: center; color: var(--ink-soft); }
 
-.ya-panel { margin-top: 0.6rem; }
-.ya-head {
+.mm-panel { margin-top: 0.6rem; }
+.mm-head {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1268,7 +1278,7 @@ select:focus {
   background: var(--green-soft);
   border-radius: 8px;
 }
-.ya-line {
+.mm-line {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1277,8 +1287,7 @@ select:focus {
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
-.ya-line-lump { font-weight: 600; color: var(--ink); }
-.ya-line > span:last-child { flex: none; }
+.mm-line > span:last-child { flex: none; }
 
 /* running, with its add button beside the toggle */
 .running-head { display: flex; align-items: center; gap: 0.75rem; }

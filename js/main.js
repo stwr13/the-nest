@@ -15,7 +15,7 @@ import {
   monthSplit,
   everydayComparison,
   typicalMonth,
-  yearAhead,
+  monthByMonth,
   oneOffs,
   oneOffsSince,
   ONE_OFF_CENTS,
@@ -2559,20 +2559,21 @@ document.getElementById("make-recurring").addEventListener("click", () => {
 
 // ── Overview (v1.20) ─────────────────────────────────────────────────
 // One picture of the household from data the app already holds: what a
-// normal month takes, what's inside each part, and when the big charges
-// land. All of it joint, so no names, pills or per-person totals here:
+// normal month takes, what's inside each part, and how the last six months
+// compare (v1.27; until then, when the big charges would land). All of it
+// joint, so no names, pills or per-person totals here:
 // between the two of them money is shared and nobody tracks who spent
 // what. No budgets either. Visibility, not budgets.
 
-const YEAR_BAR_PX = 104; // the tallest bar; the rest of .ycol holds the label
+const MONTH_BAR_PX = 112; // the tallest bar; the rest of .mm-col holds its figure and label
 const ovHeadline = document.getElementById("ov-headline");
 const ovSource = document.getElementById("ov-source");
 const ovStatus = document.getElementById("ov-status");
 const ovStack = document.getElementById("ov-stack");
 const ovLayers = document.getElementById("ov-layers");
-const yaSentence = document.getElementById("ya-sentence");
-const yaBars = document.getElementById("ya-bars");
-const yaPanel = document.getElementById("ya-panel");
+const mmSentence = document.getElementById("mm-sentence");
+const mmBars = document.getElementById("mm-bars");
+const mmPanel = document.getElementById("mm-panel");
 const oneOffTotal = document.getElementById("oneoff-total");
 const oneOffEmpty = document.getElementById("oneoff-empty");
 const oneOffList = document.getElementById("oneoff-list");
@@ -2582,7 +2583,9 @@ const oneOffStatus = document.getElementById("oneoff-status");
 // What's open survives a re-render: a confirm on the other tab, or a save,
 // rebuilds these rows, and that shouldn't fold what someone was reading.
 const overviewOpen = new Set();
-let yearPicked = null; // the month someone tapped; until then, the heaviest
+// The month someone tapped in Month by month; until then, this one. Kept in
+// memory only, so every launch opens on this month.
+let monthPicked = null;
 let oneOffRows = [];
 
 function el(tag, className, text) {
@@ -2737,7 +2740,7 @@ function setAsideBody(setAside, notCounted) {
   );
   const notes = oneTime.map(
     (item) =>
-      ` The ${wholeDollars(toCents(item.amount))} ${item.name} in ${monthYearText(item.next_due)} shows in Year ahead, not here.`,
+      ` The ${wholeDollars(toCents(item.amount))} ${item.name} in ${monthYearText(item.next_due)} is a one-time charge, so it isn't in a typical month.`,
   );
   return [
     ...setAside.items.map((item) =>
@@ -2774,7 +2777,7 @@ function renderOverview() {
     ovStack.hidden = true;
     ovLayers.replaceChildren();
   }
-  renderYearAhead();
+  renderMonthByMonth();
 }
 
 function renderTypicalMonth() {
@@ -2827,69 +2830,88 @@ function renderTypicalMonth() {
   );
 }
 
-function renderYearAhead() {
-  if (!sources.recurring.loaded) {
-    yaSentence.textContent = sources.recurring.failed ? "Needs Recurring to load." : "Loading…";
-    yaBars.replaceChildren();
-    yaPanel.replaceChildren();
+// A bar's figure, short enough for seven bars side by side on a phone.
+function barFigure(cents) {
+  return cents >= 100000 ? `$${(cents / 100000).toFixed(1)}k` : wholeDollars(cents);
+}
+
+// Six months back and this one, each bar the same figure as Money's total
+// for its month. Stacked from the bottom: Commitments, which barely move,
+// then Everyday, then One-offs, so what changed sits on top.
+function renderMonthByMonth() {
+  if (!sources.ledger.loaded) {
+    mmSentence.textContent = sources.ledger.failed ? "Needs the ledger to load." : "Loading…";
+    mmBars.replaceChildren();
+    mmPanel.replaceChildren();
     return;
   }
-  const { months, heaviest } = yearAhead(recurringCache, new Date());
-  const selected = months.find((month) => month.key === yearPicked) ?? heaviest;
+  const months = monthByMonth(expensesCache, new Date());
+  const current = months[months.length - 1];
+  const selected = months.find((month) => month.key === monthPicked && month.split) ?? current;
+  // Money's total, not its Out figure: Out also counts Investment & Insurance.
+  const matching = "Spending each month, matching Money's total. Investment & Insurance isn't counted.";
+  mmSentence.textContent = months.some((month) => !month.split)
+    ? `${matching} Months before the ledger's first full month stay blank.`
+    : matching;
 
-  yaSentence.textContent =
-    heaviest.lumpCents > 0
-      ? `${monthShortFmt.format(heaviest.date)} is the heaviest month: ${wholeDollars(heaviest.lumpCents)} on top of the usual ${wholeDollars(heaviest.regularCents)}. Everyday spending isn't included.`
-      : `Nothing big lands in the next 12 months. The usual is ${wholeDollars(heaviest.regularCents)} a month, with everyday spending on top.`;
-
-  // The bars share one scale. Heights in pixels, not percentages: a percent
-  // height inside nested flex boxes is the kind of thing that renders
-  // differently on the phone than in a desktop preview.
-  const tallest = heaviest.totalCents || 1;
-  const height = (cents) => `${Math.max(2, Math.round((cents / tallest) * YEAR_BAR_PX))}px`;
-  yaBars.replaceChildren(
+  const name = (month) =>
+    `${monthShortFmt.format(month.date)} ${month.date.getFullYear()}${month.current ? " so far" : ""}`;
+  // One scale for all seven. Heights in pixels, not percentages: a percent
+  // height inside nested flex boxes renders differently on the phone than
+  // in a desktop preview.
+  const tallest = Math.max(1, ...months.map((month) => month.totalCents));
+  const height = (cents) => `${Math.max(2, Math.round((cents / tallest) * MONTH_BAR_PX))}px`;
+  mmBars.replaceChildren(
     ...months.map((month) => {
-      const column = el("button", "ycol");
+      const column = el("button", month.current ? "mm-col mm-now" : "mm-col");
       column.type = "button";
       column.setAttribute("aria-pressed", String(month === selected));
-      column.setAttribute(
-        "aria-label",
-        `${monthShortFmt.format(month.date)} ${month.date.getFullYear()}: ${wholeDollars(month.totalCents)}`,
+      const bar = el("span", "mm-bar");
+      if (month.split) {
+        column.setAttribute("aria-label", `${name(month)}: ${wholeDollars(month.totalCents)}`);
+        const parts = [
+          [month.split.oneOffCents, "mm-one"],
+          [month.split.everydayCents, "l2"],
+          [month.split.commitmentCents, "l1"],
+        ];
+        for (const [cents, colour] of parts) {
+          if (cents <= 0) continue;
+          const segment = el("span", `mm-seg ${colour}`);
+          segment.style.height = height(cents);
+          bar.append(segment);
+        }
+        column.addEventListener("click", () => {
+          monthPicked = month.key;
+          renderMonthByMonth();
+        });
+      } else {
+        column.disabled = true;
+        column.setAttribute("aria-label", `${name(month)}: not in the ledger`);
+      }
+      column.append(
+        el("span", "mm-fig", month.split ? barFigure(month.totalCents) : ""),
+        bar,
+        el("span", "mm-lab", monthShortFmt.format(month.date)),
+        el("span", "mm-sub", month.current ? "so far" : ""),
       );
-      const bar = el("span", "ybar");
-      if (month.lumpCents > 0) {
-        const lump = el("span", "ylump");
-        lump.style.height = height(month.lumpCents);
-        bar.append(lump);
-      }
-      if (month.regularCents > 0) {
-        const regular = el("span", "yreg");
-        regular.style.height = height(month.regularCents);
-        bar.append(regular);
-      }
-      column.append(bar, el("span", "ylab", monthShortFmt.format(month.date)));
-      column.addEventListener("click", () => {
-        yearPicked = month.key;
-        renderYearAhead();
-      });
       return column;
     }),
   );
 
-  const head = el("div", "ya-head");
-  head.append(
-    el("span", null, `${monthShortFmt.format(selected.date)} ${selected.date.getFullYear()}`),
-    el("span", null, wholeDollars(selected.totalCents)),
-  );
-  const line = (className, name, cents) => {
-    const row = el("div", className);
-    row.append(el("span", null, name), el("span", null, wholeDollars(cents)));
+  const head = el("div", "mm-head");
+  head.append(el("span", null, name(selected)), el("span", null, wholeDollars(selected.totalCents)));
+  const line = (colour, label, cents) => {
+    const row = el("div", "mm-line");
+    const named = el("span");
+    named.append(el("i", `mm-key ${colour}`), label);
+    row.append(named, el("span", null, wholeDollars(cents)));
     return row;
   };
-  yaPanel.replaceChildren(
+  mmPanel.replaceChildren(
     head,
-    line("ya-line", `Regular monthly items (${selected.regularCount})`, selected.regularCents),
-    ...selected.lumps.map((lump) => line("ya-line ya-line-lump", lump.name, lump.cents)),
+    line("mm-one", "One-offs", selected.split.oneOffCents),
+    line("l2", "Everyday", selected.split.everydayCents),
+    line("l1", "Commitments", selected.split.commitmentCents),
   );
 }
 
