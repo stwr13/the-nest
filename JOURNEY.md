@@ -1652,3 +1652,74 @@ new. Version 1.26.0. Snapshot, sample data:
 
 Still to see in real use: the first scheduled copy on 1 December 2026,
 and the ledger passing 1,000 entries, expected in late January 2027.
+
+## 2026-11-14 (v1.27.0) — Month by month replaces Year ahead
+
+Shawn saw "Jul 2027" on Year ahead on 2026-11-13 and read it as a wrong
+year. The figures were right: the panel under the bars opened on the
+heaviest month, eight months out. He chose "This month", and v1.26.1 was
+locked: open on this month, name the heaviest month's year, and count an
+overdue rarer charge in this month (found while looking: Year ahead's
+walk from `next_due` dropped a yearly, half-yearly, quarterly or
+one-time charge left unconfirmed past its month). It was built, tested,
+reviewed and previewed, then held before the push when he asked why
+twelve months ahead were needed at all: "I feel that's overkill." A list
+of the year's bigger charges was mocked up instead. On seeing it he said
+what he uses the bars for: "I like the bar so that it allows me to look
+at the past in comparison, maybe six months more. I don't really need to
+see the forecast, because it's just going to come, and these are
+recurring bills that I already take into consideration." Four questions,
+a second mockup, "Yes, lock it", a final check he asked for, then "Yes,
+ship it".
+
+What shipped:
+
+- **Month by month, in Year ahead's place on Overview.** Seven bars: the
+  last six full months and this one. Each bar is that month's spending,
+  the same figure as Money's total, stacked from the bottom as
+  Commitments, Everyday and One-offs, from Money's three boxes
+  (`monthByMonth` in `js/overview-math.js`). Each bar carries its figure.
+- **This month is actual so far,** lighter and labelled "so far". No
+  estimate of where it ends.
+- **A month before the ledger's first full month stays blank** and can't
+  be tapped, because a part-month would read as a light month. A full
+  month with nothing logged is a real zero.
+- **The panel under the bars opens on this month;** tapping a bar shows
+  that month's three parts. The pick is not kept across launches.
+- **Year ahead and its maths are gone,** with their nine tests. The note
+  under Investment & Insurance about a one-time charge no longer points
+  at it.
+- **One-offs are amber.** In simulated colour-blind views it sits further
+  from both the green and the pink than they sit from each other.
+
+Decided: no forward view of charges at all, in line with no projection.
+The overdue-charge fix went with Year ahead; owed bills are seen in Due
+now. The held v1.26.1 build was never pushed, so 1.26.1 never existed on
+the phones; its diff was kept outside the repo.
+
+Caught on the way:
+
+- The final check, which Shawn asked for: Money shows its total and,
+  under it, Out, which also counts Investment & Insurance. The first
+  wording, "the same figures as Money", could have read as wrong next to
+  Out in a month with a premium. It now says "matching Money's total.
+  Investment & Insurance isn't counted."
+- The code review at medium raised two minor points, left as they are:
+  the bars read the whole ledger seven times a render (quick at this
+  size), and a month just under a thousand dollars would show in full
+  beside the next one's short "k" figure.
+- At 320px wide, the first iPhone SE, a figure of ten thousand or more
+  would touch its neighbour. At 375px and wider it fits.
+
+Checked in the preview, on sample data with a ledger starting mid-July:
+a bar matched Money's total for its month to the dollar; logging an
+entry moved Money's total and this month's bar together; a failed
+ledger load showed "Needs the ledger to load." under the no-connection
+line, with no bars. The preview pane refuses service workers, so its
+one console error is not the app's. 142/142 tests, 6 of them new and 9
+retired with Year ahead. No schema or live-data change. Version 1.27.0.
+Snapshot, sample data:
+`docs/snapshots/2026-11-14-v1.27.0-month-by-month-sample-data.png`.
+
+Still to see in real use: whether these bars are what he compares
+against, and the blank months filling in one by one.

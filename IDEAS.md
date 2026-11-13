@@ -12,15 +12,38 @@ captures, all Claire — she is now the module's most demanding user;
 Shawn has logged nothing in-app since 07-26 (he raises things in
 session instead).
 
-## Open decisions — board as of 2026-11-13 (resume here)
+## Open decisions — board as of 2026-11-14 (resume here)
 
-Live app is **v1.26.0**: the daily screens protected (v1.19), Overview in
+Live app is **v1.27.0**: the daily screens protected (v1.19), Overview in
 place of the Recurring tab (v1.20), ten categories instead of eighteen,
 Recurring items editable from Overview (v1.21), the repairs from a full
 review (v1.22), tick boxes in Due now with tighter Running rows (v1.23),
-money in (v1.24), a $ shortcut to it in the header (v1.25), and the whole
+money in (v1.24), a $ shortcut to it in the header (v1.25), the whole
 ledger loaded, the idea box retired, a bills-only tick on cards and a
-monthly backup inside Supabase (v1.26). Scope and rules are in SPEC.md.
+monthly backup inside Supabase (v1.26), and Month by month in place of
+Year ahead (v1.27). Scope and rules are in SPEC.md.
+
+**Shipped 2026-11-14, v1.27: Month by month.** Year ahead is gone from
+Overview. In its place, seven bars: the last six full months and this
+one, "so far". Each bar is Money's total for that month, stacked as
+Commitments, Everyday and One-offs; tap one for its three parts. Months
+before the ledger's first full month stay blank. Shawn locked it with
+"Yes, lock it" after two mockups, asked for a final check, and shipped
+it with "Yes, ship it". Detail in JOURNEY.md. Watch, costing nothing:
+
+- **Is this what he compares against?** He asked for the bars "to look
+  at the past in comparison". If he still steps back through months on
+  Money instead, the bars aren't earning their place.
+- **The blank months** fill in one a month, from the ledger's first full
+  month.
+
+Decided on the way, so it isn't offered again: **no forward view of
+charges.** Shawn: "I don't really need to see the forecast, because it's
+just going to come, and these are recurring bills that I already take
+into consideration." A locked v1.26.1 (Year ahead opening on this month,
+the heaviest month's year, an overdue rarer charge counted in this
+month) was built and held, then dropped with Year ahead; it never went
+live. Owed bills stay in Due now.
 
 **Shipped 2026-11-13, v1.26.** Shawn locked it with "ok build based on
 the plan in a new session" and shipped it from a phone-width preview on
@@ -40,46 +63,6 @@ Still open from that scope, undecided: whether a copy of the backup
 should also land outside Supabase (in the vault on the Mac mini). It
 needs a read-only credential kept on the Mini, so it is his decision and
 nothing was built or stored for it.
-
-**LOCKED 2026-11-14: v1.27.0, Month by month replaces Year ahead.**
-How it got here, all on 2026-11-14:
-
-- Shawn on 2026-11-13: "the year it's showing is telling me July 2027,
-  even though it's still talking about the current year and current
-  month". The figures were right; the panel under Year ahead's bars
-  opened on the heaviest month, eight months out, so it read like a wrong
-  year. He chose "This month", and v1.26.1 was locked: open on this
-  month, name the heaviest month's year, and count an overdue yearly,
-  half-yearly, quarterly or one-time charge in the current month (found
-  while looking; Year ahead's walk from `next_due` skipped it).
-- v1.26.1 was built (tests, review, preview) and held before push when
-  Shawn asked: "Why do we need to show twelve months or eleven months
-  worth of what's ahead? I feel that's overkill." A list of the year's
-  bigger charges was mocked up instead of the bars.
-- On seeing it: "I like the bar so that it allows me to look at the past
-  in comparison, maybe six months more. I don't really need to see the
-  forecast, because it's just going to come, and these are recurring
-  bills that I already take into consideration."
-- Four questions; his picks, then a mockup on sample data, then "Yes,
-  lock it". Opus-class build (reworks part of a screen, new sums), as
-  offered at the lock.
-
-Scope:
-
-1. **Month by month replaces Year ahead on Overview.** Each bar is a
-   month's spending, the same figure as Money's total for that month,
-   stacked as Commitments, Everyday and One-offs.
-2. **Six full months plus this month**: seven bars. A month before the
-   ledger's first full month shows no bar (a part-month would read as a
-   light month).
-3. **This month shows, marked "so far"**: actual to date, no estimate of
-   where it ends. The panel under the bars opens on it; tapping a bar
-   shows that month's three parts. The pick is not kept across launches.
-4. **The forward view goes**, with the held v1.26.1 build (never pushed;
-   its diff is kept outside the repo). Overdue bills stay in Due now and
-   the next 30 days in Coming up.
-
-No schema or live-data change.
 
 **Shipped 2026-11-08, v1.25: the $ shortcut.** The 💡 header button is now
 a green $. It opens one sheet for the month on Money: In · Out · Savings,
